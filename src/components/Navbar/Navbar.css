@@ -1,0 +1,170 @@
+.sgtp-navbar {
+  height: 64px;
+  background: linear-gradient(90deg, #032433 0%, #021a24 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.navbar-brand-logo {
+  width: 44px;
+  height: 44px;
+  background: radial-gradient(circle at center, #0f3d4c 0%, #062835 100%);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: inset 0 0 12px rgba(45, 212, 191, 0.2), 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.navbar-brand-logo:hover {
+  transform: scale(1.04);
+}
+
+.ecg-svg {
+  width: 32px;
+  height: 22px;
+}
+
+.navbar-brand-text {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+}
+
+/* Container de pastillas centrales */
+.navbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar-pills-container {
+  background: rgba(148, 163, 184, 0.35);
+  backdrop-filter: blur(4px);
+  padding: 4px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.navbar-pill {
+  padding: 6px 20px;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  background: transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.navbar-pill:hover {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.navbar-pill.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Lado derecho del navbar */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-profile-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 12px 4px 6px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.avatar-mini {
+  width: 28px;
+  height: 28px;
+  background: #38bdf8;
+  color: #0f172a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.user-role-badge {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.navbar-logout-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.navbar-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+@media (max-width: 768px) {
+  .sgtp-navbar {
+    padding: 0 14px;
+    height: auto;
+    flex-wrap: wrap;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    gap: 10px;
+  }
+  .navbar-center {
+    order: 3;
+    width: 100%;
+  }
+  .navbar-pills-container {
+    width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+}

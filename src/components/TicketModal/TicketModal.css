@@ -1,0 +1,201 @@
+.ticket-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.ticket-modal-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  max-width: 440px;
+  width: 100%;
+  padding: 24px;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.btn-close-modal {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  color: #94a3b8;
+  padding: 4px;
+  border-radius: 50%;
+}
+
+.btn-close-modal:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.ticket-header-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #16a34a;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 16px;
+}
+
+.printable-ticket {
+  background: #fafaf9;
+  border: 1px solid #e7e5e4;
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  width: 100%;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.03);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.ticket-hospital-title {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.ticket-hospital-title h4 {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #1c1917;
+}
+
+.ticket-hospital-title p {
+  font-size: 0.78rem;
+  color: #78716c;
+}
+
+.ticket-divider-dashed {
+  border-top: 1px dashed #d6d3d1;
+  margin: 10px 0;
+}
+
+.ticket-call-number-box {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.call-number-label {
+  display: block;
+  font-size: 0.72rem;
+  color: #78716c;
+  letter-spacing: 1px;
+}
+
+.call-number-big {
+  display: block;
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: #0c4a6e;
+  line-height: 1.1;
+  font-family: var(--font-family);
+}
+
+.totem-id {
+  display: block;
+  font-size: 0.75rem;
+  color: #0369a1;
+  font-weight: 600;
+}
+
+.ticket-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+
+.ticket-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.row-lbl {
+  color: #78716c;
+}
+
+.row-val {
+  font-weight: 700;
+  color: #1c1917;
+  text-align: right;
+}
+
+.row-val.small {
+  font-size: 0.75rem;
+  max-width: 60%;
+}
+
+.ticket-footer-notice {
+  text-align: center;
+  font-size: 0.72rem;
+  color: #78716c;
+}
+
+.ticket-uuid {
+  display: block;
+  font-size: 0.65rem;
+  color: #a8a29e;
+  margin-top: 4px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.btn-print-ticket {
+  flex: 1;
+  background: #0284c7;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-print-ticket:hover {
+  background: #0369a1;
+}
+
+.btn-done-ticket {
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+}
+
+.btn-done-ticket:hover {
+  background: #e2e8f0;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-ticket, #printable-ticket * {
+    visibility: visible;
+  }
+  #printable-ticket {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    border: none;
+  }
+}

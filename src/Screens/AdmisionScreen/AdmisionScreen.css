@@ -1,0 +1,421 @@
+.admision-screen-layout {
+  min-height: 100vh;
+  background-color: var(--bg-app);
+  display: flex;
+  flex-direction: column;
+}
+
+.admision-main-content {
+  flex: 1;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 36px 60px;
+}
+
+.admision-header-text {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Grilla principal */
+.admision-grid-container {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Tarjeta de Formulario */
+.admision-form-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header-icon-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.card-header-icon-title h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.header-icon-blue {
+  color: #0284c7;
+}
+
+.admision-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row-two-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-row-center {
+  display: flex;
+  justify-content: center;
+}
+
+.center-group {
+  width: 320px;
+}
+
+.center-input {
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.form-input {
+  height: 42px;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 0 14px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: #ffffff;
+  outline: none;
+  transition: all 0.15s;
+}
+
+.form-input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.form-input.error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.error-text {
+  font-size: 0.75rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+/* Categorías de Triage (Grid de 7 tarjetas según Imagen 3) */
+.triage-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.section-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.triage-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.triage-btn-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.triage-btn-card:hover {
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.triage-btn-card.selected {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  box-shadow: 0 0 0 2px #0284c7;
+}
+
+.triage-circle-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.triage-btn-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.triage-label-main {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.triage-subtitle-desc {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.justification-wrapper {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.justification-wrapper label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.justification-textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  outline: none;
+  font-family: inherit;
+}
+
+.justification-textarea:focus {
+  border-color: #0284c7;
+}
+
+.justification-textarea.error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+/* Estudios solicitados */
+.studies-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.studies-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-scan-ocr {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #bae6fd;
+}
+
+.btn-scan-ocr:hover {
+  background: #bae6fd;
+}
+
+.studies-quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.study-chip {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.study-chip:hover {
+  border-color: #cbd5e1;
+}
+
+.study-chip.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
+.selected-studies-summary {
+  font-size: 0.82rem;
+  color: #0369a1;
+  background: #f0f9ff;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.btn-emit-ticket {
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  height: 48px;
+  border-radius: var(--radius-md);
+  margin-top: 10px;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+  transition: background 0.15s;
+}
+
+.btn-emit-ticket:hover {
+  background: #0369a1;
+}
+
+.btn-emit-ticket:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Columna Lateral */
+.admision-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.recent-entries-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.side-card-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.empty-notice {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  text-align: left;
+  padding: 8px 0;
+}
+
+.recent-entries-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recent-entry-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid #f1f5f9;
+  border-radius: var(--radius-md);
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.recent-entry-item:hover {
+  background: #f0f9ff;
+  border-color: #e0f2fe;
+}
+
+.entry-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.entry-call-num {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0284c7;
+  min-width: 38px;
+}
+
+.entry-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.entry-patient-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.entry-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 1024px) {
+  .admision-grid-container {
+    grid-template-columns: 1fr;
+  }
+  .triage-buttons-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .form-row-two-cols {
+    grid-template-columns: 1fr;
+  }
+  .triage-buttons-grid {
+    grid-template-columns: 1fr;
+  }
+}
