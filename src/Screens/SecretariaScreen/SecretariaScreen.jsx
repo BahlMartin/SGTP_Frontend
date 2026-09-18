@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Download,
   Mail,
@@ -14,14 +14,27 @@ import { computeDailyReportMetrics, sendDailyReportEmailApi } from '../../servic
 import { generateDailyReportPdf } from '../../utils/pdfGenerator'
 import './SecretariaScreen.css'
 
+const getTodayDateString = () => {
+  const now = new Date()
+  const offset = now.getTimezoneOffset()
+  const localDate = new Date(now.getTime() - offset * 60 * 1000)
+  return localDate.toISOString().slice(0, 10)
+}
+
 export default function SecretariaScreen() {
   const { tickets } = useTriageQueue()
   const { userData } = useAuth()
-  const [jornadaDate, setJornadaDate] = useState('2026-09-19')
+  const [jornadaDate, setJornadaDate] = useState(() => getTodayDateString())
   const [notice, setNotice] = useState(null)
 
+  useEffect(() => {
+    if (!jornadaDate) {
+      setJornadaDate(getTodayDateString())
+    }
+  }, [jornadaDate])
+
   // Métricas dinámicas calculadas según la fecha seleccionada
-  const metrics = computeDailyReportMetrics(tickets, new Date(jornadaDate))
+  const metrics = computeDailyReportMetrics(tickets, jornadaDate)
   const { atendidos, enCurso, ingresos, criticos, esperaPromedio, atencionPromedio, triageDistribution } = metrics
 
   // Calcular el total para proporciones de barras

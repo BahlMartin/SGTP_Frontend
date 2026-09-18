@@ -68,3 +68,22 @@ export async function toggleShiftExceptionApi(userId, habilitado) {
   saveUsersToStorage(users)
   return user
 }
+
+export async function deleteStaffUserApi(currentUserRole, userId) {
+  const users = getUsersFromStorage()
+  const user = users.find((u) => u.id === Number(userId))
+
+  if (!user) throw new Error('Usuario no encontrado.')
+
+  if (currentUserRole === 'Jefa') {
+    if (user.rol === 'Admin' || user.rol === 'Jefa') {
+      throw new Error('La Jefa no puede eliminar usuarios con rol administrativo.')
+    }
+  } else if (currentUserRole !== 'Admin') {
+    throw new Error('Permisos insuficientes para eliminar personal.')
+  }
+
+  const filteredUsers = users.filter((u) => u.id !== Number(userId))
+  saveUsersToStorage(filteredUsers)
+  return { deletedId: Number(userId), deletedUser: user }
+}
