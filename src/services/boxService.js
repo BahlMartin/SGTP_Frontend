@@ -1,7 +1,5 @@
 import { getCurrentUtcIso } from '../utils/formatters'
 
-const LOCAL_BOXES_KEY = 'sgtp_boxes_db'
-
 const INITIAL_BOXES = [
   { id: 1, numero: 1, nombre: 'Box 1', estado: 'En atencion', activo: true, tecnicoMatricula: 'TEC-3391', ticketActualId: 'TCK-1002' },
   { id: 2, numero: 2, nombre: 'Box 2', estado: 'Disponible', activo: true, tecnicoMatricula: 'TEC-4402', ticketActualId: null },
@@ -9,17 +7,14 @@ const INITIAL_BOXES = [
   { id: 4, numero: 4, nombre: 'Box 4', estado: 'Fuera de servicio', activo: false, tecnicoMatricula: null, ticketActualId: null }
 ]
 
+let runtimeBoxes = INITIAL_BOXES.map((box) => ({ ...box }))
+
 function getStoredBoxes() {
-  const stored = localStorage.getItem(LOCAL_BOXES_KEY)
-  if (!stored) {
-    localStorage.setItem(LOCAL_BOXES_KEY, JSON.stringify(INITIAL_BOXES))
-    return INITIAL_BOXES
-  }
-  return JSON.parse(stored)
+  return runtimeBoxes
 }
 
 function saveStoredBoxes(boxes) {
-  localStorage.setItem(LOCAL_BOXES_KEY, JSON.stringify(boxes))
+  runtimeBoxes = boxes
 }
 
 export async function fetchBoxesApi() {

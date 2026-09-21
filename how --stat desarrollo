@@ -1,0 +1,13 @@
+[33mcommit ea9318dbaf72afc273a9b7cca55ca9c219c02ea3[m[33m ([m[1;32mrespaldo-desarrollo[m[33m)[m
+Author: BalderusIV <san3457@hotmail.com>
+Date:   Fri Sep 18 12:24:43 2026 -0300
+
+    modificacion de tablas y metricas
+
+ src/Screens/JefaScreen/JefaScreen.css             | 38 [32m++++++++++++[m[31m-[m
+ src/Screens/JefaScreen/JefaScreen.jsx             | 67 [32m+++++++++++++++++++[m[31m----[m
+ src/Screens/LoginScreen/LoginScreen.css           |  6 [32m+[m[31m-[m
+ src/Screens/SecretariaScreen/SecretariaScreen.jsx | 19 [32m++++++[m[31m-[m
+ src/services/reportService.js                     | 38 [32m+++++++++++[m[31m--[m
+ src/services/userService.js                       | 19 [32m+++++++[m
+ 6 files changed, 164 insertions(+), 23 deletions(-)
