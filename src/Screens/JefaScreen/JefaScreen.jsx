@@ -6,7 +6,9 @@ import {
   CheckCircle,
   Edit2,
   X,
-  Plus
+  Plus,
+  Trash2,
+  AlertCircle
 } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
@@ -16,14 +18,26 @@ import { useAuth } from '../../context/AuthContext'
 import { formatTimeHHMM } from '../../utils/formatters'
 import { generateDailyReportPdf } from '../../utils/pdfGenerator'
 import { computeDailyReportMetrics, sendDailyReportEmailApi } from '../../services/reportService'
-import { fetchAllStaffApi, createStaffUserApi, toggleShiftExceptionApi } from '../../services/userService'
+import {
+  fetchAllStaffApi,
+  createStaffUserApi,
+  toggleShiftExceptionApi,
+  deleteStaffUserApi
+} from '../../services/userService'
 import './JefaScreen.css'
+
+const getTodayDateString = () => {
+  const now = new Date()
+  const offset = now.getTimezoneOffset()
+  const localDate = new Date(now.getTime() - offset * 60 * 1000)
+  return localDate.toISOString().slice(0, 10)
+}
 
 export default function JefaScreen() {
   const { tickets, updateTicketAsJefa } = useTriageQueue()
   const { userData } = useAuth()
 
-  const [jornadaDate, setJornadaDate] = useState('2026-09-19')
+  const [jornadaDate, setJornadaDate] = useState(() => getTodayDateString())
   const [staffList, setStaffList] = useState([])
   const [statusMessage, setStatusMessage] = useState(null)
 
@@ -110,6 +124,26 @@ export default function JefaScreen() {
       await toggleShiftExceptionApi(staffId, nextStatus)
       await loadStaff()
       showNotice(`Habilitación de turno actualizada para el personal.`)
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  const handleDeleteStaff = async (staffId, staffName, staffRole) => {
+    const canDelete = userData?.rol === 'Admin' || (userData?.rol === 'Jefa' && staffRole !== 'Admin' && staffRole !== 'Jefa')
+
+    if (!canDelete) {
+      alert('No tienes permisos para eliminar este perfil de personal.')
+      return
+    }
+
+    const confirmed = window.confirm(`¿Deseas borrar al personal ${staffName}? Esta acción no se puede deshacer.`)
+    if (!confirmed) return
+
+    try {
+      await deleteStaffUserApi(userData?.rol, staffId)
+      await loadStaff()
+      showNotice('Miembro del personal eliminado correctamente.')
     } catch (err) {
       alert(err.message)
     }
@@ -369,6 +403,7 @@ export default function JefaScreen() {
                       <th>Turno</th>
                       <th>Estado</th>
                       <th>Habilitación Horaria</th>
+                      <th>Acción</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -403,6 +438,17 @@ export default function JefaScreen() {
                             <span className="permanent-badge">Acceso 24hs</span>
                           )}
                         </td>
+                        <td>
+                          {(userData?.rol === 'Admin' || userData?.rol === 'Jefa') && (
+                            <button
+                              className="btn-delete-staff"
+                              title="Eliminar personal"
+                              onClick={() => handleDeleteStaff(s.id, s.nombre, s.rol)}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -410,15 +456,14 @@ export default function JefaScreen() {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Columna Derecha: Búsqueda de Paciente */}
-          <div className="jefa-right-column">
-            <PatientSearch
-              onSelectPatient={(p) =>
-                showNotice(`Paciente encontrado: ${p.nombre} ${p.apellido} (DNI ${p.dni})`)
-              }
-            />
-          </div>
+        <div className="jefa-search-panel">
+          <PatientSearch
+            onSelectPatient={(p) =>
+              showNotice(`Paciente encontrado: ${p.nombre} ${p.apellido} (DNI ${p.dni})`)
+            }
+          />
         </div>
       </main>
 

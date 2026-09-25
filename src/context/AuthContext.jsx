@@ -12,21 +12,13 @@ export const AuthContext = createContext({
   toggleShiftLockSimulation: () => {}
 })
 
-export const AUTH_TOKEN_KEY = 'sgtp_auth_token'
-export const AUTH_USER_KEY = 'sgtp_auth_user'
-
 export const AuthContextProvider = ({ children }) => {
-  const [token, setToken] = useState(() => localStorage.getItem(AUTH_TOKEN_KEY))
-  const [userData, setUserData] = useState(() => {
-    const cached = localStorage.getItem(AUTH_USER_KEY)
-    return cached ? JSON.parse(cached) : null
-  })
-  const [isLogged, setIsLogged] = useState(() => Boolean(localStorage.getItem(AUTH_TOKEN_KEY)))
+  const [token, setToken] = useState(null)
+  const [userData, setUserData] = useState(null)
+  const [isLogged, setIsLogged] = useState(false)
 
   const login = useCallback(async (email, password) => {
     const res = await loginApi(email, password)
-    localStorage.setItem(AUTH_TOKEN_KEY, res.token)
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(res.user))
     setToken(res.token)
     setUserData(res.user)
     setIsLogged(true)
@@ -34,8 +26,6 @@ export const AuthContextProvider = ({ children }) => {
   }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem(AUTH_TOKEN_KEY)
-    localStorage.removeItem(AUTH_USER_KEY)
     setToken(null)
     setUserData(null)
     setIsLogged(false)
@@ -47,8 +37,6 @@ export const AuthContextProvider = ({ children }) => {
     const target = demos.find((d) => d.rol.toLowerCase() === roleName.toLowerCase())
     if (target) {
       const fakeToken = btoa(JSON.stringify(target))
-      localStorage.setItem(AUTH_TOKEN_KEY, fakeToken)
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(target))
       setToken(fakeToken)
       setUserData(target)
       setIsLogged(true)
@@ -58,7 +46,6 @@ export const AuthContextProvider = ({ children }) => {
   const toggleShiftLockSimulation = useCallback(() => {
     if (!userData) return
     const updated = { ...userData, dentro_horario: !userData.dentro_horario }
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updated))
     setUserData(updated)
   }, [userData])
 

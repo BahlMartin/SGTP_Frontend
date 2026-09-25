@@ -1,13 +1,41 @@
 import { calculateMinutesDiff, formatDurationHuman } from '../utils/formatters'
 
+function parseLocalDateInput(value) {
+  if (value instanceof Date) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const [year, month, day] = value.split('-').map(Number)
+    if (year && month && day) {
+      return new Date(year, month - 1, day)
+    }
+  }
+
+  return new Date()
+}
+
+function sameLocalDay(dateValue, targetDate) {
+  if (!dateValue) return false
+  const ticketDate = new Date(dateValue)
+  const normalizedTicket = new Date(
+    ticketDate.getFullYear(),
+    ticketDate.getMonth(),
+    ticketDate.getDate()
+  )
+  const normalizedTarget = new Date(
+    targetDate.getFullYear(),
+    targetDate.getMonth(),
+    targetDate.getDate()
+  )
+  return normalizedTicket.getTime() === normalizedTarget.getTime()
+}
+
 export function computeDailyReportMetrics(tickets = [], targetDate = new Date()) {
-  const targetDay = new Date(targetDate).toDateString()
+  const safeTarget = parseLocalDateInput(targetDate)
 
   // Filtrar tickets correspondientes al día seleccionado
-  const dayTickets = tickets.filter((t) => {
-    if (!t.fecha_hora_admision) return false
-    return new Date(t.fecha_hora_admision).toDateString() === targetDay
-  })
+  const dayTickets = tickets.filter((t) => sameLocalDay(t.fecha_hora_admision, safeTarget))
 
   let atendidos = 0
   let enCurso = 0
