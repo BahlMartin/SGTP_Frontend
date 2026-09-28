@@ -1,4 +1,4 @@
-.shift-lock-overlay {
+.shift-lock {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.75);
@@ -10,7 +10,7 @@
   padding: 20px;
 }
 
-.shift-lock-card {
+.shift-lock__card {
   background: #ffffff;
   border-radius: var(--radius-xl);
   max-width: 480px;
@@ -32,7 +32,7 @@
   }
 }
 
-.shift-lock-icon-wrap {
+.shift-lock__icon-wrap {
   width: 72px;
   height: 72px;
   border-radius: 50%;
@@ -44,20 +44,24 @@
   margin: 0 auto 18px;
 }
 
-.shift-lock-card h2 {
+.shift-lock__icon {
+  flex-shrink: 0;
+}
+
+.shift-lock__title {
   font-size: 1.35rem;
   color: #0f172a;
   margin-bottom: 12px;
 }
 
-.shift-lock-desc {
+.shift-lock__desc {
   font-size: 0.95rem;
   color: #475569;
   line-height: 1.5;
   margin-bottom: 16px;
 }
 
-.shift-info-box {
+.shift-lock__info-box {
   background: #fffbeb;
   border: 1px solid #fde68a;
   border-radius: var(--radius-md);
@@ -71,19 +75,27 @@
   margin-bottom: 14px;
 }
 
-.shift-note {
+.shift-lock__info-icon {
+  flex-shrink: 0;
+}
+
+.shift-lock__info-text {
+  line-height: 1.4;
+}
+
+.shift-lock__note {
   font-size: 0.85rem;
   color: #64748b;
   margin-bottom: 24px;
 }
 
-.shift-actions {
+.shift-lock__actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.btn-shift-toggle {
+.shift-lock__btn-toggle {
   background: #0284c7;
   color: #ffffff;
   font-weight: 600;
@@ -95,11 +107,11 @@
   gap: 8px;
 }
 
-.btn-shift-toggle:hover {
+.shift-lock__btn-toggle:hover {
   background: #0369a1;
 }
 
-.btn-shift-logout {
+.shift-lock__btn-logout {
   background: #f1f5f9;
   color: #475569;
   font-weight: 600;
@@ -111,6 +123,6 @@
   gap: 8px;
 }
 
-.btn-shift-logout:hover {
+.shift-lock__btn-logout:hover {
   background: #e2e8f0;
 }

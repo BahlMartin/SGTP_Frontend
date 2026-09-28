@@ -60,12 +60,12 @@ export default function LoginScreen() {
   }
 
   return (
-    <div className="login-screen-container">
-      <div className="login-card">
+    <div className="login-screen">
+      <div className="login-screen__card">
         {/* Avatar Circular Central según Imagen 5 */}
-        <div className="login-avatar-circle">
+        <div className="login-screen__avatar">
           <svg
-            className="login-avatar-svg"
+            className="login-screen__avatar-svg"
             viewBox="0 0 24 24"
             fill="none"
             stroke="#1e293b"
@@ -78,21 +78,21 @@ export default function LoginScreen() {
           </svg>
         </div>
 
-        <h2 className="login-title">Inicie Sesión</h2>
+        <h2 className="login-screen__title">Inicie Sesión</h2>
 
         {errorMsg && (
-          <div className="login-error-alert">
+          <div className="login-screen__error-alert">
             <AlertCircle size={18} />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="login-field-group">
-            <label className="login-label">Usuario</label>
+        <form onSubmit={handleSubmit} className="login-screen__form">
+          <div className="login-screen__field">
+            <label className="login-screen__label">Usuario</label>
             <input
               type="text"
-              className="login-input"
+              className="login-screen__input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="ej: admision@sgtp.hospital.gob.ar"
@@ -100,37 +100,37 @@ export default function LoginScreen() {
             />
           </div>
 
-          <div className="login-field-group">
-            <label className="login-label">Contraseña</label>
+          <div className="login-screen__field">
+            <label className="login-screen__label">Contraseña</label>
             <input
               type="password"
-              className="login-input"
+              className="login-screen__input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
             />
           </div>
 
-          <button type="submit" className="login-submit-btn" disabled={loading}>
+          <button type="submit" className="login-screen__submit-btn" disabled={loading}>
             {loading ? 'Validando credenciales...' : 'Iniciar Sesión'}
           </button>
         </form>
 
         {/* Acceso rápido para demostración y cambio de roles */}
-        <div className="login-demo-section">
-          <div className="demo-divider">
+        <div className="login-screen__demo">
+          <div className="login-screen__demo-divider">
             <span>Acceso Rápido por Perfil (Demo)</span>
           </div>
-          <div className="demo-pills-grid">
+          <div className="login-screen__demo-grid">
             {demoAccounts.map((acc) => (
               <button
                 key={acc.rol}
                 type="button"
-                className="btn-demo-pill"
+                className="login-screen__demo-pill"
                 onClick={() => handleQuickLogin(acc.rol)}
               >
-                <span className="demo-role-name">{acc.rol}</span>
-                <span className="demo-role-user">{acc.nombre.split(' ')[0]}</span>
+                <span className="login-screen__demo-role">{acc.rol}</span>
+                <span className="login-screen__demo-user">{acc.nombre.split(' ')[0]}</span>
               </button>
             ))}
           </div>

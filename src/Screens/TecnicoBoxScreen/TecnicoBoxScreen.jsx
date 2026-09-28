@@ -82,36 +82,36 @@ export default function TecnicoBoxScreen() {
   }
 
   return (
-    <div className="box-screen-layout">
+    <div className="box-screen">
       <Navbar />
 
-      <main className="box-main-content">
-        <div className="box-header-text">
-          <h1 className="page-title">Box de atención</h1>
-          <p className="page-subtitle">Cola multibox centralizada y control operativo del box</p>
+      <main className="box-screen__main">
+        <div className="box-screen__header">
+          <h1 className="box-screen__title">Box de atención</h1>
+          <p className="box-screen__subtitle">Cola multibox centralizada y control operativo del box</p>
         </div>
 
         {feedbackMsg && (
-          <div className="box-feedback-banner">
+          <div className="box-screen__feedback-banner">
             <CheckCircle2 size={18} />
             <span>{feedbackMsg}</span>
           </div>
         )}
 
-        <div className="box-grid-container">
+        <div className="box-screen__grid">
           {/* Columna Izquierda: Panel de control de box, Búsqueda y Boxes en línea */}
-          <div className="box-left-column">
+          <div className="box-screen__left-column">
             {/* Panel de control de box (Imagen 4) */}
-            <div className="box-control-card">
-              <div className="card-header-icon-title">
-                <Tv size={20} className="header-icon-blue" />
-                <h2>Panel de control de box</h2>
+            <div className="box-screen__control-card">
+              <div className="box-screen__card-header">
+                <Tv size={20} className="box-screen__card-icon" />
+                <h2 className="box-screen__card-title">Panel de control de box</h2>
               </div>
 
-              <div className="assigned-box-select-wrap">
-                <label>Box asignado</label>
+              <div className="box-screen__select-wrap">
+                <label className="box-screen__select-label">Box asignado</label>
                 <select
-                  className="box-select-input"
+                  className="box-screen__select-input"
                   value={currentBoxNumber}
                   onChange={(e) => setCurrentBoxNumber(Number(e.target.value))}
                 >
@@ -122,24 +122,30 @@ export default function TecnicoBoxScreen() {
                 </select>
               </div>
 
-              <div className="box-status-toggle-buttons">
+              <div className="box-screen__status-buttons">
                 <button
                   type="button"
-                  className={`btn-status-toggle btn-disp ${activeBoxData.estado === 'Disponible' ? 'active' : ''}`}
+                  className={`box-screen__status-btn box-screen__status-btn--disponible ${
+                    activeBoxData.estado === 'Disponible' ? 'box-screen__status-btn--disponible-active' : ''
+                  }`}
                   onClick={() => handleStatusChange('Disponible')}
                 >
                   Disponible
                 </button>
                 <button
                   type="button"
-                  className={`btn-status-toggle btn-aten ${activeBoxData.estado === 'En atencion' ? 'active' : ''}`}
+                  className={`box-screen__status-btn box-screen__status-btn--atencion ${
+                    activeBoxData.estado === 'En atencion' ? 'box-screen__status-btn--atencion-active' : ''
+                  }`}
                   onClick={() => handleStatusChange('En atencion')}
                 >
                   En atencion
                 </button>
                 <button
                   type="button"
-                  className={`btn-status-toggle btn-fuera ${activeBoxData.estado === 'Fuera de servicio' ? 'active' : ''}`}
+                  className={`box-screen__status-btn box-screen__status-btn--fuera ${
+                    activeBoxData.estado === 'Fuera de servicio' ? 'box-screen__status-btn--fuera-active' : ''
+                  }`}
                   onClick={() => handleStatusChange('Fuera de servicio')}
                 >
                   Fuera de servicio
@@ -155,19 +161,19 @@ export default function TecnicoBoxScreen() {
             />
 
             {/* Boxes en línea (Imagen 4) */}
-            <div className="boxes-online-card">
-              <h3 className="online-title">Boxes en linea</h3>
-              <ul className="boxes-online-list">
+            <div className="box-screen__online-card">
+              <h3 className="box-screen__online-title">Boxes en linea</h3>
+              <ul className="box-screen__online-list">
                 {boxes.map((b) => (
-                  <li key={b.id} className="box-online-item">
-                    <span className="box-name-label">{b.nombre}</span>
+                  <li key={b.id} className="box-screen__online-item">
+                    <span className="box-screen__online-label">{b.nombre}</span>
                     <span
-                      className={`box-status-pill ${
+                      className={`box-screen__online-pill ${
                         b.estado === 'Disponible'
-                          ? 'pill-green'
+                          ? 'box-screen__online-pill--disponible'
                           : b.estado === 'En atencion'
-                          ? 'pill-blue'
-                          : 'pill-red'
+                          ? 'box-screen__online-pill--atencion'
+                          : 'box-screen__online-pill--fuera'
                       }`}
                     >
                       {b.estado}
@@ -179,20 +185,20 @@ export default function TecnicoBoxScreen() {
           </div>
 
           {/* Columna Derecha: Paciente en atención y Cola Multibox Centralizada */}
-          <div className="box-right-column">
+          <div className="box-screen__right-column">
             {/* Paciente en atención (Imagen 4) */}
-            <div className="patient-in-service-card">
-              <div className="patient-service-header">
+            <div className="box-screen__service-card">
+              <div className="box-screen__service-header">
                 <div>
-                  <h3 className="service-card-title">Paciente en atención</h3>
-                  <span className="box-technician-code">
+                  <h3 className="box-screen__service-title">Paciente en atención</h3>
+                  <span className="box-screen__service-code">
                     {currentBoxKey} - {userData?.matricula || 'TEC-3391'}
                   </span>
                 </div>
 
-                <div className="service-header-actions">
+                <div className="box-screen__service-actions">
                   <button
-                    className="btn-call-next"
+                    className="box-screen__btn-call-next"
                     disabled={isProcessing || Boolean(patientInBox)}
                     onClick={handleCallNext}
                   >
@@ -200,7 +206,7 @@ export default function TecnicoBoxScreen() {
                     Llamar siguiente
                   </button>
                   <button
-                    className="btn-finish-consultation"
+                    className="box-screen__btn-finish"
                     disabled={isProcessing || !patientInBox}
                     onClick={handleFinishConsultation}
                   >
@@ -211,42 +217,42 @@ export default function TecnicoBoxScreen() {
               </div>
 
               {patientInBox ? (
-                <div className="active-patient-details">
-                  <div className="patient-big-call-badge">
-                    <span className="call-lbl">N° LLAMADO</span>
-                    <span className="call-number">{patientInBox.num_llamado || patientInBox.num_totem}</span>
+                <div className="box-screen__active-details">
+                  <div className="box-screen__call-badge">
+                    <span className="box-screen__call-label">N° LLAMADO</span>
+                    <span className="box-screen__call-number">{patientInBox.num_llamado || patientInBox.num_totem}</span>
                   </div>
 
-                  <div className="patient-info-meta">
-                    <div className="patient-name-triage">
-                      <h4 className="active-name">
+                  <div className="box-screen__patient-meta">
+                    <div className="box-screen__name-triage">
+                      <h4 className="box-screen__patient-name">
                         {patientInBox.paciente_nombre} {patientInBox.paciente_apellido}
                       </h4>
                       <TriageBadge categoryKey={patientInBox.clasificacion_triage} />
                     </div>
 
-                    <div className="patient-subdata">
+                    <div className="box-screen__patient-subdata">
                       <span>DNI: <strong>{patientInBox.paciente_dni}</strong></span>
                       <span>Obra Social: <strong>{patientInBox.paciente_obra_social}</strong></span>
                       <span>Ingreso: <strong>{formatTimeHHMM(patientInBox.fecha_hora_admision)} hs</strong></span>
                     </div>
 
                     {patientInBox.justificacion_otro && (
-                      <div className="justification-note">
+                      <div className="box-screen__justification-note">
                         <strong>Justificación clínica:</strong> {patientInBox.justificacion_otro}
                       </div>
                     )}
 
                     {/* Checklist de Estudios para Toma de Muestra */}
-                    <div className="studies-checklist-area">
-                      <span className="checklist-title">Estudios clínicos a realizar (Check de muestra tomada):</span>
-                      <div className="studies-checks-grid">
+                    <div className="box-screen__checklist-area">
+                      <span className="box-screen__checklist-title">Estudios clínicos a realizar (Check de muestra tomada):</span>
+                      <div className="box-screen__checks-grid">
                         {(patientInBox.estudios || ['Muestra de Sangre', 'Orina']).map((st) => {
                           const done = completedStudies[st]
                           return (
                             <label
                               key={st}
-                              className={`study-check-box ${done ? 'checked' : ''}`}
+                              className={`box-screen__check-box ${done ? 'box-screen__check-box--checked' : ''}`}
                               onClick={() => toggleStudyCheck(st)}
                             >
                               <input type="checkbox" checked={Boolean(done)} readOnly />
@@ -259,9 +265,9 @@ export default function TecnicoBoxScreen() {
                   </div>
                 </div>
               ) : (
-                <div className="empty-attention-box">
+                <div className="box-screen__empty-attention">
                   <p>No hay paciente en atención en este puesto.</p>
-                  <span className="empty-hint">
+                  <span className="box-screen__empty-hint">
                     Presione <strong>"Llamar siguiente"</strong> para convocar al paciente más crítico de la cola multibox.
                   </span>
                 </div>
@@ -269,24 +275,24 @@ export default function TecnicoBoxScreen() {
             </div>
 
             {/* Cola Multibox Centralizada (Imagen 4) */}
-            <div className="multibox-queue-card">
-              <div className="multibox-queue-header">
-                <div className="queue-title-wrap">
-                  <Radio size={18} className="live-icon" />
-                  <h3>Cola multibox centralizada</h3>
+            <div className="box-screen__queue-card">
+              <div className="box-screen__queue-header">
+                <div className="box-screen__queue-title-wrap">
+                  <Radio size={18} className="box-screen__live-icon" />
+                  <h3 className="box-screen__queue-title">Cola multibox centralizada</h3>
                 </div>
-                <span className="queue-count-badge">
+                <span className="box-screen__queue-badge">
                   {waitingQueue.length} paciente(s) en espera
                 </span>
               </div>
 
               {waitingQueue.length === 0 ? (
-                <div className="empty-queue-msg">
+                <div className="box-screen__queue-empty">
                   <p>La cola de espera se encuentra despejada en este momento.</p>
                 </div>
               ) : (
-                <div className="queue-table-wrapper">
-                  <table className="queue-table">
+                <div className="box-screen__table-wrapper">
+                  <table className="box-screen__table">
                     <thead>
                       <tr>
                         <th>N° LLAMADO</th>
@@ -301,33 +307,33 @@ export default function TecnicoBoxScreen() {
                       {waitingQueue.map((ticket, idx) => {
                         const waitMins = calculateMinutesDiff(ticket.fecha_hora_admision, new Date().toISOString())
                         return (
-                          <tr key={ticket.id} className={idx === 0 ? 'top-priority-row' : ''}>
+                          <tr key={ticket.id} className={idx === 0 ? 'box-screen__table-row--top-priority' : ''}>
                             <td>
-                              <span className="table-call-pill">{ticket.num_llamado || ticket.num_totem}</span>
+                              <span className="box-screen__table-call-pill">{ticket.num_llamado || ticket.num_totem}</span>
                             </td>
                             <td>
-                              <div className="table-patient-cell">
-                                <span className="p-name">{ticket.paciente_nombre} {ticket.paciente_apellido}</span>
-                                <span className="p-dni">DNI: {ticket.paciente_dni}</span>
+                              <div className="box-screen__table-patient">
+                                <span className="box-screen__table-patient-name">{ticket.paciente_nombre} {ticket.paciente_apellido}</span>
+                                <span className="box-screen__table-patient-dni">DNI: {ticket.paciente_dni}</span>
                               </div>
                             </td>
                             <td>
                               <TriageBadge categoryKey={ticket.clasificacion_triage} />
                             </td>
                             <td>
-                              <span className="table-wait-time">
+                              <span className="box-screen__table-wait-time">
                                 <Clock size={13} />
                                 {waitMins || 0} min
                               </span>
                             </td>
                             <td>
-                              <span className="table-studies-summary">
+                              <span className="box-screen__table-studies">
                                 {ticket.estudios?.length || 1} estudio(s)
                               </span>
                             </td>
                             <td>
                               <button
-                                className="btn-call-direct"
+                                className="box-screen__table-call-btn"
                                 disabled={Boolean(patientInBox)}
                                 onClick={handleCallNext}
                                 title="Convocar a este paciente al box activo"

@@ -78,42 +78,42 @@ export default function SecretariaScreen() {
   }
 
   return (
-    <div className="secretaria-screen-layout">
+    <div className="secretaria-screen">
       <Navbar />
 
-      <main className="secretaria-main-content">
-        <div className="secretaria-header-text">
-          <h1 className="page-title">Reportes</h1>
-          <p className="page-subtitle">Consulta y descarga de reportes diarios</p>
+      <main className="secretaria-screen__main">
+        <div className="secretaria-screen__header">
+          <h1 className="secretaria-screen__title">Reportes</h1>
+          <p className="secretaria-screen__subtitle">Consulta y descarga de reportes diarios</p>
         </div>
 
         {notice && (
-          <div className="secretaria-notice-banner">
+          <div className="secretaria-screen__notice">
             <CheckCircle2 size={18} />
             <span>{notice}</span>
           </div>
         )}
 
         {/* Controles de Jornada y Acciones (Imagen 1) */}
-        <div className="jornada-control-bar">
-          <div className="jornada-picker-wrap">
-            <span className="jornada-label">Jornada:</span>
-            <div className="input-date-styled">
+        <div className="secretaria-screen__jornada-bar">
+          <div className="secretaria-screen__jornada-picker">
+            <span className="secretaria-screen__jornada-label">Jornada:</span>
+            <div className="secretaria-screen__date-wrap">
               <input
                 type="date"
                 value={jornadaDate}
                 onChange={(e) => setJornadaDate(e.target.value)}
-                className="date-input"
+                className="secretaria-screen__date-input"
               />
             </div>
           </div>
 
-          <div className="jornada-buttons">
-            <button className="btn-action-teal" onClick={handleExportPdf}>
+          <div className="secretaria-screen__jornada-actions">
+            <button className="secretaria-screen__btn-export" onClick={handleExportPdf}>
               <Download size={15} />
               exportar PDF
             </button>
-            <button className="btn-action-white" onClick={handleSendEmail}>
+            <button className="secretaria-screen__btn-email" onClick={handleSendEmail}>
               <Mail size={15} />
               enviar por mail
             </button>
@@ -121,108 +121,108 @@ export default function SecretariaScreen() {
         </div>
 
         {/* 4 Stat Metric Cards (Imagen 1) */}
-        <div className="kpi-cards-grid">
+        <div className="secretaria-screen__kpi-grid">
           {/* Card 1: Atendidos */}
-          <div className="kpi-card">
-            <div className="kpi-card-top">
-              <Users size={18} className="kpi-icon" />
-              <span className="kpi-title">atendidos</span>
+          <div className="secretaria-screen__kpi-card">
+            <div className="secretaria-screen__kpi-top">
+              <Users size={18} className="secretaria-screen__kpi-icon" />
+              <span className="secretaria-screen__kpi-title">atendidos</span>
             </div>
-            <div className="kpi-value">{atendidos}</div>
-            <div className="kpi-subtext">
+            <div className="secretaria-screen__kpi-value">{atendidos}</div>
+            <div className="secretaria-screen__kpi-subtext">
               {ingresos} ingresos - {enCurso} en curso
             </div>
           </div>
 
           {/* Card 2: Espera Promedio */}
-          <div className="kpi-card">
-            <div className="kpi-card-top">
-              <Clock size={18} className="kpi-icon" />
-              <span className="kpi-title">Espera promedio</span>
+          <div className="secretaria-screen__kpi-card">
+            <div className="secretaria-screen__kpi-top">
+              <Clock size={18} className="secretaria-screen__kpi-icon" />
+              <span className="secretaria-screen__kpi-title">Espera promedio</span>
             </div>
-            <div className="kpi-value">{esperaPromedio}</div>
-            <div className="kpi-subtext">Emision → llamado</div>
+            <div className="secretaria-screen__kpi-value">{esperaPromedio}</div>
+            <div className="secretaria-screen__kpi-subtext">Emision → llamado</div>
           </div>
 
           {/* Card 3: Atención Promedio */}
-          <div className="kpi-card">
-            <div className="kpi-card-top">
-              <Clock size={18} className="kpi-icon" />
-              <span className="kpi-title">Atención promedio</span>
+          <div className="secretaria-screen__kpi-card">
+            <div className="secretaria-screen__kpi-top">
+              <Clock size={18} className="secretaria-screen__kpi-icon" />
+              <span className="secretaria-screen__kpi-title">Atención promedio</span>
             </div>
-            <div className="kpi-value">{atencionPromedio}</div>
-            <div className="kpi-subtext">Llamado → cierre</div>
+            <div className="secretaria-screen__kpi-value">{atencionPromedio}</div>
+            <div className="secretaria-screen__kpi-subtext">Llamado → cierre</div>
           </div>
 
           {/* Card 4: Críticos */}
-          <div className="kpi-card">
-            <div className="kpi-card-top">
-              <BarChart3 size={18} className="kpi-icon" />
-              <span className="kpi-title">Críticos</span>
+          <div className="secretaria-screen__kpi-card">
+            <div className="secretaria-screen__kpi-top">
+              <BarChart3 size={18} className="secretaria-screen__kpi-icon" />
+              <span className="secretaria-screen__kpi-title">Críticos</span>
             </div>
-            <div className="kpi-value">{criticos}</div>
-            <div className="kpi-subtext">Guardia + Médicos</div>
+            <div className="secretaria-screen__kpi-value">{criticos}</div>
+            <div className="secretaria-screen__kpi-subtext">Guardia + Médicos</div>
           </div>
         </div>
 
         {/* Tarjeta de Distribución por Triage (Imagen 1) */}
-        <div className="triage-distribution-card">
-          <h3 className="dist-title">Distribucion por triage</h3>
+        <div className="secretaria-screen__dist-card">
+          <h3 className="secretaria-screen__dist-title">Distribucion por triage</h3>
 
-          <div className="dist-bars-two-cols">
+          <div className="secretaria-screen__dist-grid">
             {/* Columna Izquierda de Barras */}
-            <div className="dist-col">
+            <div className="secretaria-screen__dist-col">
               {/* Guardia */}
-              <div className="dist-bar-item">
-                <div className="dist-bar-labels">
-                  <span className="dist-name">Guardia</span>
-                  <span className="dist-qty">{triageDistribution.guardia}</span>
+              <div className="secretaria-screen__dist-item">
+                <div className="secretaria-screen__dist-labels">
+                  <span className="secretaria-screen__dist-name">Guardia</span>
+                  <span className="secretaria-screen__dist-qty">{triageDistribution.guardia}</span>
                 </div>
-                <div className="bar-track">
+                <div className="secretaria-screen__bar-track">
                   <div
-                    className="bar-fill bar-guardia"
+                    className="secretaria-screen__bar-fill secretaria-screen__bar-fill--guardia"
                     style={{ width: `${getPercentage(triageDistribution.guardia)}%` }}
                   />
                 </div>
               </div>
 
               {/* Discapacidad */}
-              <div className="dist-bar-item">
-                <div className="dist-bar-labels">
-                  <span className="dist-name">Discapacidad</span>
-                  <span className="dist-qty">{triageDistribution.discapacidad}</span>
+              <div className="secretaria-screen__dist-item">
+                <div className="secretaria-screen__dist-labels">
+                  <span className="secretaria-screen__dist-name">Discapacidad</span>
+                  <span className="secretaria-screen__dist-qty">{triageDistribution.discapacidad}</span>
                 </div>
-                <div className="bar-track">
+                <div className="secretaria-screen__bar-track">
                   <div
-                    className="bar-fill bar-discapacidad"
+                    className="secretaria-screen__bar-fill secretaria-screen__bar-fill--discapacidad"
                     style={{ width: `${getPercentage(triageDistribution.discapacidad)}%` }}
                   />
                 </div>
               </div>
 
               {/* Extracción con turno */}
-              <div className="dist-bar-item">
-                <div className="dist-bar-labels">
-                  <span className="dist-name">Extraccion con turno</span>
-                  <span className="dist-qty">{triageDistribution.extraccion_con_turno}</span>
+              <div className="secretaria-screen__dist-item">
+                <div className="secretaria-screen__dist-labels">
+                  <span className="secretaria-screen__dist-name">Extraccion con turno</span>
+                  <span className="secretaria-screen__dist-qty">{triageDistribution.extraccion_con_turno}</span>
                 </div>
-                <div className="bar-track">
+                <div className="secretaria-screen__bar-track">
                   <div
-                    className="bar-fill bar-ext-turno"
+                    className="secretaria-screen__bar-fill secretaria-screen__bar-fill--ext-turno"
                     style={{ width: `${getPercentage(triageDistribution.extraccion_con_turno)}%` }}
                   />
                 </div>
               </div>
 
               {/* Otro */}
-              <div className="dist-bar-item">
-                <div className="dist-bar-labels">
-                  <span className="dist-name">Otro</span>
-                  <span className="dist-qty">{triageDistribution.otro}</span>
+              <div className="secretaria-screen__dist-item">
+                <div className="secretaria-screen__dist-labels">
+                  <span className="secretaria-screen__dist-name">Otro</span>
+                  <span className="secretaria-screen__dist-qty">{triageDistribution.otro}</span>
                 </div>
-                <div className="bar-track">
+                <div className="secretaria-screen__bar-track">
                   <div
-                    className="bar-fill bar-otro"
+                    className="secretaria-screen__bar-fill secretaria-screen__bar-fill--otro"
                     style={{ width: `${getPercentage(triageDistribution.otro)}%` }}
                   />
                 </div>
@@ -230,44 +230,44 @@ export default function SecretariaScreen() {
             </div>
 
             {/* Columna Derecha de Barras */}
-            <div className="dist-col">
+            <div className="secretaria-screen__dist-col">
               {/* Médicos */}
-              <div className="dist-bar-item">
-                <div className="dist-bar-labels">
-                  <span className="dist-name">Medicos</span>
-                  <span className="dist-qty">{triageDistribution.medicos}</span>
+              <div className="secretaria-screen__dist-item">
+                <div className="secretaria-screen__dist-labels">
+                  <span className="secretaria-screen__dist-name">Medicos</span>
+                  <span className="secretaria-screen__dist-qty">{triageDistribution.medicos}</span>
                 </div>
-                <div className="bar-track">
+                <div className="secretaria-screen__bar-track">
                   <div
-                    className="bar-fill bar-medicos"
+                    className="secretaria-screen__bar-fill secretaria-screen__bar-fill--medicos"
                     style={{ width: `${getPercentage(triageDistribution.medicos)}%` }}
                   />
                 </div>
               </div>
 
               {/* Oncología */}
-              <div className="dist-bar-item">
-                <div className="dist-bar-labels">
-                  <span className="dist-name">Oncologia</span>
-                  <span className="dist-qty">{triageDistribution.oncologia}</span>
+              <div className="secretaria-screen__dist-item">
+                <div className="secretaria-screen__dist-labels">
+                  <span className="secretaria-screen__dist-name">Oncologia</span>
+                  <span className="secretaria-screen__dist-qty">{triageDistribution.oncologia}</span>
                 </div>
-                <div className="bar-track">
+                <div className="secretaria-screen__bar-track">
                   <div
-                    className="bar-fill bar-oncologia"
+                    className="secretaria-screen__bar-fill secretaria-screen__bar-fill--oncologia"
                     style={{ width: `${getPercentage(triageDistribution.oncologia)}%` }}
                   />
                 </div>
               </div>
 
               {/* Extracción sin turno */}
-              <div className="dist-bar-item">
-                <div className="dist-bar-labels">
-                  <span className="dist-name">Extraccion sin turno</span>
-                  <span className="dist-qty">{triageDistribution.extraccion_sin_turno}</span>
+              <div className="secretaria-screen__dist-item">
+                <div className="secretaria-screen__dist-labels">
+                  <span className="secretaria-screen__dist-name">Extraccion sin turno</span>
+                  <span className="secretaria-screen__dist-qty">{triageDistribution.extraccion_sin_turno}</span>
                 </div>
-                <div className="bar-track">
+                <div className="secretaria-screen__bar-track">
                   <div
-                    className="bar-fill bar-ext-sinturno"
+                    className="secretaria-screen__bar-fill secretaria-screen__bar-fill--ext-sinturno"
                     style={{ width: `${getPercentage(triageDistribution.extraccion_sin_turno)}%` }}
                   />
                 </div>

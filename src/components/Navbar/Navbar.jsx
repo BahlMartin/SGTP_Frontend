@@ -28,11 +28,12 @@ export default function Navbar() {
     return location.pathname === tab.path
   }
 
+
   return (
-    <header className="sgtp-navbar">
-      <div className="navbar-left">
-        <div className="navbar-brand-logo" onClick={() => navigate('/admision')}>
-          <svg className="ecg-svg" viewBox="0 0 40 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <header className="navbar">
+      <div className="navbar__left">
+        <div className="navbar__brand-logo" onClick={() => navigate('/admision')}>
+          <svg className="navbar__brand-icon" viewBox="0 0 40 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
               d="M2 12H10L14 3L18 21L23 8L27 15L29 12H38"
               stroke="#2dd4bf"
@@ -42,17 +43,17 @@ export default function Navbar() {
             />
           </svg>
         </div>
-        <span className="navbar-brand-text">SGTP</span>
+        <span className="navbar__brand-text">SGTP</span>
       </div>
 
-      <div className="navbar-center">
-        <nav className="navbar-pills-container">
+      <div className="navbar__center">
+        <nav className="navbar__pills">
           {tabs.map((tab) => {
             const active = isTabActive(tab)
             return (
               <button
                 key={tab.label}
-                className={`navbar-pill ${active ? 'active' : ''}`}
+                className={`navbar__pill ${active ? 'navbar__pill--active' : ''}`}
                 onClick={() => handleTabClick(tab)}
               >
                 {tab.label}
@@ -62,18 +63,18 @@ export default function Navbar() {
         </nav>
       </div>
 
-      <div className="navbar-right">
-        <div className="user-profile-chip" title={`Usuario: ${userData?.nombre || ''}`}>
-          <div className="avatar-mini">
+      <div className="navbar__right">
+        <div className="navbar__profile" title={`Usuario: ${userData?.nombre || ''}`}>
+          <div className="navbar__avatar">
             <User size={15} />
           </div>
-          <div className="user-meta">
-            <span className="user-name">{userData?.nombre?.split(' ')[0] || 'Usuario'}</span>
-            <span className="user-role-badge">{userData?.rol || 'Personal'}</span>
+          <div className="navbar__user-meta">
+            <span className="navbar__user-name">{userData?.nombre?.split(' ')[0] || 'Usuario'}</span>
+            <span className="navbar__user-role">{userData?.rol || 'Personal'}</span>
           </div>
         </div>
 
-        <button className="navbar-logout-btn" onClick={logout} title="Cerrar Sesión">
+        <button className="navbar__logout-btn" onClick={logout} title="Cerrar Sesión">
           <LogOut size={17} />
         </button>
       </div>

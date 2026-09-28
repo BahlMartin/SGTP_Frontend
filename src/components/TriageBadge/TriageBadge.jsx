@@ -14,8 +14,8 @@ export default function TriageBadge({ categoryKey, showPriority = true }) {
         borderColor: info.color + '40'
       }}
     >
-      <span className="triage-dot" style={{ backgroundColor: info.color }} />
-      <span className="triage-text">
+      <span className="triage-badge__dot" style={{ backgroundColor: info.color }} />
+      <span className="triage-badge__text">
         {showPriority ? `${info.code}. ` : ''}
         {info.key}
       </span>

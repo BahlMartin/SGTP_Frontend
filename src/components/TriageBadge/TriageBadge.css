@@ -10,9 +10,13 @@
   white-space: nowrap;
 }
 
-.triage-dot {
+.triage-badge__dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+.triage-badge__text {
+  line-height: 1;
 }

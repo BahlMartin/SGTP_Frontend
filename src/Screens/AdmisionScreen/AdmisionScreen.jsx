@@ -120,42 +120,42 @@ export default function AdmisionScreen() {
   }
 
   return (
-    <div className="admision-screen-layout">
+    <div className="admision-screen">
       <Navbar />
 
-      <main className="admision-main-content">
-        <div className="admision-header-text">
-          <h1 className="page-title">Admision</h1>
-          <p className="page-subtitle">Registro de pacientes, clasificacion de triage y emision de tickets</p>
+      <main className="admision-screen__main">
+        <div className="admision-screen__header">
+          <h1 className="admision-screen__title">Admision</h1>
+          <p className="admision-screen__subtitle">Registro de pacientes, clasificacion de triage y emision de tickets</p>
         </div>
 
-        <div className="admision-grid-container">
+        <div className="admision-screen__grid">
           {/* Columna Izquierda: Formulario Principal de Admisión */}
-          <div className="admision-form-card">
-            <div className="card-header-icon-title">
-              <UserPlus size={24} className="header-icon-blue" />
-              <h2>Ingreso y clasificacion de pacientes</h2>
+          <div className="admision-screen__form-card">
+            <div className="admision-screen__card-header">
+              <UserPlus size={24} className="admision-screen__card-icon" />
+              <h2 className="admision-screen__card-title">Ingreso y clasificacion de pacientes</h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="admision-form">
-              <div className="form-row-two-cols">
-                <div className="input-group">
-                  <label>DNI</label>
+            <form onSubmit={handleSubmit} className="admision-screen__form">
+              <div className="admision-screen__form-row">
+                <div className="admision-screen__field">
+                  <label className="admision-screen__label">DNI</label>
                   <input
                     type="text"
-                    className={`form-input ${errors.dni ? 'error' : ''}`}
+                    className={`admision-screen__input ${errors.dni ? 'admision-screen__input--error' : ''}`}
                     placeholder="ej: 38472910"
                     value={dni}
                     onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
                   />
-                  {errors.dni && <span className="error-text">{errors.dni}</span>}
+                  {errors.dni && <span className="admision-screen__error-text">{errors.dni}</span>}
                 </div>
 
-                <div className="input-group">
-                  <label>Obra social</label>
+                <div className="admision-screen__field">
+                  <label className="admision-screen__label">Obra social</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="admision-screen__input"
                     placeholder="ej: OSDE, PAMI, IOMA"
                     value={obraSocial}
                     onChange={(e) => setObraSocial(e.target.value)}
@@ -163,38 +163,38 @@ export default function AdmisionScreen() {
                 </div>
               </div>
 
-              <div className="form-row-two-cols">
-                <div className="input-group">
-                  <label>Nombre</label>
+              <div className="admision-screen__form-row">
+                <div className="admision-screen__field">
+                  <label className="admision-screen__label">Nombre</label>
                   <input
                     type="text"
-                    className={`form-input ${errors.nombre ? 'error' : ''}`}
+                    className={`admision-screen__input ${errors.nombre ? 'admision-screen__input--error' : ''}`}
                     placeholder="Nombre del paciente"
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
                   />
-                  {errors.nombre && <span className="error-text">{errors.nombre}</span>}
+                  {errors.nombre && <span className="admision-screen__error-text">{errors.nombre}</span>}
                 </div>
 
-                <div className="input-group">
-                  <label>Apellido</label>
+                <div className="admision-screen__field">
+                  <label className="admision-screen__label">Apellido</label>
                   <input
                     type="text"
-                    className={`form-input ${errors.apellido ? 'error' : ''}`}
+                    className={`admision-screen__input ${errors.apellido ? 'admision-screen__input--error' : ''}`}
                     placeholder="Apellido del paciente"
                     value={apellido}
                     onChange={(e) => setApellido(e.target.value)}
                   />
-                  {errors.apellido && <span className="error-text">{errors.apellido}</span>}
+                  {errors.apellido && <span className="admision-screen__error-text">{errors.apellido}</span>}
                 </div>
               </div>
 
-              <div className="form-row-center">
-                <div className="input-group center-group">
-                  <label>N° de llamado(sistema externo)</label>
+              <div className="admision-screen__form-row admision-screen__form-row--center">
+                <div className="admision-screen__field admision-screen__field--center">
+                  <label className="admision-screen__label">N° de llamado(sistema externo)</label>
                   <input
                     type="text"
-                    className="form-input center-input"
+                    className="admision-screen__input admision-screen__input--center"
                     placeholder="ej: 104"
                     value={numLlamado}
                     onChange={(e) => setNumLlamado(e.target.value)}
@@ -203,22 +203,22 @@ export default function AdmisionScreen() {
               </div>
 
               {/* Categorías de Triage según Imagen 3 */}
-              <div className="triage-section">
-                <label className="section-label">Categoria de triage</label>
-                <div className="triage-buttons-grid">
+              <div className="admision-screen__triage-section">
+                <label className="admision-screen__section-label">Categoria de triage</label>
+                <div className="admision-screen__triage-grid">
                   {TRIAGE_LIST.map((t) => {
                     const isSelected = selectedTriage === t.key
                     return (
                       <button
                         type="button"
                         key={t.id}
-                        className={`triage-btn-card ${isSelected ? 'selected' : ''}`}
+                        className={`admision-screen__triage-card ${isSelected ? 'admision-screen__triage-card--selected' : ''}`}
                         onClick={() => handleTriageSelect(t.key)}
                       >
-                        <span className="triage-circle-dot" style={{ backgroundColor: t.color }} />
-                        <div className="triage-btn-text">
-                          <span className="triage-label-main">{t.label}</span>
-                          <span className="triage-subtitle-desc">{t.subtitle}</span>
+                        <span className="admision-screen__triage-dot" style={{ backgroundColor: t.color }} />
+                        <div className="admision-screen__triage-text">
+                          <span className="admision-screen__triage-label">{t.label}</span>
+                          <span className="admision-screen__triage-desc">{t.subtitle}</span>
                         </div>
                       </button>
                     )
@@ -226,27 +226,27 @@ export default function AdmisionScreen() {
                 </div>
 
                 {selectedTriage === 'Otro' && (
-                  <div className="justification-wrapper">
-                    <label>Justificación técnica requerida:</label>
+                  <div className="admision-screen__justification">
+                    <label className="admision-screen__justification-label">Justificación técnica requerida:</label>
                     <textarea
-                      className={`justification-textarea ${errors.justificacion ? 'error' : ''}`}
+                      className={`admision-screen__justification-input ${errors.justificacion ? 'admision-screen__justification-input--error' : ''}`}
                       rows={2}
                       placeholder="Indique motivo clínico o derivación especial..."
                       value={justificacionOtro}
                       onChange={(e) => setJustificacionOtro(e.target.value)}
                     />
-                    {errors.justificacion && <span className="error-text">{errors.justificacion}</span>}
+                    {errors.justificacion && <span className="admision-screen__error-text">{errors.justificacion}</span>}
                   </div>
                 )}
               </div>
 
               {/* Sección de Estudios Solicitados con OCR y Selección Rápida */}
-              <div className="studies-section">
-                <div className="studies-header">
-                  <label className="section-label">Estudios solicitados</label>
+              <div className="admision-screen__studies-section">
+                <div className="admision-screen__studies-header">
+                  <label className="admision-screen__section-label">Estudios solicitados</label>
                   <button
                     type="button"
-                    className="btn-scan-ocr"
+                    className="admision-screen__scan-ocr-btn"
                     onClick={() => setShowOcrModal(true)}
                   >
                     <Sparkles size={16} />
@@ -254,12 +254,12 @@ export default function AdmisionScreen() {
                   </button>
                 </div>
 
-                <div className="studies-quick-tags">
+                <div className="admision-screen__studies-tags">
                   {['Hemograma', 'Bioquimica', 'Orina', 'Cultivo', 'Glucemia', 'Coagulograma'].map((st) => (
                     <button
                       type="button"
                       key={st}
-                      className={`study-chip ${selectedStudies.includes(st) ? 'active' : ''}`}
+                      className={`admision-screen__study-chip ${selectedStudies.includes(st) ? 'admision-screen__study-chip--active' : ''}`}
                       onClick={() =>
                         selectedStudies.includes(st) ? handleRemoveStudy(st) : handleAddManualStudy(st)
                       }
@@ -271,36 +271,36 @@ export default function AdmisionScreen() {
                 </div>
 
                 {selectedStudies.length > 0 && (
-                  <div className="selected-studies-summary">
+                  <div className="admision-screen__studies-summary">
                     <span>Cargados ({selectedStudies.length}): </span>
                     <strong>{selectedStudies.join(', ')}</strong>
                   </div>
                 )}
               </div>
 
-              <button type="submit" className="btn-emit-ticket" disabled={isSubmitting}>
+              <button type="submit" className="admision-screen__submit-btn" disabled={isSubmitting}>
                 {isSubmitting ? 'Generando ticket...' : 'Emitir Ticket Asistencial'}
               </button>
             </form>
           </div>
 
           {/* Columna Derecha: Últimos ingresos y Búsqueda de Paciente */}
-          <div className="admision-side-column">
-            <div className="recent-entries-card">
-              <h3 className="side-card-title">Últimos ingresos de hoy</h3>
+          <div className="admision-screen__side-column">
+            <div className="admision-screen__recent-card">
+              <h3 className="admision-screen__side-title">Últimos ingresos de hoy</h3>
               {todayTickets.length === 0 ? (
-                <p className="empty-notice">No hubo ningun ingreso</p>
+                <p className="admision-screen__empty-notice">No hubo ningun ingreso</p>
               ) : (
-                <ul className="recent-entries-list">
+                <ul className="admision-screen__recent-list">
                   {todayTickets.slice(0, 6).map((t) => (
-                    <li key={t.id} className="recent-entry-item" onClick={() => setIssuedTicket(t)}>
-                      <div className="entry-left">
-                        <span className="entry-call-num">{t.num_llamado || t.num_totem}</span>
-                        <div className="entry-details">
-                          <span className="entry-patient-name">
+                    <li key={t.id} className="admision-screen__recent-item" onClick={() => setIssuedTicket(t)}>
+                      <div className="admision-screen__entry-left">
+                        <span className="admision-screen__entry-call-num">{t.num_llamado || t.num_totem}</span>
+                        <div className="admision-screen__entry-details">
+                          <span className="admision-screen__entry-name">
                             {t.paciente_nombre} {t.paciente_apellido}
                           </span>
-                          <span className="entry-time">{formatTimeHHMM(t.fecha_hora_admision)} hs</span>
+                          <span className="admision-screen__entry-time">{formatTimeHHMM(t.fecha_hora_admision)} hs</span>
                         </div>
                       </div>
                       <TriageBadge categoryKey={t.clasificacion_triage} showPriority={false} />

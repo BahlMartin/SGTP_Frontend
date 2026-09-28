@@ -1,4 +1,4 @@
-.sgtp-navbar {
+.navbar {
   height: 64px;
   background: linear-gradient(90deg, #032433 0%, #021a24 100%);
   display: flex;
@@ -11,13 +11,13 @@
   z-index: 100;
 }
 
-.navbar-left {
+.navbar__left {
   display: flex;
   align-items: center;
   gap: 14px;
 }
 
-.navbar-brand-logo {
+.navbar__brand-logo {
   width: 44px;
   height: 44px;
   background: radial-gradient(circle at center, #0f3d4c 0%, #062835 100%);
@@ -31,16 +31,16 @@
   transition: transform 0.2s ease;
 }
 
-.navbar-brand-logo:hover {
+.navbar__brand-logo:hover {
   transform: scale(1.04);
 }
 
-.ecg-svg {
+.navbar__brand-icon {
   width: 32px;
   height: 22px;
 }
 
-.navbar-brand-text {
+.navbar__brand-text {
   font-size: 1.55rem;
   font-weight: 800;
   letter-spacing: -0.5px;
@@ -48,13 +48,13 @@
 }
 
 /* Container de pastillas centrales */
-.navbar-center {
+.navbar__center {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.navbar-pills-container {
+.navbar__pills {
   background: rgba(148, 163, 184, 0.35);
   backdrop-filter: blur(4px);
   padding: 4px;
@@ -64,7 +64,7 @@
   gap: 2px;
 }
 
-.navbar-pill {
+.navbar__pill {
   padding: 6px 20px;
   border-radius: 24px;
   font-size: 0.9rem;
@@ -75,25 +75,25 @@
   white-space: nowrap;
 }
 
-.navbar-pill:hover {
+.navbar__pill:hover {
   color: #0f172a;
   background: rgba(255, 255, 255, 0.3);
 }
 
-.navbar-pill.active {
+.navbar__pill--active {
   background: #ffffff;
   color: #0f172a;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 /* Lado derecho del navbar */
-.navbar-right {
+.navbar__right {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.user-profile-chip {
+.navbar__profile {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -103,7 +103,7 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.avatar-mini {
+.navbar__avatar {
   width: 28px;
   height: 28px;
   background: #38bdf8;
@@ -114,25 +114,25 @@
   justify-content: center;
 }
 
-.user-meta {
+.navbar__user-meta {
   display: flex;
   flex-direction: column;
 }
 
-.user-name {
+.navbar__user-name {
   font-size: 0.8rem;
   font-weight: 600;
   color: #f8fafc;
 }
 
-.user-role-badge {
+.navbar__user-role {
   font-size: 0.68rem;
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.navbar-logout-btn {
+.navbar__logout-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -144,13 +144,13 @@
   transition: all 0.2s;
 }
 
-.navbar-logout-btn:hover {
+.navbar__logout-btn:hover {
   background: rgba(239, 68, 68, 0.2);
   color: #f87171;
 }
 
 @media (max-width: 768px) {
-  .sgtp-navbar {
+  .navbar {
     padding: 0 14px;
     height: auto;
     flex-wrap: wrap;
@@ -158,11 +158,11 @@
     padding-bottom: 10px;
     gap: 10px;
   }
-  .navbar-center {
+  .navbar__center {
     order: 3;
     width: 100%;
   }
-  .navbar-pills-container {
+  .navbar__pills {
     width: 100%;
     overflow-x: auto;
     justify-content: flex-start;
