@@ -2,6 +2,7 @@ import React, { useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { LogOut, User } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { getHomePathByRole } from '../../utils/navigation'
 import Logo from '../Logo/Logo'
 import './Navbar.css'
 
@@ -12,24 +13,6 @@ const NAV_TABS = [
   { label: 'Supervisión', path: '/supervision', roleKey: 'Jefa', allowedRoles: ['Jefa', 'Admin'] },
   { label: 'Reportes', path: '/reportes', roleKey: 'Secretaria', allowedRoles: ['Secretaria', 'Jefa', 'Admin'] }
 ]
-
-// Obtener la pantalla inicial según el rol del usuario
-const getHomePathByRole = (rol) => {
-  switch (rol) {
-    case 'Admision':
-      return '/admision'
-    case 'Box':
-      return '/box'
-    case 'Jefa':
-    case 'Admin':
-      return '/supervision'
-    case 'Secretaria':
-      return '/reportes'
-    default:
-      // Si el rol es desconocido o no autorizado, enviar a 404 por seguridad
-      return '/404'
-  }
-}
 
 export default function Navbar() {
   const navigate = useNavigate()

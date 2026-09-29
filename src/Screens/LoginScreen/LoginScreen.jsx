@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AlertCircle } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { getDemoCredentials } from '../../services/authService'
+import { getHomePathByRole } from '../../utils/navigation'
 import './LoginScreen.css'
 
 export default function LoginScreen() {
@@ -27,23 +28,7 @@ export default function LoginScreen() {
     try {
       const user = await login(email, password)
       // Redirigir según el rol del usuario
-      switch (user.rol) {
-        case 'Admision':
-          navigate('/admision')
-          break
-        case 'Box':
-          navigate('/box')
-          break
-        case 'Jefa':
-        case 'Admin':
-          navigate('/supervision')
-          break
-        case 'Secretaria':
-          navigate('/reportes')
-          break
-        default:
-          navigate('/404')
-      }
+      navigate(getHomePathByRole(user.rol))
     } catch (err) {
       setErrorMsg(err.message || 'Error al iniciar sesión.')
     } finally {
@@ -53,10 +38,7 @@ export default function LoginScreen() {
 
   const handleQuickLogin = (roleKey) => {
     switchDemoRole(roleKey)
-    if (roleKey === 'Admision') navigate('/admision')
-    else if (roleKey === 'Box') navigate('/box')
-    else if (roleKey === 'Secretaria') navigate('/reportes')
-    else navigate('/supervision')
+    navigate(getHomePathByRole(roleKey))
   }
 
   return (
