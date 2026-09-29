@@ -20,3 +20,68 @@
 .triage-badge__text {
   line-height: 1;
 }
+
+/* Modificadores por categoría de triage */
+.triage-badge--guardia {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-color: #ef444440;
+}
+.triage-badge--guardia .triage-badge__dot {
+  background-color: #ef4444;
+}
+
+.triage-badge--medicos {
+  background-color: #ffedd5;
+  color: #9a3412;
+  border-color: #f9731640;
+}
+.triage-badge--medicos .triage-badge__dot {
+  background-color: #f97316;
+}
+
+.triage-badge--discapacidad {
+  background-color: #fef9c3;
+  color: #854d0e;
+  border-color: #eab30840;
+}
+.triage-badge--discapacidad .triage-badge__dot {
+  background-color: #eab308;
+}
+
+.triage-badge--oncologia {
+  background-color: #e0f2fe;
+  color: #075985;
+  border-color: #0284c740;
+}
+.triage-badge--oncologia .triage-badge__dot {
+  background-color: #0284c7;
+}
+
+.triage-badge--extraccion_con_turno {
+  background-color: #dcfce7;
+  color: #166534;
+  border-color: #22c55e40;
+}
+.triage-badge--extraccion_con_turno .triage-badge__dot {
+  background-color: #22c55e;
+}
+
+.triage-badge--extraccion_sin_turno {
+  background-color: #f3e8ff;
+  color: #6b21a8;
+  border-color: #a855f740;
+}
+.triage-badge--extraccion_sin_turno .triage-badge__dot {
+  background-color: #a855f7;
+}
+
+.triage-badge--otro {
+  background-color: #f1f5f9;
+  color: #334155;
+  border-color: #64748b40;
+}
+.triage-badge--otro .triage-badge__dot {
+  background-color: #64748b;
+}
+
