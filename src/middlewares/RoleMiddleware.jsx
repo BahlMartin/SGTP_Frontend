@@ -14,12 +14,7 @@ export default function RoleMiddleware({ allowedRoles = [] }) {
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(userData.rol)) {
-    return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <h2>Acceso Restringido (RBAC)</h2>
-        <p>Su rol ({userData.rol}) no posee autorización para visualizar este módulo sanitario.</p>
-      </div>
-    )
+    return <Navigate to="/404" replace />
   }
 
   return <Outlet />

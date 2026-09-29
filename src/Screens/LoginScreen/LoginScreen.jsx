@@ -42,7 +42,7 @@ export default function LoginScreen() {
           navigate('/reportes')
           break
         default:
-          navigate('/admision')
+          navigate('/404')
       }
     } catch (err) {
       setErrorMsg(err.message || 'Error al iniciar sesión.')
