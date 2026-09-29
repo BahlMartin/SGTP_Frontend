@@ -74,7 +74,9 @@
 
 .ticket-modal__receipt-header {
   text-align: center;
+  padding-bottom: 10px;
   margin-bottom: 10px;
+  border-bottom: 1px dashed #d6d3d1;
 }
 
 .ticket-modal__hospital-name {
@@ -89,14 +91,11 @@
   color: #78716c;
 }
 
-.ticket-modal__divider {
-  border-top: 1px dashed #d6d3d1;
-  margin: 10px 0;
-}
-
 .ticket-modal__call-box {
   text-align: center;
-  padding: 8px 0;
+  padding: 8px 0 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #d6d3d1;
 }
 
 .ticket-modal__call-label {
@@ -127,6 +126,9 @@
   flex-direction: column;
   gap: 6px;
   font-size: 0.82rem;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #d6d3d1;
 }
 
 .ticket-modal__row {

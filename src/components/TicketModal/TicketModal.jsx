@@ -1,24 +1,71 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Printer, X, CheckCircle } from 'lucide-react'
 import { formatDateDDMMAAAA, formatTimeHHMM } from '../../utils/formatters'
 import TriageBadge from '../TriageBadge/TriageBadge'
 import './TicketModal.css'
 
 export default function TicketModal({ ticket, onClose }) {
+  useEffect(() => {
+    if (!ticket) return
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose?.()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [ticket, onClose])
+
   if (!ticket) return null
 
   const handlePrint = () => {
     window.print()
   }
 
+  const handleBackdropClick = (event) => {
+    if (event.target === event.currentTarget) {
+      onClose?.()
+    }
+  }
+
+  const detailRows = [
+    { label: 'Paciente:', value: `${ticket.paciente_nombre} ${ticket.paciente_apellido}` },
+    { label: 'DNI:', value: ticket.paciente_dni },
+    { label: 'Obra Social:', value: ticket.paciente_obra_social || 'Particular' },
+    { label: 'Triage:', value: <TriageBadge categoryKey={ticket.clasificacion_triage} /> },
+    ticket.justificacion_otro && {
+      label: 'Justificación:',
+      value: ticket.justificacion_otro,
+      small: true
+    },
+    {
+      label: 'Estudios:',
+      value: ticket.estudios?.length > 0 ? ticket.estudios.join(', ') : 'Rutina estándar',
+      small: true
+    },
+    {
+      label: 'Fecha y Hora:',
+      value: `${formatDateDDMMAAAA(ticket.fecha_hora_admision)} ${formatTimeHHMM(ticket.fecha_hora_admision)}`
+    },
+    { label: 'Admisión:', value: ticket.mat_admision || 'TEC-ADM' }
+  ].filter(Boolean)
+
   return (
-    <div className="ticket-modal">
+    <div
+      className="ticket-modal"
+      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ticket-modal-title"
+    >
       <div className="ticket-modal__card">
         <button className="ticket-modal__close-btn" onClick={onClose} aria-label="Cerrar modal">
           <X className="ticket-modal__close-icon" />
         </button>
 
-        <div className="ticket-modal__badge">
+        <div className="ticket-modal__badge" id="ticket-modal-title">
           <CheckCircle className="ticket-modal__badge-icon" />
           <span>Ticket Asistencial Emitido</span>
         </div>
@@ -30,62 +77,22 @@ export default function TicketModal({ ticket, onClose }) {
             <p className="ticket-modal__hospital-sub">Laboratorio Central & Triage</p>
           </div>
 
-          <div className="ticket-modal__divider" />
-
           <div className="ticket-modal__call-box">
             <span className="ticket-modal__call-label">N° DE LLAMADO EXTERNO</span>
             <span className="ticket-modal__call-number">{ticket.num_llamado || 'S/N'}</span>
             <span className="ticket-modal__totem-id">Identificador: {ticket.num_totem}</span>
           </div>
 
-          <div className="ticket-modal__divider" />
-
           <div className="ticket-modal__details">
-            <div className="ticket-modal__row">
-              <span className="ticket-modal__row-label">Paciente:</span>
-              <span className="ticket-modal__row-value">
-                {ticket.paciente_nombre} {ticket.paciente_apellido}
-              </span>
-            </div>
-            <div className="ticket-modal__row">
-              <span className="ticket-modal__row-label">DNI:</span>
-              <span className="ticket-modal__row-value">{ticket.paciente_dni}</span>
-            </div>
-            <div className="ticket-modal__row">
-              <span className="ticket-modal__row-label">Obra Social:</span>
-              <span className="ticket-modal__row-value">{ticket.paciente_obra_social || 'Particular'}</span>
-            </div>
-            <div className="ticket-modal__row">
-              <span className="ticket-modal__row-label">Triage:</span>
-              <span className="ticket-modal__row-value">
-                <TriageBadge categoryKey={ticket.clasificacion_triage} />
-              </span>
-            </div>
-            {ticket.justificacion_otro && (
-              <div className="ticket-modal__row">
-                <span className="ticket-modal__row-label">Justificación:</span>
-                <span className="ticket-modal__row-value ticket-modal__row-value--small">{ticket.justificacion_otro}</span>
+            {detailRows.map((row) => (
+              <div className="ticket-modal__row" key={row.label}>
+                <span className="ticket-modal__row-label">{row.label}</span>
+                <span className={`ticket-modal__row-value ${row.small ? 'ticket-modal__row-value--small' : ''}`}>
+                  {row.value}
+                </span>
               </div>
-            )}
-            <div className="ticket-modal__row">
-              <span className="ticket-modal__row-label">Estudios:</span>
-              <span className="ticket-modal__row-value ticket-modal__row-value--small">
-                {ticket.estudios?.length > 0 ? ticket.estudios.join(', ') : 'Rutina estándar'}
-              </span>
-            </div>
-            <div className="ticket-modal__row">
-              <span className="ticket-modal__row-label">Fecha y Hora:</span>
-              <span className="ticket-modal__row-value">
-                {formatDateDDMMAAAA(ticket.fecha_hora_admision)} {formatTimeHHMM(ticket.fecha_hora_admision)}
-              </span>
-            </div>
-            <div className="ticket-modal__row">
-              <span className="ticket-modal__row-label">Admisión:</span>
-              <span className="ticket-modal__row-value">{ticket.mat_admision || 'TEC-ADM'}</span>
-            </div>
+            ))}
           </div>
-
-          <div className="ticket-modal__divider" />
 
           <div className="ticket-modal__receipt-footer">
             <p>Por favor aguarde su turno en la sala de espera frente a la pantalla multibox.</p>
