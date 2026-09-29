@@ -41,6 +41,8 @@
 .patient-search__icon {
   position: absolute;
   right: 12px;
+  width: 16px;
+  height: 16px;
   color: #94a3b8;
   pointer-events: none;
 }
@@ -48,12 +50,20 @@
 .patient-search__clear-btn {
   position: absolute;
   right: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
   color: #64748b;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 4px;
   border-radius: 4px;
+}
+
+.patient-search__clear-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .patient-search__clear-btn:hover {
@@ -116,6 +126,11 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.patient-search__avatar-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .patient-search__info {

@@ -16,7 +16,7 @@ function saveStoredTickets(tickets) {
 }
 
 export async function fetchTicketsApi() {
-  return getStoredTickets().filter((t) => !t.is_deleted)
+  return getStoredTickets().filter((ticket) => !ticket.is_deleted)
 }
 
 export async function createTicketApi(ticketData) {
@@ -71,7 +71,7 @@ export async function updateTicketByJefaApi(ticketId, updatedFields, userRole) {
   }
 
   const tickets = getStoredTickets()
-  const index = tickets.findIndex((t) => t.id === ticketId)
+  const index = tickets.findIndex((ticket) => ticket.id === ticketId)
   if (index === -1) throw new Error('Ticket no encontrado.')
 
   const current = tickets[index]
@@ -97,21 +97,21 @@ export async function searchPatientsApi(query) {
   const matches = []
   const seenDnis = new Set()
 
-  tickets.forEach((t) => {
+  tickets.forEach((ticket) => {
     if (
-      (t.paciente_dni && t.paciente_dni.includes(clean)) ||
-      (t.paciente_obra_social && t.paciente_obra_social.toLowerCase().includes(clean)) ||
-      (t.paciente_nombre && t.paciente_nombre.toLowerCase().includes(clean)) ||
-      (t.paciente_apellido && t.paciente_apellido.toLowerCase().includes(clean))
+      (ticket.paciente_dni && ticket.paciente_dni.includes(clean)) ||
+      (ticket.paciente_obra_social && ticket.paciente_obra_social.toLowerCase().includes(clean)) ||
+      (ticket.paciente_nombre && ticket.paciente_nombre.toLowerCase().includes(clean)) ||
+      (ticket.paciente_apellido && ticket.paciente_apellido.toLowerCase().includes(clean))
     ) {
-      if (!seenDnis.has(t.paciente_dni)) {
-        seenDnis.add(t.paciente_dni)
+      if (!seenDnis.has(ticket.paciente_dni)) {
+        seenDnis.add(ticket.paciente_dni)
         matches.push({
-          dni: t.paciente_dni,
-          nombre: t.paciente_nombre,
-          apellido: t.paciente_apellido,
-          obraSocial: t.paciente_obra_social,
-          ultimoTicket: t
+          dni: ticket.paciente_dni,
+          nombre: ticket.paciente_nombre,
+          apellido: ticket.paciente_apellido,
+          obraSocial: ticket.paciente_obra_social,
+          ultimoTicket: ticket
         })
       }
     }
