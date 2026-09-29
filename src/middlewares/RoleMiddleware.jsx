@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 export default function RoleMiddleware({ allowedRoles = [] }) {
   const { userData } = useAuth()
 
+  // Si no hay datos de usuario (no logueado o expirado), redirige a login.
   if (!userData) {
     return <Navigate to="/login" replace />
   }
