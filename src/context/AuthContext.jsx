@@ -34,7 +34,7 @@ export const AuthContextProvider = ({ children }) => {
   // Utilidad rápida para alternar entre roles (Admisión, Box, Jefa, Secretaria, Admin)
   const switchDemoRole = useCallback((roleName) => {
     const demos = getDemoCredentials()
-    const target = demos.find((d) => d.rol.toLowerCase() === roleName.toLowerCase())
+    const target = demos.find((demoItem) => demoItem.rol.toLowerCase() === roleName.toLowerCase())
     if (target) {
       const fakeToken = btoa(JSON.stringify(target))
       setToken(fakeToken)
@@ -57,8 +57,8 @@ export const AuthContextProvider = ({ children }) => {
         if (!userData) {
           setUserData(parsed)
         }
-      } catch (e) {
-        console.warn('Fallback decodificación token:', e)
+      } catch (error) {
+        console.warn('Fallback decodificación token:', error)
       }
     }
   }, [token, userData])
