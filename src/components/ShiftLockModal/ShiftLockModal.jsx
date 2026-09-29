@@ -10,7 +10,7 @@ export default function ShiftLockModal({ user }) {
     <div className="shift-lock">
       <div className="shift-lock__card">
         <div className="shift-lock__icon-wrap">
-          <Clock size={42} className="shift-lock__icon" />
+          <Clock className="shift-lock__icon" />
         </div>
         <h2 className="shift-lock__title">Acceso Restringido por Horario</h2>
         <p className="shift-lock__desc">
@@ -18,7 +18,7 @@ export default function ShiftLockModal({ user }) {
         </p>
 
         <div className="shift-lock__info-box">
-          <AlertTriangle size={18} className="shift-lock__info-icon" />
+          <AlertTriangle className="shift-lock__info-icon" />
           <span className="shift-lock__info-text">Turno registrado: <strong>{user?.turno || 'No asignado'}</strong></span>
         </div>
 
@@ -28,11 +28,11 @@ export default function ShiftLockModal({ user }) {
 
         <div className="shift-lock__actions">
           <button className="shift-lock__btn-toggle" onClick={toggleShiftLockSimulation}>
-            <RefreshCw size={16} />
+            <RefreshCw className="shift-lock__btn-icon" />
             Simular ingreso dentro de turno (Demo)
           </button>
           <button className="shift-lock__btn-logout" onClick={logout}>
-            <LogOut size={16} />
+            <LogOut className="shift-lock__btn-icon" />
             Cerrar Sesión
           </button>
         </div>
