@@ -14,12 +14,12 @@ export default function TicketModal({ ticket, onClose }) {
   return (
     <div className="ticket-modal">
       <div className="ticket-modal__card">
-        <button className="ticket-modal__close-btn" onClick={onClose}>
-          <X size={20} />
+        <button className="ticket-modal__close-btn" onClick={onClose} aria-label="Cerrar modal">
+          <X className="ticket-modal__close-icon" />
         </button>
 
         <div className="ticket-modal__badge">
-          <CheckCircle size={22} className="ticket-modal__badge-icon" />
+          <CheckCircle className="ticket-modal__badge-icon" />
           <span>Ticket Asistencial Emitido</span>
         </div>
 
@@ -95,7 +95,7 @@ export default function TicketModal({ ticket, onClose }) {
 
         <div className="ticket-modal__actions">
           <button className="ticket-modal__print-btn" onClick={handlePrint}>
-            <Printer size={18} />
+            <Printer className="ticket-modal__print-icon" />
             Imprimir Ticket
           </button>
           <button className="ticket-modal__done-btn" onClick={onClose}>

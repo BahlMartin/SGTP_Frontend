@@ -30,11 +30,20 @@
   color: #94a3b8;
   padding: 4px;
   border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ticket-modal__close-btn:hover {
   background: #f1f5f9;
   color: #0f172a;
+}
+
+.ticket-modal__close-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 .ticket-modal__badge {
@@ -48,6 +57,8 @@
 }
 
 .ticket-modal__badge-icon {
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
 }
 
@@ -174,6 +185,12 @@
 
 .ticket-modal__print-btn:hover {
   background: #0369a1;
+}
+
+.ticket-modal__print-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .ticket-modal__done-btn {
