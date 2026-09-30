@@ -1,8 +1,9 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { computeDailyReportMetrics } from '../services/reportService'
 import { getTodayLocalDateString } from '../utils/formatters'
 import { useExportReportPdf } from './useExportReportPdf'
 import { useSendReportEmail } from './useSendReportEmail'
+import { useFeedbackNotice } from './useFeedbackNotice'
 
 /**
  * Hook personalizado para orquestar el estado de Secretaría, el cómputo de métricas
@@ -10,17 +11,7 @@ import { useSendReportEmail } from './useSendReportEmail'
  */
 export function useSecretariaReport({ tickets = [], userData = null }) {
   const [jornadaDate, setJornadaDate] = useState(() => getTodayLocalDateString())
-  const [notice, setNotice] = useState(null)
-  const noticeTimerRef = useRef(null)
-
-  // Limpieza del temporizador en desmontaje
-  useEffect(() => {
-    return () => {
-      if (noticeTimerRef.current) {
-        clearTimeout(noticeTimerRef.current)
-      }
-    }
-  }, [])
+  const { notice, showNotice } = useFeedbackNotice(4000)
 
   // Asegurar fecha por defecto si el usuario limpia el input
   useEffect(() => {
@@ -28,16 +19,6 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
       setJornadaDate(getTodayLocalDateString())
     }
   }, [jornadaDate])
-
-  const showNotice = useCallback((messageText) => {
-    if (noticeTimerRef.current) {
-      clearTimeout(noticeTimerRef.current)
-    }
-    setNotice(messageText)
-    noticeTimerRef.current = setTimeout(() => {
-      setNotice(null)
-    }, 4000)
-  }, [])
 
   // Métricas dinámicas calculadas según la fecha seleccionada de forma memorizada
   const metrics = useMemo(() => {

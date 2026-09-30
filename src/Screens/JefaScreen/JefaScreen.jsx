@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo } from 'react'
 import JefaLayout from './components/JefaLayout'
 import JefaHeader from './components/JefaHeader'
 import LabMatrixCard from './components/LabMatrixCard'
@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
 import { useExportReportPdf } from '../../hooks/useExportReportPdf'
 import { useSendReportEmail } from '../../hooks/useSendReportEmail'
+import { useFeedbackNotice } from '../../hooks/useFeedbackNotice'
 import { getTodayLocalDateString } from '../../utils/formatters'
 import { computeDailyReportMetrics, computeLabMatrix } from '../../services/reportService'
 
@@ -27,17 +28,9 @@ export default function JefaScreen() {
   } = useStaffManagement()
 
   const [jornadaDate, setJornadaDate] = useState(() => getTodayLocalDateString())
-  const [statusNotice, setStatusNotice] = useState(null)
+  const { notice: statusNotice, showNotice } = useFeedbackNotice(4000)
   const [editingTicket, setEditingTicket] = useState(null)
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
-
-  const showNotice = useCallback((messageText) => {
-    setStatusNotice(messageText)
-    const timerIdentifier = setTimeout(() => {
-      setStatusNotice(null)
-    }, 4000)
-    return () => clearTimeout(timerIdentifier)
-  }, [])
 
   const labMatrix = useMemo(() => computeLabMatrix(tickets), [tickets])
 
