@@ -1,42 +1,64 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Eye, EyeOff, Loader2, User } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { getDemoCredentials } from '../../services/authService'
 import { getHomePathByRole } from '../../utils/navigation'
 import './LoginScreen.css'
 
+// Extraído fuera del componente para evitar recalcular y procesar en cada re-renderizado
+const DEMO_ACCOUNTS = getDemoCredentials().map((credentialItem) => ({
+  ...credentialItem,
+  primerNombre: credentialItem.nombre.split(' ')[0]
+}))
+
 export default function LoginScreen() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [formData, setFormData] = useState({ email: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
   const [errorMsg, setErrorMsg] = useState(null)
   const [loading, setLoading] = useState(false)
+
   const { login, switchDemoRole } = useAuth()
   const navigate = useNavigate()
 
-  const demoAccounts = getDemoCredentials()
+  const handleInputChange = (event) => {
+    const { name, value } = event.target
+    if (errorMsg) {
+      setErrorMsg(null)
+    }
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value
+    }))
+  }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setErrorMsg(null)
-    if (!email || !password) {
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (loading) return
+
+    const sanitizedEmail = formData.email.trim()
+    const password = formData.password
+
+    if (!sanitizedEmail || !password) {
       setErrorMsg('Por favor ingrese usuario y contraseña.')
       return
     }
 
     setLoading(true)
+    setErrorMsg(null)
+
     try {
-      const user = await login(email, password)
-      // Redirigir según el rol del usuario
-      navigate(getHomePathByRole(user.rol))
-    } catch (err) {
-      setErrorMsg(err.message || 'Error al iniciar sesión.')
+      const authenticatedUser = await login(sanitizedEmail, password)
+      navigate(getHomePathByRole(authenticatedUser.rol))
+    } catch (error) {
+      setErrorMsg(error.message || 'Error al iniciar sesión.')
     } finally {
       setLoading(false)
     }
   }
 
   const handleQuickLogin = (roleKey) => {
+    if (loading) return
     switchDemoRole(roleKey)
     navigate(getHomePathByRole(roleKey))
   }
@@ -44,57 +66,82 @@ export default function LoginScreen() {
   return (
     <div className="login-screen">
       <div className="login-screen__card">
-        {/* Avatar Circular Central según Imagen 5 */}
+        {/* Avatar Circular Central */}
         <div className="login-screen__avatar">
-          <svg
-            className="login-screen__avatar-svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#1e293b"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
+          <User className="login-screen__avatar-svg" />
         </div>
 
         <h2 className="login-screen__title">Inicie Sesión</h2>
 
         {errorMsg && (
-          <div className="login-screen__error-alert">
-            <AlertCircle size={18} />
+          <div className="login-screen__error-alert" role="alert" aria-live="polite">
+            <AlertCircle className="login-screen__error-icon" />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="login-screen__form">
+        <form onSubmit={handleSubmit} className="login-screen__form" noValidate>
           <div className="login-screen__field">
-            <label className="login-screen__label">Usuario</label>
+            <label htmlFor="login-email" className="login-screen__label">
+              Usuario
+            </label>
             <input
+              id="login-email"
+              name="email"
               type="text"
+              autoComplete="username"
               className="login-screen__input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleInputChange}
               placeholder="ej: admision@sgtp.hospital.gob.ar"
+              disabled={loading}
               autoFocus
             />
           </div>
 
           <div className="login-screen__field">
-            <label className="login-screen__label">Contraseña</label>
-            <input
-              type="password"
-              className="login-screen__input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
+            <label htmlFor="login-password" className="login-screen__label">
+              Contraseña
+            </label>
+            <div className="login-screen__password-wrapper">
+              <input
+                id="login-password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                className="login-screen__input"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="••••••••"
+                disabled={loading}
+              />
+              <button
+                type="button"
+                className="login-screen__toggle-password"
+                onClick={() => setShowPassword((prevShow) => !prevShow)}
+                title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                disabled={loading}
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="login-screen__toggle-icon" />
+                ) : (
+                  <Eye className="login-screen__toggle-icon" />
+                )}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className="login-screen__submit-btn" disabled={loading}>
-            {loading ? 'Validando credenciales...' : 'Iniciar Sesión'}
+            {loading ? (
+              <span className="login-screen__btn-loading">
+                <Loader2 className="login-screen__spinner" />
+                Validando credenciales...
+              </span>
+            ) : (
+              'Iniciar Sesión'
+            )}
           </button>
         </form>
 
@@ -104,15 +151,16 @@ export default function LoginScreen() {
             <span>Acceso Rápido por Perfil (Demo)</span>
           </div>
           <div className="login-screen__demo-grid">
-            {demoAccounts.map((acc) => (
+            {DEMO_ACCOUNTS.map((credentialItem) => (
               <button
-                key={acc.rol}
+                key={credentialItem.rol}
                 type="button"
                 className="login-screen__demo-pill"
-                onClick={() => handleQuickLogin(acc.rol)}
+                onClick={() => handleQuickLogin(credentialItem.rol)}
+                disabled={loading}
               >
-                <span className="login-screen__demo-role">{acc.rol}</span>
-                <span className="login-screen__demo-user">{acc.nombre.split(' ')[0]}</span>
+                <span className="login-screen__demo-role">{credentialItem.rol}</span>
+                <span className="login-screen__demo-user">{credentialItem.primerNombre}</span>
               </button>
             ))}
           </div>
