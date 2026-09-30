@@ -1,0 +1,121 @@
+.admission-form-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+.admission-form-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.admission-form-card__icon {
+  color: #0284c7;
+}
+
+.admission-form-card__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.admission-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admission-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.admission-form__row--center {
+  display: flex;
+  justify-content: center;
+}
+
+.admission-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admission-form__field--center {
+  width: 320px;
+}
+
+.admission-form__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.admission-form__input {
+  height: 42px;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 0 14px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: #ffffff;
+  outline: none;
+  transition: all 0.15s;
+}
+
+.admission-form__input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.admission-form__input--center {
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.admission-form__input--error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.admission-form__error-text {
+  font-size: 0.75rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.admission-form__submit-btn {
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  height: 48px;
+  border-radius: var(--radius-md);
+  margin-top: 10px;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+  transition: background 0.15s;
+  cursor: pointer;
+  border: none;
+}
+
+.admission-form__submit-btn:hover {
+  background: #0369a1;
+}
+
+.admission-form__submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .admission-form__row {
+    grid-template-columns: 1fr;
+  }
+}
