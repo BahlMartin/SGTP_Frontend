@@ -9,11 +9,11 @@ export const TriageQueueContext = createContext({
   waitingQueue: [],
   activeInBoxes: {},
   loading: false,
-  createTicket: async () => {},
-  callNextPatient: async () => {},
-  finishAttention: async () => {},
-  updateTicketAsJefa: async () => {},
-  refreshTickets: async () => {}
+  createTicket: async () => { },
+  callNextPatient: async () => { },
+  finishAttention: async () => { },
+  updateTicketAsJefa: async () => { },
+  refreshTickets: async () => { }
 })
 
 export const TriageQueueContextProvider = ({ children }) => {
@@ -45,13 +45,14 @@ export const TriageQueueContextProvider = ({ children }) => {
   // Mapa de tickets actualmente en atención por box
   const activeInBoxes = useMemo(() => {
     const map = {}
-    tickets
-      .filter((t) => t.estado === 'En atencion' && t.box_asignado)
-      .forEach((t) => {
+    for (const t of tickets) {
+      if (t.estado === 'En atencion' && t.box_asignado) {
         map[t.box_asignado] = t
-      })
+      }
+    }
     return map
   }, [tickets])
+
 
   const createTicket = useCallback(async (payload) => {
     const newTicket = await createTicketApi(payload)

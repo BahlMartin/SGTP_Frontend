@@ -1,0 +1,104 @@
+.box-control-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.box-control-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.box-control-card__header-icon {
+  width: 20px;
+  height: 20px;
+  color: #0284c7;
+}
+
+.box-control-card__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.box-control-card__select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.box-control-card__select-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.box-control-card__select-input {
+  height: 42px;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.box-control-card__select-input:focus {
+  border-color: #0284c7;
+}
+
+.box-control-card__status-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.box-control-card__status-btn {
+  height: 42px;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  font-weight: 600;
+  background: #ffffff;
+  color: #334155;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.box-control-card__status-btn:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.box-control-card__status-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.box-control-card__status-btn--disponible-active {
+  background: #22c55e;
+  color: #ffffff;
+  border-color: #16a34a;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+}
+
+.box-control-card__status-btn--atencion-active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0369a1;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+}
+
+.box-control-card__status-btn--fuera-active {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #dc2626;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}

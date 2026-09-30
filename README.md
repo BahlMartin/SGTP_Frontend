@@ -77,12 +77,9 @@ graph TD
 
 ```text
 SGTP_Frontend/
-├── public/                     # Assets estáticos y favicons
-│   ├── favicon.svg
-│   └── icons.svg
+├── public/                     # Assets estáticos y recursos públicos
 ├── src/
 │   ├── assets/                 # Imágenes estáticas e ilustraciones
-│   │   └── hero.png
 │   ├── components/             # Componentes UI transversales y reutilizables
 │   │   ├── Navbar/             # Barra de navegación superior con conmutador demo
 │   │   ├── PatientSearch/      # Búsqueda en vivo de pacientes con historial

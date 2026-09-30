@@ -10,9 +10,78 @@
   white-space: nowrap;
 }
 
-.triage-dot {
+.triage-badge__dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
+
+.triage-badge__text {
+  line-height: 1;
+}
+
+/* Modificadores por categoría de triage */
+.triage-badge--guardia {
+  background-color: var(--triage-guardia-bg);
+  color: var(--triage-guardia-text);
+  border-color: color-mix(in srgb, var(--triage-guardia) 25%, transparent);
+}
+.triage-badge--guardia .triage-badge__dot {
+  background-color: var(--triage-guardia);
+}
+
+.triage-badge--medicos {
+  background-color: var(--triage-medicos-bg);
+  color: var(--triage-medicos-text);
+  border-color: color-mix(in srgb, var(--triage-medicos) 25%, transparent);
+}
+.triage-badge--medicos .triage-badge__dot {
+  background-color: var(--triage-medicos);
+}
+
+.triage-badge--discapacidad {
+  background-color: var(--triage-discapacidad-bg);
+  color: var(--triage-discapacidad-text);
+  border-color: color-mix(in srgb, var(--triage-discapacidad) 25%, transparent);
+}
+.triage-badge--discapacidad .triage-badge__dot {
+  background-color: var(--triage-discapacidad);
+}
+
+.triage-badge--oncologia {
+  background-color: var(--triage-oncologia-bg);
+  color: var(--triage-oncologia-text);
+  border-color: color-mix(in srgb, var(--triage-oncologia) 25%, transparent);
+}
+.triage-badge--oncologia .triage-badge__dot {
+  background-color: var(--triage-oncologia);
+}
+
+.triage-badge--extraccion_con_turno {
+  background-color: var(--triage-extraccion-turno-bg);
+  color: var(--triage-extraccion-turno-text);
+  border-color: color-mix(in srgb, var(--triage-extraccion-turno) 25%, transparent);
+}
+.triage-badge--extraccion_con_turno .triage-badge__dot {
+  background-color: var(--triage-extraccion-turno);
+}
+
+.triage-badge--extraccion_sin_turno {
+  background-color: var(--triage-extraccion-sin-turno-bg);
+  color: var(--triage-extraccion-sin-turno-text);
+  border-color: color-mix(in srgb, var(--triage-extraccion-sin-turno) 25%, transparent);
+}
+.triage-badge--extraccion_sin_turno .triage-badge__dot {
+  background-color: var(--triage-extraccion-sin-turno);
+}
+
+.triage-badge--otro {
+  background-color: var(--triage-otro-bg);
+  color: var(--triage-otro-text);
+  border-color: color-mix(in srgb, var(--triage-otro) 25%, transparent);
+}
+.triage-badge--otro .triage-badge__dot {
+  background-color: var(--triage-otro);
+}
+

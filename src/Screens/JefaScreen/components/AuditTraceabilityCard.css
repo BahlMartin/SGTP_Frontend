@@ -1,0 +1,172 @@
+.jefa-screen__audit-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.jefa-screen__audit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.jefa-screen__audit-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.jefa-screen__audit-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jefa-screen__date-box input,
+.jefa-screen__date-input {
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  outline: none;
+}
+
+.jefa-screen__btn-export {
+  background: #0d9488;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+}
+
+.jefa-screen__btn-export:hover {
+  background: #0f766e;
+}
+
+.jefa-screen__btn-export-icon,
+.jefa-screen__btn-email-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.jefa-screen__btn-email {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.jefa-screen__btn-email:hover {
+  background: #f8fafc;
+}
+
+.jefa-screen__audit-table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 290px;
+  scrollbar-gutter: stable;
+}
+
+.jefa-screen__audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.jefa-screen__audit-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.jefa-screen__audit-table th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.jefa-screen__audit-table td {
+  padding: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.82rem;
+}
+
+.jefa-screen__audit-id {
+  font-weight: 700;
+  color: #0284c7;
+}
+
+.jefa-screen__audit-patient {
+  font-weight: 600;
+}
+
+.jefa-screen__audit-mat {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.jefa-screen__audit-time {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.jefa-screen__state-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.jefa-screen__state-pill--done {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.jefa-screen__state-pill--progress {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.jefa-screen__state-pill--wait {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.jefa-screen__btn-edit-ticket {
+  color: #0284c7;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid #bae6fd;
+  background: #f0f9ff;
+  cursor: pointer;
+}
+
+.jefa-screen__btn-edit-ticket:hover {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.jefa-screen__btn-edit-icon {
+  width: 13px;
+  height: 13px;
+}
+

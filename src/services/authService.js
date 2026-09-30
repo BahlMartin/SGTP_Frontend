@@ -6,7 +6,7 @@ export async function loginApi(email, password) {
   await new Promise((resolve) => setTimeout(resolve, 300))
 
   const users = getRuntimeUsers()
-  const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase())
+  const user = users.find((currentUser) => currentUser.email.toLowerCase() === email.trim().toLowerCase())
 
   if (!user) {
     throw new Error('Credenciales inválidas. Verifique su usuario o contraseña.')
@@ -58,7 +58,7 @@ export async function loginApi(email, password) {
 
 export async function unlockUserApi(userId) {
   const users = getRuntimeUsers()
-  const target = users.find((u) => u.id === Number(userId))
+  const target = users.find((currentUser) => currentUser.id === Number(userId))
   if (target) {
     target.cant_intentos = 0
     saveRuntimeUsers(users)

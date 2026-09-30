@@ -1,0 +1,57 @@
+.online-boxes-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.online-boxes-card__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.online-boxes-card__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.online-boxes-card__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.online-boxes-card__label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.online-boxes-card__pill {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 14px;
+}
+
+.online-boxes-card__pill--disponible {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.online-boxes-card__pill--atencion {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.online-boxes-card__pill--fuera {
+  background: #ef4444;
+  color: #ffffff;
+}

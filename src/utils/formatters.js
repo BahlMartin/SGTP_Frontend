@@ -55,3 +55,14 @@ export function formatDurationHuman(minutes) {
 export function getCurrentUtcIso() {
   return new Date().toISOString()
 }
+
+/**
+ * Devuelve la fecha local en formato estricto YYYY-MM-DD
+ * compensando la diferencia de huso horario local.
+ */
+export function getTodayLocalDateString(referenceDate = new Date()) {
+  const safeDate = referenceDate instanceof Date ? referenceDate : new Date(referenceDate)
+  const offsetInMinutes = safeDate.getTimezoneOffset()
+  const localDate = new Date(safeDate.getTime() - offsetInMinutes * 60 * 1000)
+  return localDate.toISOString().slice(0, 10)
+}

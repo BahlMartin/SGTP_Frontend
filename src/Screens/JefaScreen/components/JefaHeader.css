@@ -1,0 +1,37 @@
+.jefa-screen__header {
+  margin-bottom: 24px;
+}
+
+.jefa-screen__title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.jefa-screen__subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.jefa-screen__alert {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.jefa-screen__alert-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+

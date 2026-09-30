@@ -1,59 +1,62 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { LogOut, User } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { getHomePathByRole } from '../../utils/navigation'
+import Logo from '../Logo/Logo'
 import './Navbar.css'
+
+// Constante estática fuera del componente para evitar reasignación de memoria en cada render
+const NAV_TABS = [
+  { label: 'Admisión', path: '/admision', roleKey: 'Admision', allowedRoles: ['Admision'] },
+  { label: 'Técnico/Box', path: '/box', roleKey: 'Box', allowedRoles: ['Box'] },
+  { label: 'Supervisión', path: '/supervision', roleKey: 'Jefa', allowedRoles: ['Jefa', 'Admin'] },
+  { label: 'Reportes', path: '/reportes', roleKey: 'Secretaria', allowedRoles: ['Secretaria', 'Jefa', 'Admin'] }
+]
 
 export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { userData, logout, switchDemoRole } = useAuth()
+  const { userData, logout } = useAuth()
 
-  const tabs = [
-    { label: 'Admision', path: '/admision', roleKey: 'Admision' },
-    { label: 'Tecnico/Box', path: '/box', roleKey: 'Box' },
-    { label: 'Jefa', path: '/supervision', roleKey: 'Jefa' },
-    { label: 'Secretaria', path: '/reportes', roleKey: 'Secretaria' }
-  ]
+  const firstName = userData?.nombre?.split(' ')[0] || 'Usuario'
+  const userRole = userData?.rol || 'Personal'
 
-  const handleTabClick = (tab) => {
-    // Si el usuario actual tiene un rol distinto, le permitimos cambiar de rol o navegar
-    if (userData && userData.rol !== tab.roleKey && userData.rol !== 'Admin') {
-      switchDemoRole(tab.roleKey)
+  // Pestañas visibles según rol (Jefa y Admin ven y navegan libremente entre Supervisión y Reportes)
+  const visibleTabs = NAV_TABS.filter((tab) => {
+    if (!userData?.rol) return false
+    if (userData.rol === 'Jefa' || userData.rol === 'Admin') {
+      return tab.path === '/supervision' || tab.path === '/reportes'
     }
-    navigate(tab.path)
-  }
+    return tab.allowedRoles.includes(userData.rol)
+  })
 
-  const isTabActive = (tab) => {
-    return location.pathname === tab.path
-  }
+  // Navegación limpia preservando siempre el rol autenticado
+  const handleTabClick = useCallback((tab) => {
+    navigate(tab.path)
+  }, [navigate])
+
+  const handleLogoClick = useCallback(() => {
+    navigate(getHomePathByRole(userData?.rol))
+  }, [userData?.rol, navigate])
 
   return (
-    <header className="sgtp-navbar">
-      <div className="navbar-left">
-        <div className="navbar-brand-logo" onClick={() => navigate('/admision')}>
-          <svg className="ecg-svg" viewBox="0 0 40 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M2 12H10L14 3L18 21L23 8L27 15L29 12H38"
-              stroke="#2dd4bf"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-        <span className="navbar-brand-text">SGTP</span>
+    <header className="navbar">
+      <div className="navbar__left">
+        <Logo withText onClick={handleLogoClick} />
       </div>
 
-      <div className="navbar-center">
-        <nav className="navbar-pills-container">
-          {tabs.map((tab) => {
-            const active = isTabActive(tab)
+      <div className="navbar__center">
+        <nav className="navbar__pills" aria-label="Navegación principal">
+          {visibleTabs.map((tab) => {
+            const isActive = location.pathname === tab.path
             return (
               <button
                 key={tab.label}
-                className={`navbar-pill ${active ? 'active' : ''}`}
+                type="button"
+                className={`navbar__pill ${isActive ? 'navbar__pill--active' : ''}`}
                 onClick={() => handleTabClick(tab)}
+                aria-current={isActive ? 'page' : undefined}
               >
                 {tab.label}
               </button>
@@ -62,18 +65,24 @@ export default function Navbar() {
         </nav>
       </div>
 
-      <div className="navbar-right">
-        <div className="user-profile-chip" title={`Usuario: ${userData?.nombre || ''}`}>
-          <div className="avatar-mini">
+      <div className="navbar__right">
+        <div className="navbar__profile" title={`Usuario: ${userData?.nombre || ''}`}>
+          <div className="navbar__avatar" aria-hidden="true">
             <User size={15} />
           </div>
-          <div className="user-meta">
-            <span className="user-name">{userData?.nombre?.split(' ')[0] || 'Usuario'}</span>
-            <span className="user-role-badge">{userData?.rol || 'Personal'}</span>
+          <div className="navbar__user-meta">
+            <span className="navbar__user-name">{firstName}</span>
+            <span className="navbar__user-role">{userRole}</span>
           </div>
         </div>
 
-        <button className="navbar-logout-btn" onClick={logout} title="Cerrar Sesión">
+        <button
+          type="button"
+          className="navbar__logout-btn"
+          onClick={logout}
+          title="Cerrar Sesión"
+          aria-label="Cerrar Sesión"
+        >
           <LogOut size={17} />
         </button>
       </div>

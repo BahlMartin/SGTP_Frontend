@@ -1,0 +1,75 @@
+.triage-dist-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.triage-dist-item__labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.triage-dist-item__name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+}
+
+.triage-dist-item__qty {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted, #94a3b8);
+}
+
+.triage-dist-item__bar-track {
+  width: 100%;
+  height: 18px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.triage-dist-item__bar-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.triage-dist-item__bar-fill {
+  transition: width 0.4s ease-out;
+}
+
+.triage-dist-item__bar-fill--guardia {
+  fill: #ef4444;
+}
+
+.triage-dist-item__bar-fill--medicos {
+  fill: #f97316;
+}
+
+.triage-dist-item__bar-fill--discapacidad {
+  fill: #eab308;
+}
+
+.triage-dist-item__bar-fill--oncologia {
+  fill: #0284c7;
+}
+
+.triage-dist-item__bar-fill--extraccion_con_turno,
+.triage-dist-item__bar-fill--ext-turno {
+  fill: #22c55e;
+}
+
+.triage-dist-item__bar-fill--extraccion_sin_turno,
+.triage-dist-item__bar-fill--ext-sinturno {
+  fill: #a855f7;
+}
+
+.triage-dist-item__bar-fill--otro {
+  fill: #64748b;
+}
