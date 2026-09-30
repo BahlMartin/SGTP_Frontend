@@ -1,0 +1,117 @@
+.jefa-screen__modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.jefa-screen__modal-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  max-width: 480px;
+  width: 100%;
+  padding: 26px;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+
+.jefa-screen__modal-title {
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.jefa-screen__modal-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.jefa-screen__modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.jefa-screen__modal-field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.jefa-screen__modal-select,
+.jefa-screen__modal-textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  outline: none;
+  font-family: inherit;
+}
+
+.jefa-screen__modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.jefa-screen__btn-save {
+  flex: 1;
+  background: #0284c7;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+}
+
+.jefa-screen__btn-save:hover {
+  background: #0369a1;
+}
+
+.jefa-screen__btn-cancel {
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+}
+
+.jefa-screen__btn-cancel:hover {
+  background: #e2e8f0;
+}
+
+.jefa-screen__modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: #94a3b8;
+  padding: 4px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jefa-screen__modal-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.jefa-screen__modal-close-icon {
+  width: 18px;
+  height: 18px;
+}
+

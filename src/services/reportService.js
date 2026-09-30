@@ -113,3 +113,40 @@ export async function sendDailyReportEmailApi(jornadaDate, recipientEmail) {
     message: `Informe diario de la jornada enviado con éxito a ${recipientEmail || 'jefa@sgtp.hospital.gob.ar'}.`
   }
 }
+
+export const LAB_STUDY_CATEGORIES = ['Hemograma', 'Bioquimica', 'Orina', 'Cultivo', 'Otro']
+
+export function computeLabMatrix(tickets = []) {
+  return LAB_STUDY_CATEGORIES.map((categoryName) => {
+    let total = 0
+    let pendientes = 0
+    let enCurso = 0
+    let listos = 0
+
+    tickets.forEach((ticketItem) => {
+      const tieneCategoria = ticketItem.estudios?.some((studyName) =>
+        studyName.toLowerCase().includes(categoryName.toLowerCase())
+      )
+
+      if (tieneCategoria) {
+        total++
+        if (ticketItem.estado === 'Espera') {
+          pendientes++
+        } else if (ticketItem.estado === 'En atencion') {
+          enCurso++
+        } else if (ticketItem.estado === 'Atendido') {
+          listos++
+        }
+      }
+    })
+
+    return {
+      nombre: categoryName,
+      total,
+      pend: pendientes,
+      curso: enCurso,
+      listos
+    }
+  })
+}
+

@@ -1,0 +1,173 @@
+.jefa-screen__shifts-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.jefa-screen__shifts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.jefa-screen__shifts-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jefa-screen__shifts-icon {
+  color: #0284c7;
+  width: 18px;
+  height: 18px;
+}
+
+.jefa-screen__shifts-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.jefa-screen__btn-add-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.jefa-screen__btn-add-staff {
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+}
+
+.jefa-screen__btn-add-staff:hover {
+  background: #0369a1;
+}
+
+.jefa-screen__shifts-table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 290px;
+  scrollbar-gutter: stable;
+}
+
+.jefa-screen__shifts-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.jefa-screen__shifts-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.jefa-screen__shifts-table th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.jefa-screen__shifts-table td {
+  padding: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.82rem;
+}
+
+.jefa-screen__shift-name {
+  font-weight: 700;
+}
+
+.jefa-screen__shift-mat {
+  font-size: 0.82rem;
+}
+
+.jefa-screen__shift-role {
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.jefa-screen__shift-turno {
+  font-size: 0.82rem;
+}
+
+.jefa-screen__status-chip {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.jefa-screen__status-chip--active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.jefa-screen__status-chip--offline {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.jefa-screen__btn-toggle-shift {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.jefa-screen__btn-toggle-shift--enable {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.jefa-screen__btn-toggle-shift--disable {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.jefa-screen__btn-delete-staff {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 7px;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  cursor: pointer;
+}
+
+.jefa-screen__btn-delete-staff:hover {
+  background: #fecaca;
+}
+
+.jefa-screen__btn-delete-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.jefa-screen__permanent-badge {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-style: italic;
+}
