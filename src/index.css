@@ -26,12 +26,32 @@
   
   /* Colores de Triage */
   --triage-guardia: #ef4444;
+  --triage-guardia-bg: #fee2e2;
+  --triage-guardia-text: #991b1b;
+
   --triage-medicos: #f97316;
+  --triage-medicos-bg: #ffedd5;
+  --triage-medicos-text: #9a3412;
+
   --triage-discapacidad: #eab308;
+  --triage-discapacidad-bg: #fef9c3;
+  --triage-discapacidad-text: #854d0e;
+
   --triage-oncologia: #0284c7;
+  --triage-oncologia-bg: #e0f2fe;
+  --triage-oncologia-text: #075985;
+
   --triage-extraccion-turno: #22c55e;
+  --triage-extraccion-turno-bg: #dcfce7;
+  --triage-extraccion-turno-text: #166534;
+
   --triage-extraccion-sin-turno: #a855f7;
+  --triage-extraccion-sin-turno-bg: #f3e8ff;
+  --triage-extraccion-sin-turno-text: #6b21a8;
+
   --triage-otro: #64748b;
+  --triage-otro-bg: #f1f5f9;
+  --triage-otro-text: #334155;
   
   /* Estados de Box */
   --box-disponible: #22c55e;

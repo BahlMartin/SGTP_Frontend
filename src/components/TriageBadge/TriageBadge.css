@@ -23,65 +23,65 @@
 
 /* Modificadores por categoría de triage */
 .triage-badge--guardia {
-  background-color: #fee2e2;
-  color: #991b1b;
-  border-color: #ef444440;
+  background-color: var(--triage-guardia-bg);
+  color: var(--triage-guardia-text);
+  border-color: color-mix(in srgb, var(--triage-guardia) 25%, transparent);
 }
 .triage-badge--guardia .triage-badge__dot {
-  background-color: #ef4444;
+  background-color: var(--triage-guardia);
 }
 
 .triage-badge--medicos {
-  background-color: #ffedd5;
-  color: #9a3412;
-  border-color: #f9731640;
+  background-color: var(--triage-medicos-bg);
+  color: var(--triage-medicos-text);
+  border-color: color-mix(in srgb, var(--triage-medicos) 25%, transparent);
 }
 .triage-badge--medicos .triage-badge__dot {
-  background-color: #f97316;
+  background-color: var(--triage-medicos);
 }
 
 .triage-badge--discapacidad {
-  background-color: #fef9c3;
-  color: #854d0e;
-  border-color: #eab30840;
+  background-color: var(--triage-discapacidad-bg);
+  color: var(--triage-discapacidad-text);
+  border-color: color-mix(in srgb, var(--triage-discapacidad) 25%, transparent);
 }
 .triage-badge--discapacidad .triage-badge__dot {
-  background-color: #eab308;
+  background-color: var(--triage-discapacidad);
 }
 
 .triage-badge--oncologia {
-  background-color: #e0f2fe;
-  color: #075985;
-  border-color: #0284c740;
+  background-color: var(--triage-oncologia-bg);
+  color: var(--triage-oncologia-text);
+  border-color: color-mix(in srgb, var(--triage-oncologia) 25%, transparent);
 }
 .triage-badge--oncologia .triage-badge__dot {
-  background-color: #0284c7;
+  background-color: var(--triage-oncologia);
 }
 
 .triage-badge--extraccion_con_turno {
-  background-color: #dcfce7;
-  color: #166534;
-  border-color: #22c55e40;
+  background-color: var(--triage-extraccion-turno-bg);
+  color: var(--triage-extraccion-turno-text);
+  border-color: color-mix(in srgb, var(--triage-extraccion-turno) 25%, transparent);
 }
 .triage-badge--extraccion_con_turno .triage-badge__dot {
-  background-color: #22c55e;
+  background-color: var(--triage-extraccion-turno);
 }
 
 .triage-badge--extraccion_sin_turno {
-  background-color: #f3e8ff;
-  color: #6b21a8;
-  border-color: #a855f740;
+  background-color: var(--triage-extraccion-sin-turno-bg);
+  color: var(--triage-extraccion-sin-turno-text);
+  border-color: color-mix(in srgb, var(--triage-extraccion-sin-turno) 25%, transparent);
 }
 .triage-badge--extraccion_sin_turno .triage-badge__dot {
-  background-color: #a855f7;
+  background-color: var(--triage-extraccion-sin-turno);
 }
 
 .triage-badge--otro {
-  background-color: #f1f5f9;
-  color: #334155;
-  border-color: #64748b40;
+  background-color: var(--triage-otro-bg);
+  color: var(--triage-otro-text);
+  border-color: color-mix(in srgb, var(--triage-otro) 25%, transparent);
 }
 .triage-badge--otro .triage-badge__dot {
-  background-color: #64748b;
+  background-color: var(--triage-otro);
 }
 

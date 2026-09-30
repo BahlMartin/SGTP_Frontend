@@ -182,6 +182,34 @@
   flex-shrink: 0;
 }
 
+.admision-screen__triage-dot--guardia {
+  background-color: var(--triage-guardia);
+}
+
+.admision-screen__triage-dot--medicos {
+  background-color: var(--triage-medicos);
+}
+
+.admision-screen__triage-dot--discapacidad {
+  background-color: var(--triage-discapacidad);
+}
+
+.admision-screen__triage-dot--oncologia {
+  background-color: var(--triage-oncologia);
+}
+
+.admision-screen__triage-dot--extraccion_con_turno {
+  background-color: var(--triage-extraccion-turno);
+}
+
+.admision-screen__triage-dot--extraccion_sin_turno {
+  background-color: var(--triage-extraccion-sin-turno);
+}
+
+.admision-screen__triage-dot--otro {
+  background-color: var(--triage-otro);
+}
+
 .admision-screen__triage-text {
   display: flex;
   flex-direction: column;

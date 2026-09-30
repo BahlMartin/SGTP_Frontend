@@ -1,5 +1,5 @@
 import React from 'react'
-import { getTriageInfo } from '../../utils/triageAlgorithm'
+import { getTriageInfo } from '../../constants/triage.constants'
 import './TriageBadge.css'
 
 export default function TriageBadge({ categoryKey, showPriority = true }) {

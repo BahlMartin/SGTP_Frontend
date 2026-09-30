@@ -13,6 +13,7 @@ import {
 import Navbar from '../../components/Navbar/Navbar'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import TriageBadge from '../../components/TriageBadge/TriageBadge'
+import { TRIAGE_LIST } from '../../constants/triage.constants'
 import { useTriageQueue } from '../../context/TriageQueueContext'
 import { useAuth } from '../../context/AuthContext'
 import { formatTimeHHMM } from '../../utils/formatters'
@@ -493,13 +494,11 @@ export default function JefaScreen() {
                 value={editTriage}
                 onChange={(e) => setEditTriage(e.target.value)}
               >
-                <option value="Guardia">1. Guardia (Máxima urgencia)</option>
-                <option value="Medicos">2. Médicos (Urgente)</option>
-                <option value="Discapacidad">3. Discapacidad (Prioritario)</option>
-                <option value="Oncologia">4. Oncología (Programado)</option>
-                <option value="Extraccion con turno">5. Extracción con turno</option>
-                <option value="Extraccion sin turno">6. Extracción sin turno</option>
-                <option value="Otro">7. Otro (Requiere Justificación)</option>
+                {TRIAGE_LIST.map((t) => (
+                  <option key={t.id} value={t.key}>
+                    {t.code}. {t.key} {t.subtitle ? `(${t.subtitle})` : ''}
+                  </option>
+                ))}
               </select>
             </div>
 

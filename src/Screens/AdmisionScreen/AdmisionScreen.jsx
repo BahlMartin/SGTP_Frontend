@@ -5,7 +5,7 @@ import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import TicketModal from '../../components/TicketModal/TicketModal'
 import RecipeOcrModal from '../../components/RecipeOcrModal/RecipeOcrModal'
 import TriageBadge from '../../components/TriageBadge/TriageBadge'
-import { TRIAGE_LIST } from '../../utils/triageAlgorithm'
+import { TRIAGE_LIST } from '../../constants/triage.constants'
 import { validatePersonName, validateDni } from '../../utils/validators'
 import { useTriageQueue } from '../../context/TriageQueueContext'
 import { useAuth } from '../../context/AuthContext'
@@ -215,7 +215,7 @@ export default function AdmisionScreen() {
                         className={`admision-screen__triage-card ${isSelected ? 'admision-screen__triage-card--selected' : ''}`}
                         onClick={() => handleTriageSelect(t.key)}
                       >
-                        <span className="admision-screen__triage-dot" style={{ backgroundColor: t.color }} />
+                        <span className={`admision-screen__triage-dot admision-screen__triage-dot--${t.id}`} />
                         <div className="admision-screen__triage-text">
                           <span className="admision-screen__triage-label">{t.label}</span>
                           <span className="admision-screen__triage-desc">{t.subtitle}</span>
