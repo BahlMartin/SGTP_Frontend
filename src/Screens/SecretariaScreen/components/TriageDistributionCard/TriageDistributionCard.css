@@ -1,0 +1,33 @@
+.triage-distribution-card {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-card, #e2e8f0);
+  border-radius: var(--radius-lg, 12px);
+  padding: 24px 28px 36px;
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+}
+
+.triage-distribution-card__title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary, #0f172a);
+  margin-bottom: 24px;
+}
+
+.triage-distribution-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px 50px;
+}
+
+.triage-distribution-card__column {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+@media (max-width: 1024px) {
+  .triage-distribution-card__grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}

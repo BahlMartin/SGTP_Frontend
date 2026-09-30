@@ -11,19 +11,10 @@ import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useTriageQueue } from '../../context/TriageQueueContext'
 import { useAuth } from '../../context/AuthContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
-import { generateDailyReportPdf } from '../../utils/pdfGenerator'
-import {
-  computeDailyReportMetrics,
-  computeLabMatrix,
-  sendDailyReportEmailApi
-} from '../../services/reportService'
-
-const getTodayDateString = () => {
-  const currentDate = new Date()
-  const offsetInMinutes = currentDate.getTimezoneOffset()
-  const localDate = new Date(currentDate.getTime() - offsetInMinutes * 60 * 1000)
-  return localDate.toISOString().slice(0, 10)
-}
+import { useExportReportPdf } from '../../hooks/useExportReportPdf'
+import { useSendReportEmail } from '../../hooks/useSendReportEmail'
+import { getTodayLocalDateString } from '../../utils/formatters'
+import { computeDailyReportMetrics, computeLabMatrix } from '../../services/reportService'
 
 export default function JefaScreen() {
   const { tickets, updateTicketAsJefa } = useTriageQueue()
@@ -35,7 +26,7 @@ export default function JefaScreen() {
     createStaff
   } = useStaffManagement()
 
-  const [jornadaDate, setJornadaDate] = useState(() => getTodayDateString())
+  const [jornadaDate, setJornadaDate] = useState(() => getTodayLocalDateString())
   const [statusNotice, setStatusNotice] = useState(null)
   const [editingTicket, setEditingTicket] = useState(null)
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
@@ -55,40 +46,28 @@ export default function JefaScreen() {
     [tickets, jornadaDate]
   )
 
-  const handleExportPdf = () => {
-    generateDailyReportPdf({
-      jornadaDate: new Date(jornadaDate),
-      stats: {
-        atendidos: metrics.atendidos,
-        ingresos: metrics.ingresos,
-        enCurso: metrics.enCurso,
-        esperaPromedio: metrics.esperaPromedio,
-        atencionPromedio: metrics.atencionPromedio,
-        criticos: metrics.criticos
-      },
-      triageDistribution: metrics.triageDistribution,
-      tickets: metrics.tickets,
-      generatedBy: `${userData?.nombre} (${userData?.rol})`
-    })
-    showNotice('Reporte diario exportado a PDF correctamente.')
-  }
+  // Hook reutilizable para la generación y descarga del PDF
+  const { handleExportPdf } = useExportReportPdf({
+    jornadaDate,
+    metrics,
+    userData,
+    onSuccessNotice: showNotice
+  })
 
-  const handleSendEmail = async () => {
-    try {
-      const responseEmail = await sendDailyReportEmailApi(jornadaDate, userData?.email)
-      showNotice(responseEmail.message)
-    } catch (error) {
-      alert(error.message)
-    }
-  }
+  // Hook reutilizable para el envío del reporte por email
+  const { handleSendEmail } = useSendReportEmail({
+    jornadaDate,
+    recipientEmail: userData?.email,
+    onSuccessNotice: showNotice
+  })
 
   const handleSaveTicketEdit = async (ticketId, updatePayload) => {
     try {
       await updateTicketAsJefa(ticketId, updatePayload, userData?.rol)
       setEditingTicket(null)
       showNotice('Ticket asistencial actualizado bajo auditoría inmutable de 24hs.')
-    } catch (error) {
-      alert(error.message)
+    } catch (errorInstance) {
+      alert(errorInstance.message || 'Error al actualizar el ticket.')
     }
   }
 
