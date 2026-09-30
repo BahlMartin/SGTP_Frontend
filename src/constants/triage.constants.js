@@ -72,7 +72,9 @@ export const TRIAGE_LIST = Object.values(TRIAGE_CATEGORIES)
 export function getTriageInfo(categoryKey) {
   if (!categoryKey) return TRIAGE_CATEGORIES.OTRO
   const found = TRIAGE_LIST.find(
-    (t) => t.key.toLowerCase() === categoryKey.toLowerCase() || t.id.toLowerCase() === categoryKey.toLowerCase()
+    (category) =>
+      category.key.toLowerCase() === categoryKey.toLowerCase() ||
+      category.id.toLowerCase() === categoryKey.toLowerCase()
   )
   return found || TRIAGE_CATEGORIES.OTRO
 }

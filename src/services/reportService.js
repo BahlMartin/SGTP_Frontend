@@ -1,4 +1,5 @@
 import { calculateMinutesDiff, formatDurationHuman } from '../utils/formatters'
+import { TRIAGE_CATEGORIES, TRIAGE_LIST, getTriageInfo } from '../constants/triage.constants'
 
 function parseLocalDateInput(value) {
   if (value instanceof Date) {
@@ -35,7 +36,7 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
   const safeTarget = parseLocalDateInput(targetDate)
 
   // Filtrar tickets correspondientes al día seleccionado
-  const dayTickets = tickets.filter((t) => sameLocalDay(t.fecha_hora_admision, safeTarget))
+  const dayTickets = tickets.filter((ticket) => sameLocalDay(ticket.fecha_hora_admision, safeTarget))
 
   let atendidos = 0
   let enCurso = 0
@@ -48,48 +49,31 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
   let totalAtencionMinutos = 0
   let countConAtencion = 0
 
-  const triageCounts = {
-    guardia: 0,
-    medicos: 0,
-    discapacidad: 0,
-    oncologia: 0,
-    extraccion_con_turno: 0,
-    extraccion_sin_turno: 0,
-    otro: 0
-  }
+  const triageCounts = Object.fromEntries(
+    TRIAGE_LIST.map((category) => [category.id, 0])
+  )
 
-  const categoryMap = {
-    guardia: 'guardia',
-    medicos: 'medicos',
-    discapacidad: 'discapacidad',
-    oncologia: 'oncologia',
-    'extraccion con turno': 'extraccion_con_turno',
-    'extraccion sin turno': 'extraccion_sin_turno',
-    otro: 'otro'
-  }
-
-  dayTickets.forEach((t) => {
+  dayTickets.forEach((ticket) => {
     // Clasificación de Triage
-    const key = (t.clasificacion_triage || '').toLowerCase().trim()
-    const mapped = categoryMap[key] || 'otro'
-    triageCounts[mapped] = (triageCounts[mapped] || 0) + 1
+    const triageInfo = getTriageInfo(ticket.clasificacion_triage)
+    triageCounts[triageInfo.id] = (triageCounts[triageInfo.id] || 0) + 1
 
-    if (mapped === 'guardia' || mapped === 'medicos') {
+    if (triageInfo.id === TRIAGE_CATEGORIES.GUARDIA.id || triageInfo.id === TRIAGE_CATEGORIES.MEDICOS.id) {
       criticos++
     }
 
     // Estados
-    if (t.estado === 'Atendido') {
+    if (ticket.estado === 'Atendido') {
       atendidos++
-    } else if (t.estado === 'En atencion') {
+    } else if (ticket.estado === 'En atencion') {
       enCurso++
-    } else if (t.estado === 'Espera') {
+    } else if (ticket.estado === 'Espera') {
       ingresos++
     }
 
     // Tiempo de Espera (Emisión -> Llamado)
-    if (t.fecha_hora_admision && t.fecha_hora_llamado) {
-      const wait = calculateMinutesDiff(t.fecha_hora_admision, t.fecha_hora_llamado)
+    if (ticket.fecha_hora_admision && ticket.fecha_hora_llamado) {
+      const wait = calculateMinutesDiff(ticket.fecha_hora_admision, ticket.fecha_hora_llamado)
       if (wait !== null && wait >= 0) {
         totalEsperaMinutos += wait
         countConEspera++
@@ -97,8 +81,8 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
     }
 
     // Tiempo de Atención (Llamado -> Cierre)
-    if (t.fecha_hora_llamado && t.fecha_hora_cierre) {
-      const duration = calculateMinutesDiff(t.fecha_hora_llamado, t.fecha_hora_cierre)
+    if (ticket.fecha_hora_llamado && ticket.fecha_hora_cierre) {
+      const duration = calculateMinutesDiff(ticket.fecha_hora_llamado, ticket.fecha_hora_cierre)
       if (duration !== null && duration >= 0) {
         totalAtencionMinutos += duration
         countConAtencion++
