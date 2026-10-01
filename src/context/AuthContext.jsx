@@ -1,78 +1,61 @@
 import { createContext, useState, useEffect, useCallback, useContext } from 'react'
-import { jwtDecode } from 'jwt-decode'
-import { loginApi, getDemoCredentials } from '../services/authService'
+import { loginApi, logoutApi } from '../services/authService'
+
+const STORAGE_KEY = 'sgtp_session_user'
 
 export const AuthContext = createContext({
   isLogged: false,
   userData: null,
-  token: null,
   login: async () => {},
-  logout: () => {},
-  switchDemoRole: () => {},
-  toggleShiftLockSimulation: () => {}
+  logout: async () => {}
 })
 
 export const AuthContextProvider = ({ children }) => {
-  const [token, setToken] = useState(null)
-  const [userData, setUserData] = useState(null)
-  const [isLogged, setIsLogged] = useState(false)
+  const [userData, setUserData] = useState(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      return stored ? JSON.parse(stored) : null
+    } catch {
+      return null
+    }
+  })
+  const [isLogged, setIsLogged] = useState(() => {
+    return Boolean(localStorage.getItem(STORAGE_KEY))
+  })
 
   const login = useCallback(async (email, password) => {
     const res = await loginApi(email, password)
-    setToken(res.token)
     setUserData(res.user)
     setIsLogged(true)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(res.user))
+    } catch (e) {
+      console.warn('No se pudo guardar la sesión en almacenamiento local:', e)
+    }
     return res.user
   }, [])
 
-  const logout = useCallback(() => {
-    setToken(null)
-    setUserData(null)
-    setIsLogged(false)
-  }, [])
-
-  // Utilidad rápida para alternar entre roles (Admisión, Box, Jefa, Secretaria, Admin)
-  const switchDemoRole = useCallback((roleName) => {
-    const demos = getDemoCredentials()
-    const target = demos.find((demoItem) => demoItem.rol.toLowerCase() === roleName.toLowerCase())
-    if (target) {
-      const fakeToken = btoa(JSON.stringify(target))
-      setToken(fakeToken)
-      setUserData(target)
-      setIsLogged(true)
-    }
-  }, [])
-
-  const toggleShiftLockSimulation = useCallback(() => {
-    if (!userData) return
-    const updated = { ...userData, dentro_horario: !userData.dentro_horario }
-    setUserData(updated)
-  }, [userData])
-
-  useEffect(() => {
-    if (token) {
+  const logout = useCallback(async () => {
+    try {
+      await logoutApi()
+    } finally {
+      setUserData(null)
+      setIsLogged(false)
       try {
-        // En producción decodifica JWT, si falla usa el usuario guardado
-        const parsed = JSON.parse(atob(token))
-        if (!userData) {
-          setUserData(parsed)
-        }
-      } catch (error) {
-        console.warn('Fallback decodificación token:', error)
+        localStorage.removeItem(STORAGE_KEY)
+      } catch (e) {
+        console.warn('Error al limpiar almacenamiento local:', e)
       }
     }
-  }, [token, userData])
+  }, [])
 
   return (
     <AuthContext.Provider
       value={{
         isLogged,
         userData,
-        token,
         login,
-        logout,
-        switchDemoRole,
-        toggleShiftLockSimulation
+        logout
       }}
     >
       {children}

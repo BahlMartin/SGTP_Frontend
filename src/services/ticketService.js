@@ -1,121 +1,161 @@
-import { isWithin24HourWindow } from '../utils/validators'
-import { getCurrentUtcIso } from '../utils/formatters'
-import { DEMO_TICKETS } from '../data/demoTickets'
+import apiClient from './apiClient'
 
-let runtimeTickets = DEMO_TICKETS.map((ticket) => ({
-  ...ticket,
-  estudios: [...ticket.estudios]
-}))
+/**
+ * Normaliza los tickets devueltos por DRF a la estructura estándar consumida en React.
+ */
+export function normalizeTicket(t) {
+  if (!t) return null
+  const paciente = t.paciente_detalle || {}
+  const estudiosList = (t.estudios || []).map((e) => {
+    if (typeof e === 'string') return e
+    return e?.estudio_detalle?.nombre || e?.nombre || 'Práctica Asistencial'
+  })
 
-function getStoredTickets() {
-  return runtimeTickets
+  let estadoNormalizado = t.estado
+  if (t.estado === 'Pendiente') estadoNormalizado = 'Espera'
+  else if (t.estado === 'En Atencion') estadoNormalizado = 'En atencion'
+  else if (t.estado === 'Finalizado') estadoNormalizado = 'Atendido'
+
+  return {
+    ...t,
+    id: t.id_ticket || t.id,
+    id_ticket: t.id_ticket || t.id,
+    num_totem: t.num_totem,
+    num_llamado: t.num_totem ? t.num_totem.replace(/[^\d]/g, '') || t.num_totem : (t.num_llamado || '101'),
+    fecha_hora_admision: t.fecha_hora_admision,
+    paciente_id: t.paciente,
+    paciente_dni: paciente.dni ? String(paciente.dni) : (t.paciente_dni || ''),
+    paciente_nombre: paciente.nombre || t.paciente_nombre || '',
+    paciente_apellido: paciente.apellidos || t.paciente_apellido || '',
+    paciente_obra_social: paciente.obra_social || t.paciente_obra_social || 'Particular',
+    clasificacion_triage: t.clasificacion_triage,
+    justificacion_otro: t.justificacion_otro || '',
+    box_asignado: t.box_numero ? `Box ${t.box_numero}` : (t.box_asignado || null),
+    estado: estadoNormalizado,
+    estado_backend: t.estado,
+    estudios: estudiosList,
+    estudios_raw: t.estudios || []
+  }
 }
 
-function saveStoredTickets(tickets) {
-  runtimeTickets = tickets
-}
-
+/**
+ * Obtiene todos los tickets registrados en el sistema.
+ */
 export async function fetchTicketsApi() {
-  return getStoredTickets().filter((ticket) => !ticket.is_deleted)
+  const response = await apiClient.get('/tickets/')
+  const list = Array.isArray(response) ? response : response.results || []
+  return list.map(normalizeTicket)
 }
 
+/**
+ * Obtiene la cola de espera de tickets pendientes ordenada por prioridad médica (FIFO asistencial).
+ */
+export async function fetchColaEsperaApi() {
+  const response = await apiClient.get('/tickets/cola-espera/')
+  const list = Array.isArray(response) ? response : response.results || []
+  return list.map(normalizeTicket)
+}
+
+/**
+ * Obtiene un ticket específico por su ID / UUID.
+ */
+export async function fetchTicketByIdApi(idTicket) {
+  const response = await apiClient.get(`/tickets/${idTicket}/`)
+  return normalizeTicket(response)
+}
+
+/**
+ * Emite un nuevo ticket en Admisión.
+ * Soporta paciente_datos (alta automática) y estudios_ids.
+ */
 export async function createTicketApi(ticketData) {
-  const tickets = getStoredTickets()
-  const requestedCallNumber = ticketData.num_llamado?.trim()
-  const nextCallNumber = requestedCallNumber || String(tickets.length + 101)
-
-  if (tickets.some((ticket) => ticket.num_llamado === nextCallNumber)) {
-    throw new Error(`El número de llamado ${nextCallNumber} ya está asignado a otro ticket.`)
-  }
-
-  let randomSuffix = Math.floor(1000 + Math.random() * 9000)
-  while (tickets.some((ticket) => ticket.id === `TCK-${randomSuffix}`)) {
-    randomSuffix = Math.floor(1000 + Math.random() * 9000)
-  }
-
-  let ticketSequence = tickets.length + 1
-  while (tickets.some((ticket) => ticket.num_totem === `T-${ticketSequence}`)) {
-    ticketSequence += 1
-  }
-
-  const newTicket = {
-    id: `TCK-${randomSuffix}`,
-    num_totem: `T-${ticketSequence}`,
-    num_llamado: nextCallNumber,
-    fecha_hora_admision: getCurrentUtcIso(),
-    fecha_hora_llamado: null,
-    fecha_hora_cierre: null,
-    id_personal_admision: ticketData.mat_admision || 'ADM-4412',
-    mat_admision: ticketData.mat_admision || 'ADM-4412',
-    mat_box: null,
-    box_asignado: null,
-    paciente_dni: ticketData.paciente_dni,
-    paciente_nombre: ticketData.paciente_nombre,
-    paciente_apellido: ticketData.paciente_apellido,
-    paciente_obra_social: ticketData.paciente_obra_social,
-    clasificacion_triage: ticketData.clasificacion_triage,
+  const payload = {
+    num_totem: ticketData.num_totem || (ticketData.num_llamado ? `T-${ticketData.num_llamado}` : ''),
+    clasificacion_triage: ticketData.clasificacion_triage || 'Extraccion sin Turno',
     justificacion_otro: ticketData.justificacion_otro || '',
-    estudios: ticketData.estudios || [],
-    estado: 'Espera',
-    is_deleted: false
+    estudios_ids: ticketData.estudios_ids || []
   }
 
-  tickets.unshift(newTicket)
-  saveStoredTickets(tickets)
-  return newTicket
+  if (ticketData.paciente_id) {
+    payload.paciente = ticketData.paciente_id
+  } else {
+    payload.paciente_datos = {
+      dni: Number(String(ticketData.paciente_dni || ticketData.dni).replace(/\D/g, '')),
+      nombre: ticketData.paciente_nombre || ticketData.nombre || 'Sin Nombre',
+      apellidos: ticketData.paciente_apellido || ticketData.apellido || 'Sin Apellido',
+      obra_social: ticketData.paciente_obra_social || ticketData.obraSocial || 'Particular'
+    }
+  }
+
+  const response = await apiClient.post('/tickets/', payload)
+  return normalizeTicket(response)
 }
 
+/**
+ * Actualiza un ticket emitido (exclusivo para Jefa/Admin bajo ventana de 24h).
+ */
 export async function updateTicketByJefaApi(ticketId, updatedFields, userRole) {
   if (userRole !== 'Jefa' && userRole !== 'Admin') {
     throw new Error('Solo el rol de Jefa o Admin tiene autorización para modificar tickets emitidos.')
   }
 
-  const tickets = getStoredTickets()
-  const index = tickets.findIndex((ticket) => ticket.id === ticketId)
-  if (index === -1) throw new Error('Ticket no encontrado.')
-
-  const current = tickets[index]
-  // Validación de la regla de inmutabilidad de 24 horas
-  if (!isWithin24HourWindow(current.fecha_hora_admision)) {
-    throw new Error('Inmutabilidad activa: Ha vencido la ventana de 24 horas permitida para modificar este ticket.')
-  }
-
-  tickets[index] = {
-    ...current,
-    ...updatedFields
-  }
-  saveStoredTickets(tickets)
-  return tickets[index]
+  const response = await apiClient.patch(`/tickets/${ticketId}/`, updatedFields)
+  return normalizeTicket(response)
 }
 
+/**
+ * Borrado lógico / cancelación asistencial de un ticket.
+ */
+export async function deleteTicketApi(ticketId) {
+  return await apiClient.delete(`/tickets/${ticketId}/`)
+}
+
+/**
+ * Búsqueda asistencial de antecedentes de pacientes.
+ */
 export async function searchPatientsApi(query) {
-  if (!query) return []
-  const clean = query.trim().toLowerCase()
-  const tickets = getStoredTickets()
-  
-  // Devuelve pacientes únicos encontrados por DNI u Obra Social
-  const matches = []
-  const seenDnis = new Set()
+  if (!query || !query.trim()) return []
+  const cleanDni = query.replace(/\D/g, '')
 
-  tickets.forEach((ticket) => {
-    if (
-      (ticket.paciente_dni && ticket.paciente_dni.includes(clean)) ||
-      (ticket.paciente_obra_social && ticket.paciente_obra_social.toLowerCase().includes(clean)) ||
-      (ticket.paciente_nombre && ticket.paciente_nombre.toLowerCase().includes(clean)) ||
-      (ticket.paciente_apellido && ticket.paciente_apellido.toLowerCase().includes(clean))
-    ) {
-      if (!seenDnis.has(ticket.paciente_dni)) {
-        seenDnis.add(ticket.paciente_dni)
-        matches.push({
-          dni: ticket.paciente_dni,
-          nombre: ticket.paciente_nombre,
-          apellido: ticket.paciente_apellido,
-          obraSocial: ticket.paciente_obra_social,
-          ultimoTicket: ticket
-        })
+  if (cleanDni.length >= 4) {
+    try {
+      const found = await apiClient.post('/patients/buscar-por-dni/', { dni: Number(cleanDni) })
+      if (found) {
+        return [
+          {
+            dni: String(found.dni),
+            nombre: found.nombre,
+            apellido: found.apellidos,
+            obraSocial: found.obra_social,
+            id_paciente: found.id_paciente
+          }
+        ]
       }
+    } catch {
+      // Si no coincide por DNI exacto, buscar en lista general
     }
-  })
+  }
 
-  return matches
+  try {
+    const allPatients = await apiClient.get('/patients/')
+    const list = Array.isArray(allPatients) ? allPatients : allPatients.results || []
+    const q = query.toLowerCase().trim()
+    return list
+      .filter((p) =>
+        String(p.dni).includes(q) ||
+        (p.nombre && p.nombre.toLowerCase().includes(q)) ||
+        (p.apellidos && p.apellidos.toLowerCase().includes(q)) ||
+        (p.obra_social && p.obra_social.toLowerCase().includes(q))
+      )
+      .map((p) => ({
+        dni: String(p.dni),
+        nombre: p.nombre,
+        apellido: p.apellidos,
+        obraSocial: p.obra_social,
+        id_paciente: p.id_paciente
+      }))
+  } catch (err) {
+    console.error('Error al buscar pacientes:', err)
+    return []
+  }
 }

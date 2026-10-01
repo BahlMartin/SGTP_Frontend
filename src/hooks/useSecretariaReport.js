@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { computeDailyReportMetrics } from '../services/reportService'
+import { computeDailyReportMetrics, fetchMetricasDiariasApi } from '../services/reportService'
 import { getTodayLocalDateString } from '../utils/formatters'
 import { useExportReportPdf } from './useExportReportPdf'
 import { useSendReportEmail } from './useSendReportEmail'
@@ -7,7 +7,7 @@ import { useFeedbackNotice } from './useFeedbackNotice'
 
 /**
  * Hook personalizado para orquestar el estado de Secretaría, el cómputo de métricas
- * y delegar la exportación en PDF y el despacho de correos en hooks especializados.
+ * reales desde el backend y delegar la exportación en PDF y el despacho de correos.
  */
 export function useSecretariaReport({ tickets = [], userData = null }) {
   const [jornadaDate, setJornadaDate] = useState(() => getTodayLocalDateString())
@@ -20,10 +20,29 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
     }
   }, [jornadaDate])
 
-  // Métricas dinámicas calculadas según la fecha seleccionada de forma memorizada
-  const metrics = useMemo(() => {
-    return computeDailyReportMetrics(tickets, jornadaDate)
-  }, [tickets, jornadaDate])
+  const [metrics, setMetrics] = useState(() => computeDailyReportMetrics(tickets, jornadaDate))
+
+  // Sincronizar métricas consolidadas con el backend
+  useEffect(() => {
+    let cancelled = false
+    async function loadBackendMetrics() {
+      try {
+        const backendMetrics = await fetchMetricasDiariasApi(jornadaDate)
+        if (!cancelled && backendMetrics) {
+          setMetrics(backendMetrics)
+        }
+      } catch (err) {
+        console.warn('Utilizando cómputo asistencial de métricas:', err)
+        if (!cancelled) {
+          setMetrics(computeDailyReportMetrics(tickets, jornadaDate))
+        }
+      }
+    }
+    loadBackendMetrics()
+    return () => {
+      cancelled = true
+    }
+  }, [jornadaDate, tickets])
 
   // Total de pacientes para proporciones visuales
   const totalPacientes = useMemo(() => {
@@ -47,7 +66,7 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
     [totalPacientes]
   )
 
-  // Hook reutilizable para exportación de PDF
+  // Hook reutilizable para exportación de PDF (conectado con backend)
   const { handleExportPdf } = useExportReportPdf({
     jornadaDate,
     metrics,
@@ -55,7 +74,7 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
     onSuccessNotice: showNotice
   })
 
-  // Hook reutilizable para despacho por correo
+  // Hook reutilizable para despacho por correo SMTP (conectado con backend)
   const { handleSendEmail, isSendingEmail } = useSendReportEmail({
     jornadaDate,
     recipientEmail: userData?.email,
