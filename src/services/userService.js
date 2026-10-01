@@ -1,17 +1,7 @@
-const LOCAL_USERS_KEY = 'sgtp_users_db'
-
-function getUsersFromStorage() {
-  const stored = localStorage.getItem(LOCAL_USERS_KEY)
-  if (!stored) return []
-  return JSON.parse(stored)
-}
-
-function saveUsersToStorage(users) {
-  localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users))
-}
+import { getRuntimeUsers, saveRuntimeUsers } from './runtimeUserStore'
 
 export async function fetchAllStaffApi() {
-  const users = getUsersFromStorage()
+  const users = getRuntimeUsers()
   return users.map((u) => ({
     id: u.id,
     nombre: u.nombre,
@@ -36,7 +26,7 @@ export async function createStaffUserApi(currentUserRole, newUserPayload) {
     throw new Error('Permisos insuficientes para crear personal.')
   }
 
-  const users = getUsersFromStorage()
+  const users = getRuntimeUsers()
   const exists = users.find((u) => u.email.toLowerCase() === newUserPayload.email.toLowerCase())
   if (exists) throw new Error('Ya existe un usuario con este correo electrónico.')
 
@@ -55,16 +45,35 @@ export async function createStaffUserApi(currentUserRole, newUserPayload) {
   }
 
   users.push(created)
-  saveUsersToStorage(users)
+  saveRuntimeUsers(users)
   return created
 }
 
 export async function toggleShiftExceptionApi(userId, habilitado) {
-  const users = getUsersFromStorage()
+  const users = getRuntimeUsers()
   const user = users.find((u) => u.id === Number(userId))
   if (!user) throw new Error('Usuario no encontrado.')
 
   user.dentro_horario = habilitado
-  saveUsersToStorage(users)
+  saveRuntimeUsers(users)
   return user
+}
+
+export async function deleteStaffUserApi(currentUserRole, userId) {
+  const users = getRuntimeUsers()
+  const user = users.find((u) => u.id === Number(userId))
+
+  if (!user) throw new Error('Usuario no encontrado.')
+
+  if (currentUserRole === 'Jefa') {
+    if (user.rol === 'Admin' || user.rol === 'Jefa') {
+      throw new Error('La Jefa no puede eliminar usuarios con rol administrativo.')
+    }
+  } else if (currentUserRole !== 'Admin') {
+    throw new Error('Permisos insuficientes para eliminar personal.')
+  }
+
+  const filteredUsers = users.filter((u) => u.id !== Number(userId))
+  saveRuntimeUsers(filteredUsers)
+  return { deletedId: Number(userId), deletedUser: user }
 }

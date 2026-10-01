@@ -17,8 +17,8 @@ export const BoxContextProvider = ({ children }) => {
     try {
       const data = await fetchBoxesApi()
       setBoxes(data)
-    } catch (err) {
-      console.error('Error fetching boxes:', err)
+    } catch (error) {
+      console.error('Error fetching boxes:', error)
     }
   }, [])
 
@@ -26,14 +26,18 @@ export const BoxContextProvider = ({ children }) => {
     refreshBoxes()
   }, [refreshBoxes])
 
-  const changeBoxStatus = useCallback(async (boxNum, newStatus) => {
+  const changeBoxStatus = useCallback(async (boxNumero, nuevoEstado) => {
     try {
-      const updated = await updateBoxStateApi(boxNum, newStatus)
-      setBoxes((prev) => prev.map((b) => (b.numero === Number(boxNum) ? updated : b)))
-      return updated
-    } catch (err) {
-      console.error('Error updating box status:', err)
-      throw err
+      const updatedBox = await updateBoxStateApi(boxNumero, nuevoEstado)
+      setBoxes((previousBoxes) =>
+        previousBoxes.map((currentBox) =>
+          currentBox.numero === Number(boxNumero) ? updatedBox : currentBox
+        )
+      )
+      return updatedBox
+    } catch (error) {
+      console.error('Error updating box status:', error)
+      throw error
     }
   }, [])
 

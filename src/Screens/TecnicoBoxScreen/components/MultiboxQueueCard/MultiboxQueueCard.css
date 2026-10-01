@@ -1,0 +1,148 @@
+.multibox-queue-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  box-shadow: var(--shadow-sm);
+}
+
+.multibox-queue-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.multibox-queue-card__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.multibox-queue-card__live-icon {
+  width: 18px;
+  height: 18px;
+  color: #0284c7;
+  animation: pulseQueue 1.5s infinite;
+}
+
+@keyframes pulseQueue {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.multibox-queue-card__title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.multibox-queue-card__badge {
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.multibox-queue-card__table-wrapper {
+  overflow-x: auto;
+}
+
+.multibox-queue-card__table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.multibox-queue-card__th {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.multibox-queue-card__td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.88rem;
+}
+
+.multibox-queue-card__row--top-priority {
+  background: #fff8f6;
+}
+
+.multibox-queue-card__call-pill {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0284c7;
+}
+
+.multibox-queue-card__patient-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.multibox-queue-card__patient-name {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.multibox-queue-card__patient-dni {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.multibox-queue-card__wait-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: #d97706;
+  font-weight: 600;
+}
+
+.multibox-queue-card__wait-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.multibox-queue-card__studies {
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.multibox-queue-card__call-btn {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0284c7;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.multibox-queue-card__call-btn:hover:not(:disabled) {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.multibox-queue-card__call-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.multibox-queue-card__empty {
+  padding: 30px;
+  text-align: center;
+  color: var(--text-muted);
+}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Camera, Upload, Check, X, Sparkles, AlertCircle, FileText } from 'lucide-react'
-import { MASTER_LAB_STUDIES, simulateOcrPrescriptionExtraction } from '../../services/ocrService'
+import { Camera, Upload, Check, X, Sparkles, FileText } from 'lucide-react'
+import { simulateOcrPrescriptionExtraction } from '../../services/ocrService'
 import './RecipeOcrModal.css'
 
 export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
@@ -51,58 +51,58 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   }
 
   return (
-    <div className="ocr-modal-overlay">
-      <div className="ocr-modal-card">
-        <button className="btn-close-modal" onClick={onClose}>
+    <div className="ocr-modal">
+      <div className="ocr-modal__card">
+        <button className="ocr-modal__close-btn" onClick={onClose}>
           <X size={20} />
         </button>
 
-        <div className="ocr-modal-header">
-          <div className="ocr-chip-ai">
+        <div className="ocr-modal__header">
+          <div className="ocr-modal__chip-ai">
             <Sparkles size={16} />
             <span>IA On-Premise (PaddleOCR / TrOCR)</span>
           </div>
-          <h3>Escaneo y Reconocimiento de Receta Médica</h3>
-          <p>
+          <h3 className="ocr-modal__title">Escaneo y Reconocimiento de Receta Médica</h3>
+          <p className="ocr-modal__subtitle">
             Procesamiento seguro en memoria volátil de la red institucional sin salida a la nube (Cumplimiento PHI).
           </p>
         </div>
 
         {!ocrResult ? (
-          <div className="ocr-upload-step">
+          <div className="ocr-modal__step-upload">
             {imagePreview ? (
-              <div className="image-preview-container">
-                <img src={imagePreview} alt="Receta médica" className="preview-img" />
-                <button className="btn-reupload" onClick={() => setImagePreview(null)}>
+              <div className="ocr-modal__preview-container">
+                <img src={imagePreview} alt="Receta médica" className="ocr-modal__preview-image" />
+                <button className="ocr-modal__reupload-btn" onClick={() => setImagePreview(null)}>
                   Cambiar imagen
                 </button>
               </div>
             ) : (
-              <div className="dropzone">
-                <Camera size={44} className="dropzone-icon" />
-                <p className="dropzone-text">Arrastre o seleccione una fotografía de la orden médica</p>
-                <div className="dropzone-buttons">
-                  <label className="btn-browse-file">
+              <div className="ocr-modal__dropzone">
+                <Camera size={44} className="ocr-modal__dropzone-icon" />
+                <p className="ocr-modal__dropzone-text">Arrastre o seleccione una fotografía de la orden médica</p>
+                <div className="ocr-modal__dropzone-buttons">
+                  <label className="ocr-modal__browse-btn">
                     <Upload size={16} />
                     Subir archivo
                     <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
                   </label>
-                  <button type="button" className="btn-sample-file" onClick={handleSimulateSampleImage}>
+                  <button type="button" className="ocr-modal__sample-btn" onClick={handleSimulateSampleImage}>
                     Usar receta de prueba
                   </button>
                 </div>
               </div>
             )}
 
-            <div className="ocr-actions">
+            <div className="ocr-modal__actions">
               <button
-                className="btn-run-ocr"
+                className="ocr-modal__run-btn"
                 disabled={!imagePreview || analyzing}
                 onClick={handleProcessOcr}
               >
                 {analyzing ? (
                   <>
-                    <span className="spinner-mini" />
+                    <span className="ocr-modal__spinner" />
                     Segmentando texto manuscrito con IA...
                   </>
                 ) : (
@@ -115,41 +115,41 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
             </div>
           </div>
         ) : (
-          <div className="ocr-human-loop-step">
-            <div className="human-loop-alert">
-              <Check size={18} className="check-icon" />
-              <div>
+          <div className="ocr-modal__step-review">
+            <div className="ocr-modal__alert">
+              <Check size={18} className="ocr-modal__alert-icon" />
+              <div className="ocr-modal__alert-content">
                 <strong>Revisión Humana Asistida (Human-in-the-Loop)</strong>
                 <p>La IA detectó las siguientes prácticas. Modifique o confirme los estudios antes de emitir el ticket:</p>
               </div>
             </div>
 
-            <div className="raw-text-preview">
+            <div className="ocr-modal__raw-preview">
               <FileText size={15} />
               <span>Texto extraído: "{ocrResult.extractedRawText}"</span>
             </div>
 
-            <div className="studies-selection-grid">
+            <div className="ocr-modal__studies-grid">
               {['Hemograma', 'Bioquimica', 'Orina', 'Cultivo', 'Otro'].map((cat) => {
                 const isSelected = selectedStudyNames.includes(cat)
                 return (
                   <label
                     key={cat}
-                    className={`study-checkbox-item ${isSelected ? 'selected' : ''}`}
+                    className={`ocr-modal__study-item ${isSelected ? 'ocr-modal__study-item--selected' : ''}`}
                     onClick={() => toggleStudy(cat)}
                   >
-                    <input type="checkbox" checked={isSelected} readOnly />
-                    <span className="study-cat-name">{cat}</span>
+                    <input type="checkbox" className="ocr-modal__study-checkbox" checked={isSelected} readOnly />
+                    <span className="ocr-modal__study-name">{cat}</span>
                   </label>
                 )
               })}
             </div>
 
-            <div className="ocr-actions">
-              <button className="btn-confirm-studies" onClick={handleConfirm}>
+            <div className="ocr-modal__actions">
+              <button className="ocr-modal__confirm-btn" onClick={handleConfirm}>
                 Confirmar Estudios ({selectedStudyNames.length})
               </button>
-              <button className="btn-cancel-ocr" onClick={() => setOcrResult(null)}>
+              <button className="ocr-modal__cancel-btn" onClick={() => setOcrResult(null)}>
                 Volver a escanear
               </button>
             </div>

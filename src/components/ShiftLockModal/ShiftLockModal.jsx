@@ -7,32 +7,32 @@ export default function ShiftLockModal({ user }) {
   const { logout, toggleShiftLockSimulation } = useAuth()
 
   return (
-    <div className="shift-lock-overlay">
-      <div className="shift-lock-card">
-        <div className="shift-lock-icon-wrap">
-          <Clock size={42} className="shift-lock-icon" />
+    <div className="shift-lock">
+      <div className="shift-lock__card">
+        <div className="shift-lock__icon-wrap">
+          <Clock className="shift-lock__icon" />
         </div>
-        <h2>Acceso Restringido por Horario</h2>
-        <p className="shift-lock-desc">
+        <h2 className="shift-lock__title">Acceso Restringido por Horario</h2>
+        <p className="shift-lock__desc">
           Estimado/a <strong>{user?.nombre}</strong> (Rol: <strong>{user?.rol}</strong>), su acceso al sistema se encuentra restringido fuera de su turno laboral asignado:
         </p>
 
-        <div className="shift-info-box">
-          <AlertTriangle size={18} className="warn-icon" />
-          <span>Turno registrado: <strong>{user?.turno || 'No asignado'}</strong></span>
+        <div className="shift-lock__info-box">
+          <AlertTriangle className="shift-lock__info-icon" />
+          <span className="shift-lock__info-text">Turno registrado: <strong>{user?.turno || 'No asignado'}</strong></span>
         </div>
 
-        <p className="shift-note">
+        <p className="shift-lock__note">
           Las extensiones por horas extras o rotación de turno deben ser habilitadas y validadas por el rol de <strong>Jefa</strong> o <strong>Admin</strong>.
         </p>
 
-        <div className="shift-actions">
-          <button className="btn-shift-toggle" onClick={toggleShiftLockSimulation}>
-            <RefreshCw size={16} />
+        <div className="shift-lock__actions">
+          <button className="shift-lock__btn-toggle" onClick={toggleShiftLockSimulation}>
+            <RefreshCw className="shift-lock__btn-icon" />
             Simular ingreso dentro de turno (Demo)
           </button>
-          <button className="btn-shift-logout" onClick={logout}>
-            <LogOut size={16} />
+          <button className="shift-lock__btn-logout" onClick={logout}>
+            <LogOut className="shift-lock__btn-icon" />
             Cerrar Sesión
           </button>
         </div>

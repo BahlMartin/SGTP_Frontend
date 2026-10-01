@@ -1,4 +1,4 @@
-.ocr-modal-overlay {
+.ocr-modal {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.65);
@@ -10,7 +10,7 @@
   padding: 20px;
 }
 
-.ocr-modal-card {
+.ocr-modal__card {
   background: #ffffff;
   border-radius: var(--radius-xl);
   max-width: 540px;
@@ -32,7 +32,21 @@
   }
 }
 
-.ocr-chip-ai {
+.ocr-modal__close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: #94a3b8;
+  padding: 4px;
+  border-radius: 50%;
+}
+
+.ocr-modal__close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.ocr-modal__chip-ai {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -45,20 +59,25 @@
   margin-bottom: 8px;
 }
 
-.ocr-modal-header h3 {
+.ocr-modal__title {
   font-size: 1.25rem;
   color: var(--text-primary);
   margin-bottom: 6px;
 }
 
-.ocr-modal-header p {
+.ocr-modal__subtitle {
   font-size: 0.82rem;
   color: var(--text-muted);
   line-height: 1.4;
   margin-bottom: 20px;
 }
 
-.dropzone {
+.ocr-modal__step-upload {
+  display: flex;
+  flex-direction: column;
+}
+
+.ocr-modal__dropzone {
   border: 2px dashed #cbd5e1;
   border-radius: var(--radius-lg);
   padding: 30px 20px;
@@ -70,23 +89,23 @@
   justify-content: center;
 }
 
-.dropzone-icon {
+.ocr-modal__dropzone-icon {
   color: #64748b;
   margin-bottom: 12px;
 }
 
-.dropzone-text {
+.ocr-modal__dropzone-text {
   font-size: 0.9rem;
   color: #475569;
   margin-bottom: 16px;
 }
 
-.dropzone-buttons {
+.ocr-modal__dropzone-buttons {
   display: flex;
   gap: 10px;
 }
 
-.btn-browse-file {
+.ocr-modal__browse-btn {
   background: #0284c7;
   color: #ffffff;
   font-size: 0.85rem;
@@ -99,7 +118,7 @@
   gap: 6px;
 }
 
-.btn-sample-file {
+.ocr-modal__sample-btn {
   background: #ffffff;
   color: #0f172a;
   border: 1px solid #cbd5e1;
@@ -109,27 +128,32 @@
   border-radius: var(--radius-md);
 }
 
-.image-preview-container {
+.ocr-modal__preview-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
 }
 
-.preview-img {
+.ocr-modal__preview-image {
   max-height: 200px;
   border-radius: var(--radius-md);
   border: 1px solid #cbd5e1;
   object-fit: cover;
 }
 
-.btn-reupload {
+.ocr-modal__reupload-btn {
   font-size: 0.8rem;
   color: #0284c7;
   text-decoration: underline;
 }
 
-.human-loop-alert {
+.ocr-modal__step-review {
+  display: flex;
+  flex-direction: column;
+}
+
+.ocr-modal__alert {
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
   border-radius: var(--radius-md);
@@ -141,12 +165,16 @@
   font-size: 0.85rem;
 }
 
-.human-loop-alert .check-icon {
+.ocr-modal__alert-icon {
   flex-shrink: 0;
   color: #16a34a;
 }
 
-.raw-text-preview {
+.ocr-modal__alert-content p {
+  margin-top: 2px;
+}
+
+.ocr-modal__raw-preview {
   background: #f1f5f9;
   border-radius: var(--radius-sm);
   padding: 8px 12px;
@@ -158,14 +186,14 @@
   margin-bottom: 16px;
 }
 
-.studies-selection-grid {
+.ocr-modal__studies-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 10px;
   margin-bottom: 20px;
 }
 
-.study-checkbox-item {
+.ocr-modal__study-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -178,20 +206,28 @@
   font-size: 0.88rem;
 }
 
-.study-checkbox-item.selected {
+.ocr-modal__study-item--selected {
   background: #e0f2fe;
   border-color: #38bdf8;
   color: #0369a1;
   font-weight: 600;
 }
 
-.ocr-actions {
+.ocr-modal__study-checkbox {
+  cursor: pointer;
+}
+
+.ocr-modal__study-name {
+  user-select: none;
+}
+
+.ocr-modal__actions {
   display: flex;
   gap: 12px;
   margin-top: 18px;
 }
 
-.btn-run-ocr {
+.ocr-modal__run-btn {
   width: 100%;
   background: #0284c7;
   color: #ffffff;
@@ -204,12 +240,12 @@
   gap: 8px;
 }
 
-.btn-run-ocr:disabled {
+.ocr-modal__run-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-confirm-studies {
+.ocr-modal__confirm-btn {
   flex: 1;
   background: #16a34a;
   color: #ffffff;
@@ -218,7 +254,11 @@
   border-radius: var(--radius-md);
 }
 
-.btn-cancel-ocr {
+.ocr-modal__confirm-btn:hover {
+  background: #15803d;
+}
+
+.ocr-modal__cancel-btn {
   background: #f1f5f9;
   color: #475569;
   font-weight: 600;
@@ -226,7 +266,11 @@
   border-radius: var(--radius-md);
 }
 
-.spinner-mini {
+.ocr-modal__cancel-btn:hover {
+  background: #e2e8f0;
+}
+
+.ocr-modal__spinner {
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.4);

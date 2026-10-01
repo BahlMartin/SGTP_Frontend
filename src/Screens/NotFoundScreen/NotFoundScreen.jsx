@@ -7,12 +7,12 @@ export default function NotFoundScreen() {
   const navigate = useNavigate()
 
   return (
-    <div className="not-found-container">
-      <div className="not-found-card">
-        <AlertTriangle size={54} className="not-found-icon" />
-        <h1>404 - Pantalla No Encontrada</h1>
-        <p>El recurso sanitario solicitado no existe o fue reubicado.</p>
-        <button className="btn-go-home" onClick={() => navigate('/')}>
+    <div className="not-found">
+      <div className="not-found__card">
+        <AlertTriangle size={54} className="not-found__icon" />
+        <h1 className="not-found__title">404 - Pantalla No Encontrada</h1>
+        <p className="not-found__desc">El recurso sanitario solicitado no existe o fue reubicado.</p>
+        <button className="not-found__btn" onClick={() => navigate('/')}>
           <Home size={18} />
           Volver al Inicio
         </button>

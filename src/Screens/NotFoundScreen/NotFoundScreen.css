@@ -1,4 +1,4 @@
-.not-found-container {
+.not-found {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -7,7 +7,7 @@
   padding: 24px;
 }
 
-.not-found-card {
+.not-found__card {
   background: #ffffff;
   border-radius: var(--radius-xl);
   padding: 48px;
@@ -18,23 +18,23 @@
   border: 1px solid var(--border-card);
 }
 
-.not-found-icon {
+.not-found__icon {
   color: #eab308;
   margin-bottom: 16px;
 }
 
-.not-found-card h1 {
+.not-found__title {
   font-size: 1.4rem;
   margin-bottom: 10px;
 }
 
-.not-found-card p {
+.not-found__desc {
   font-size: 0.95rem;
   color: var(--text-secondary);
   margin-bottom: 24px;
 }
 
-.btn-go-home {
+.not-found__btn {
   background: #0284c7;
   color: #ffffff;
   font-weight: 700;
@@ -43,4 +43,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+.not-found__btn:hover {
+  background: #0369a1;
 }

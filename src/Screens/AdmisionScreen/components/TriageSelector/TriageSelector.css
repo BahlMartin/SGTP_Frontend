@@ -1,0 +1,145 @@
+.triage-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.triage-selector__label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.triage-selector__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.triage-selector__card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+  outline: none;
+}
+
+.triage-selector__card:hover {
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.triage-selector__card--selected {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  box-shadow: 0 0 0 2px #0284c7;
+}
+
+.triage-selector__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.triage-selector__dot--guardia {
+  background-color: var(--triage-guardia);
+}
+
+.triage-selector__dot--medicos {
+  background-color: var(--triage-medicos);
+}
+
+.triage-selector__dot--discapacidad {
+  background-color: var(--triage-discapacidad);
+}
+
+.triage-selector__dot--oncologia {
+  background-color: var(--triage-oncologia);
+}
+
+.triage-selector__dot--extraccion_con_turno {
+  background-color: var(--triage-extraccion-turno);
+}
+
+.triage-selector__dot--extraccion_sin_turno {
+  background-color: var(--triage-extraccion-sin-turno);
+}
+
+.triage-selector__dot--otro {
+  background-color: var(--triage-otro);
+}
+
+.triage-selector__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.triage-selector__item-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.triage-selector__item-desc {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.triage-selector__justification {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.triage-selector__justification-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.triage-selector__justification-input {
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.triage-selector__justification-input:focus {
+  border-color: #0284c7;
+}
+
+.triage-selector__justification-input--error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.triage-selector__error-text {
+  font-size: 0.75rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+@media (max-width: 1024px) {
+  .triage-selector__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .triage-selector__grid {
+    grid-template-columns: 1fr;
+  }
+}
