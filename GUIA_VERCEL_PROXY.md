@@ -1,4 +1,4 @@
-﻿# 🚀 Guía de Despliegue en Vercel: Proxy Inverso, Variables y Ocultamiento de la API
+# 🚀 Guía de Despliegue en Vercel: Proxy Inverso, Variables y Ocultamiento de la API
 
 Esta guía detalla la arquitectura y los pasos para desplegar el frontend de **SGTP** en **Vercel**, enmascarando la dirección real del Backend, resolviendo problemas de **CORS** y gestionando entornos de forma segura.
 
@@ -32,12 +32,16 @@ Al configurar **Vercel Rewrites**, Vercel actúa como intermediario:
 ### A. [ercel.json](file:///vercel.json)
 Ubicado en la raíz del proyecto, define las reglas de redirección y proxy:
 
-\\\json
+```json
 {
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://tu-backend-api.com/api/:path*"
+      "source": "/api/(.*)",
+      "destination": "https://tu-backend-api.com/app/$1"
+    },
+    {
+      "source": "/api",
+      "destination": "https://tu-backend-api.com/app/"
     },
     {
       "source": "/(.*)",
@@ -45,7 +49,7 @@ Ubicado en la raíz del proyecto, define las reglas de redirección y proxy:
     }
   ]
 }
-\\\
+```
 
 > ⚠️ **Importante**:
 > - Reemplaza https://tu-backend-api.com por la URL o IP pública de tu servidor backend real (ej. https://sgtp-api.onrender.com o https://api.tuinstitucion.gob.ar).
