@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
+import { useAuth } from './AuthContext'
 import {
   fetchTicketsApi,
   fetchColaEsperaApi,
@@ -23,6 +24,7 @@ export const TriageQueueContext = createContext({
 })
 
 export const TriageQueueContextProvider = ({ children }) => {
+  const { isLogged } = useAuth()
   const [tickets, setTickets] = useState([])
   const [waitingQueue, setWaitingQueue] = useState([])
   const [loading, setLoading] = useState(false)
@@ -44,8 +46,13 @@ export const TriageQueueContextProvider = ({ children }) => {
   }, [])
 
   useEffect(() => {
-    refreshTickets()
-  }, [refreshTickets])
+    if (isLogged) {
+      refreshTickets()
+    } else {
+      setTickets([])
+      setWaitingQueue([])
+    }
+  }, [isLogged, refreshTickets])
 
   // Mapa de tickets actualmente en atención por box
   const activeInBoxes = useMemo(() => {

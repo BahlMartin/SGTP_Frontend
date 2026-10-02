@@ -23,6 +23,23 @@ export const AuthContextProvider = ({ children }) => {
     return Boolean(localStorage.getItem(STORAGE_KEY))
   })
 
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUserData(null)
+      setIsLogged(false)
+      try {
+        localStorage.removeItem(STORAGE_KEY)
+      } catch (e) {
+        console.warn('Error al limpiar almacenamiento local:', e)
+      }
+    }
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized)
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized)
+    }
+  }, [])
+
   const login = useCallback(async (email, password) => {
     const res = await loginApi(email, password)
     setUserData(res.user)

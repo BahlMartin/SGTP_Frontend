@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { useAuth } from './AuthContext'
 import { fetchBoxesApi, updateBoxStateApi } from '../services/boxService'
 
 export const BoxContext = createContext({
@@ -10,6 +11,7 @@ export const BoxContext = createContext({
 })
 
 export const BoxContextProvider = ({ children }) => {
+  const { isLogged } = useAuth()
   const [boxes, setBoxes] = useState([])
   const [currentBoxNumber, setCurrentBoxNumber] = useState(1)
 
@@ -23,8 +25,12 @@ export const BoxContextProvider = ({ children }) => {
   }, [])
 
   useEffect(() => {
-    refreshBoxes()
-  }, [refreshBoxes])
+    if (isLogged) {
+      refreshBoxes()
+    } else {
+      setBoxes([])
+    }
+  }, [isLogged, refreshBoxes])
 
   const changeBoxStatus = useCallback(async (boxNumero, nuevoEstado) => {
     try {

@@ -8,7 +8,7 @@ import ENVIRONMENT from '../config/enviroment.config'
 
 const BASE_URL = ENVIRONMENT.URL_API.replace(/\/$/, '')
 
-async function handleResponse(response) {
+async function handleResponse(response, endpoint = '') {
   const contentType = response.headers.get('content-type') || ''
 
   if (contentType.includes('application/pdf') || contentType.includes('application/octet-stream')) {
@@ -50,6 +50,19 @@ async function handleResponse(response) {
         if (fieldErrors) errorMsg = fieldErrors
       }
     }
+
+    // Si la sesión expiró o no hay credenciales (401 o 403 de DRF), notificar para limpiar estado local
+    const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/emergency-unlock')
+    const isUnauthenticated =
+      response.status === 401 ||
+      (response.status === 403 &&
+        typeof data?.detail === 'string' &&
+        data.detail.toLowerCase().includes('credenciales'))
+
+    if (isUnauthenticated && !isAuthEndpoint && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { message: errorMsg } }))
+    }
+
     const err = new Error(errorMsg)
     err.status = response.status
     err.data = data
@@ -86,7 +99,7 @@ export async function request(endpoint, options = {}) {
   }
 
   const response = await fetch(url, config)
-  return handleResponse(response)
+  return handleResponse(response, endpoint)
 }
 
 export const apiClient = {
