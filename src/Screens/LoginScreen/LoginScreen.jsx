@@ -2,15 +2,8 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, Eye, EyeOff, Loader2, User } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { getDemoCredentials } from '../../services/authService'
 import { getHomePathByRole } from '../../utils/navigation'
 import './LoginScreen.css'
-
-// Extraído fuera del componente para evitar recalcular y procesar en cada re-renderizado
-const DEMO_ACCOUNTS = getDemoCredentials().map((credentialItem) => ({
-  ...credentialItem,
-  primerNombre: credentialItem.nombre.split(' ')[0]
-}))
 
 export default function LoginScreen() {
   const [formData, setFormData] = useState({ email: '', password: '' })
@@ -18,7 +11,7 @@ export default function LoginScreen() {
   const [errorMsg, setErrorMsg] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const { login, switchDemoRole } = useAuth()
+  const { login } = useAuth()
   const navigate = useNavigate()
 
   const handleInputChange = (event) => {
@@ -57,12 +50,6 @@ export default function LoginScreen() {
     }
   }
 
-  const handleQuickLogin = (roleKey) => {
-    if (loading) return
-    switchDemoRole(roleKey)
-    navigate(getHomePathByRole(roleKey))
-  }
-
   return (
     <div className="login-screen">
       <div className="login-screen__card">
@@ -83,17 +70,17 @@ export default function LoginScreen() {
         <form onSubmit={handleSubmit} className="login-screen__form" noValidate>
           <div className="login-screen__field">
             <label htmlFor="login-email" className="login-screen__label">
-              Usuario
+              Correo Electrónico
             </label>
             <input
               id="login-email"
               name="email"
-              type="text"
+              type="email"
               autoComplete="username"
               className="login-screen__input"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="ej: admision@sgtp.hospital.gob.ar"
+              placeholder="ej: usuario@sgtp.hospital.gob.ar"
               disabled={loading}
               autoFocus
             />
@@ -144,27 +131,6 @@ export default function LoginScreen() {
             )}
           </button>
         </form>
-
-        {/* Acceso rápido para demostración y cambio de roles */}
-        <div className="login-screen__demo">
-          <div className="login-screen__demo-divider">
-            <span>Acceso Rápido por Perfil (Demo)</span>
-          </div>
-          <div className="login-screen__demo-grid">
-            {DEMO_ACCOUNTS.map((credentialItem) => (
-              <button
-                key={credentialItem.rol}
-                type="button"
-                className="login-screen__demo-pill"
-                onClick={() => handleQuickLogin(credentialItem.rol)}
-                disabled={loading}
-              >
-                <span className="login-screen__demo-role">{credentialItem.rol}</span>
-                <span className="login-screen__demo-user">{credentialItem.primerNombre}</span>
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   )

@@ -3,8 +3,10 @@ import {
   fetchAllStaffApi,
   createStaffUserApi,
   toggleShiftExceptionApi,
-  deleteStaffUserApi
+  deleteStaffUserApi,
+  reactivateStaffUserApi
 } from '../services/userService'
+import { unlockUserApi } from '../services/authService'
 
 export function useStaffManagement() {
   const [staffList, setStaffList] = useState([])
@@ -86,6 +88,30 @@ export function useStaffManagement() {
     }
   }
 
+  const unlockStaff = async (staffMemberId, onSuccess) => {
+    try {
+      await unlockUserApi(staffMemberId)
+      await loadStaff()
+      if (onSuccess) {
+        onSuccess('Cuenta de personal desbloqueada exitosamente.')
+      }
+    } catch (error) {
+      alert(error.message || 'Error al desbloquear al miembro del personal.')
+    }
+  }
+
+  const reactivateStaff = async (staffMemberId, onSuccess) => {
+    try {
+      await reactivateStaffUserApi(staffMemberId)
+      await loadStaff()
+      if (onSuccess) {
+        onSuccess('Cuenta de personal reactivada exitosamente.')
+      }
+    } catch (error) {
+      alert(error.message || 'Error al reactivar al miembro del personal.')
+    }
+  }
+
   return {
     staffList,
     loadingStaff,
@@ -93,6 +119,8 @@ export function useStaffManagement() {
     loadStaff,
     toggleShift,
     deleteStaff,
-    createStaff
+    createStaff,
+    unlockStaff,
+    reactivateStaff
   }
 }

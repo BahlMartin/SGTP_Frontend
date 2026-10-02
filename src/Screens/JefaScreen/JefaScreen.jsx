@@ -24,7 +24,9 @@ export default function JefaScreen() {
     staffList,
     toggleShift,
     deleteStaff,
-    createStaff
+    createStaff,
+    unlockStaff,
+    reactivateStaff
   } = useStaffManagement()
 
   const [jornadaDate, setJornadaDate] = useState(() => getTodayLocalDateString())
@@ -76,6 +78,14 @@ export default function JefaScreen() {
     deleteStaff(staffMemberId, staffMemberName, staffMemberRole, userData?.rol, showNotice)
   }
 
+  const handleUnlockStaff = (staffMemberId) => {
+    unlockStaff(staffMemberId, showNotice)
+  }
+
+  const handleReactivateStaff = (staffMemberId) => {
+    reactivateStaff(staffMemberId, showNotice)
+  }
+
   const handleSelectPatient = (selectedPatient) => {
     showNotice(
       `Paciente encontrado: ${selectedPatient.nombre} ${selectedPatient.apellido} (DNI ${selectedPatient.dni})`
@@ -108,6 +118,8 @@ export default function JefaScreen() {
               onOpenAddStaff={() => setShowAddStaffModal(true)}
               onToggleShift={handleToggleShift}
               onDeleteStaff={handleDeleteStaff}
+              onUnlockStaff={handleUnlockStaff}
+              onReactivateStaff={handleReactivateStaff}
             />
           </>
         }

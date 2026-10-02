@@ -7,7 +7,9 @@ export default function StaffShiftsCard({
   currentUserRole,
   onOpenAddStaff,
   onToggleShift,
-  onDeleteStaff
+  onDeleteStaff,
+  onUnlockStaff,
+  onReactivateStaff
 }) {
   return (
     <div className="jefa-screen__shifts-card">
@@ -71,8 +73,28 @@ export default function StaffShiftsCard({
                     <span className="jefa-screen__permanent-badge">Acceso 24hs</span>
                   )}
                 </td>
-                <td>
-                  {(currentUserRole === 'Admin' || currentUserRole === 'Jefa') && (
+                <td style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  {staffMember.cant_intentos >= 3 && onUnlockStaff && (
+                    <button
+                      className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
+                      style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                      title="Desbloquear cuenta por intentos fallidos"
+                      onClick={() => onUnlockStaff(staffMember.id)}
+                    >
+                      Desbloquear
+                    </button>
+                  )}
+                  {!staffMember.activo && onReactivateStaff && (
+                    <button
+                      className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
+                      style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                      title="Reactivar usuario"
+                      onClick={() => onReactivateStaff(staffMember.id)}
+                    >
+                      Reactivar
+                    </button>
+                  )}
+                  {(currentUserRole === 'Admin' || currentUserRole === 'Jefa') && staffMember.activo && (
                     <button
                       className="jefa-screen__btn-delete-staff"
                       title="Eliminar personal"
