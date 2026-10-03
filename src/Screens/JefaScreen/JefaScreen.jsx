@@ -7,6 +7,7 @@ import AuditTraceabilityCard from './components/AuditTraceabilityCard'
 import StaffShiftsCard from './components/StaffShiftsCard'
 import EditTicketModal from './components/EditTicketModal'
 import AddStaffModal from './components/AddStaffModal'
+import EditStaffModal from './components/EditStaffModal'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useTriageQueue } from '../../context/TriageQueueContext'
 import { useAuth } from '../../context/AuthContext'
@@ -25,6 +26,7 @@ export default function JefaScreen() {
     toggleShift,
     deleteStaff,
     createStaff,
+    updateStaff,
     unlockStaff,
     reactivateStaff
   } = useStaffManagement()
@@ -33,6 +35,7 @@ export default function JefaScreen() {
   const { notice: statusNotice, showNotice } = useFeedbackNotice(4000)
   const [editingTicket, setEditingTicket] = useState(null)
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
+  const [editingStaff, setEditingStaff] = useState(null)
 
   const labMatrix = useMemo(() => computeLabMatrix(tickets), [tickets])
 
@@ -68,6 +71,11 @@ export default function JefaScreen() {
 
   const handleCreateStaff = async (newStaffPayload) => {
     await createStaff(newStaffPayload, userData?.rol, showNotice)
+  }
+
+  const handleUpdateStaff = async (staffMemberId, updatePayload) => {
+    await updateStaff(staffMemberId, updatePayload, showNotice)
+    setEditingStaff(null)
   }
 
   const handleToggleShift = (staffMemberId, currentStatus) => {
@@ -118,6 +126,7 @@ export default function JefaScreen() {
               onOpenAddStaff={() => setShowAddStaffModal(true)}
               onToggleShift={handleToggleShift}
               onDeleteStaff={handleDeleteStaff}
+              onEditStaff={setEditingStaff}
               onUnlockStaff={handleUnlockStaff}
               onReactivateStaff={handleReactivateStaff}
             />
@@ -138,6 +147,14 @@ export default function JefaScreen() {
         onSubmit={handleCreateStaff}
         currentUserRole={userData?.rol}
       />
+
+      {editingStaff && (
+        <EditStaffModal
+          staffMember={editingStaff}
+          onClose={() => setEditingStaff(null)}
+          onSubmit={handleUpdateStaff}
+        />
+      )}
     </>
   )
 }

@@ -1,4 +1,5 @@
 import apiClient from './apiClient'
+import { getTriageApiValue, getTriageInfo } from '../constants/triage.constants'
 
 /**
  * Normaliza los tickets devueltos por DRF a la estructura estándar consumida en React.
@@ -28,7 +29,7 @@ export function normalizeTicket(t) {
     paciente_nombre: paciente.nombre || t.paciente_nombre || '',
     paciente_apellido: paciente.apellidos || t.paciente_apellido || '',
     paciente_obra_social: paciente.obra_social || t.paciente_obra_social || 'Particular',
-    clasificacion_triage: t.clasificacion_triage,
+    clasificacion_triage: getTriageInfo(t.clasificacion_triage).key,
     justificacion_otro: t.justificacion_otro || '',
     box_asignado: t.box_numero ? `Box ${t.box_numero}` : (t.box_asignado || null),
     estado: estadoNormalizado,
@@ -71,7 +72,9 @@ export async function fetchTicketByIdApi(idTicket) {
 export async function createTicketApi(ticketData) {
   const payload = {
     num_totem: ticketData.num_totem || (ticketData.num_llamado ? `T-${ticketData.num_llamado}` : ''),
-    clasificacion_triage: ticketData.clasificacion_triage || 'Extraccion sin Turno',
+    clasificacion_triage: getTriageApiValue(
+      ticketData.clasificacion_triage || 'Extraccion sin turno'
+    ),
     justificacion_otro: ticketData.justificacion_otro || '',
     estudios_ids: ticketData.estudios_ids || []
   }
@@ -99,7 +102,14 @@ export async function updateTicketByJefaApi(ticketId, updatedFields, userRole) {
     throw new Error('Solo el rol de Jefa o Admin tiene autorización para modificar tickets emitidos.')
   }
 
-  const response = await apiClient.patch(`/tickets/${ticketId}/`, updatedFields)
+  const payload = updatedFields.clasificacion_triage
+    ? {
+        ...updatedFields,
+        clasificacion_triage: getTriageApiValue(updatedFields.clasificacion_triage)
+      }
+    : updatedFields
+
+  const response = await apiClient.patch(`/tickets/${ticketId}/`, payload)
   return normalizeTicket(response)
 }
 

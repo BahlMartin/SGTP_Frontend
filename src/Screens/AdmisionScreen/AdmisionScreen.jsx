@@ -11,6 +11,38 @@ import { useAdmissionForm } from '../../hooks/useAdmissionForm'
 import { useTodayTickets } from '../../hooks/useTodayTickets'
 import './AdmisionScreen.css'
 
+function getTicketNumberKey(ticketNumber) {
+  const normalizedNumber = String(ticketNumber || '').trim().toUpperCase()
+  const digits = normalizedNumber.replace(/\D/g, '')
+  return digits || normalizedNumber
+}
+
+function isTicketNumberAlreadyUsed(ticketNumber, existingTickets) {
+  const ticketNumberKey = getTicketNumberKey(ticketNumber)
+  if (!ticketNumberKey) return false
+
+  return existingTickets.some((ticket) => {
+    const existingTicketNumber = ticket.num_totem || ticket.num_llamado
+    return getTicketNumberKey(existingTicketNumber) === ticketNumberKey
+  })
+}
+
+function generateUniqueCallNumber(existingTickets) {
+  const usedNumbers = new Set(
+    existingTickets.map((ticket) =>
+      getTicketNumberKey(ticket.num_totem || ticket.num_llamado)
+    )
+  )
+  const firstCandidate = Math.floor(Math.random() * 900)
+
+  for (let offset = 0; offset < 900; offset += 1) {
+    const candidate = String(100 + ((firstCandidate + offset) % 900))
+    if (!usedNumbers.has(candidate)) return candidate
+  }
+
+  throw new Error('No quedan números de llamado disponibles entre 100 y 999 para hoy.')
+}
+
 /**
  * Pantalla principal de Admisión (Orquestador).
  * Coordina el formulario de admisión, la búsqueda rápida de pacientes,
@@ -34,9 +66,14 @@ export default function AdmisionScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [issuedTicket, setIssuedTicket] = useState(null)
   const [showOcrModal, setShowOcrModal] = useState(false)
+  const [admissionError, setAdmissionError] = useState('')
 
   // Filtrado de tickets emitidos hoy delegado al hook
   const todayTickets = useTodayTickets(tickets)
+  const enteredCallNumber = formData.numLlamado.trim()
+  const ticketNumberError = enteredCallNumber && isTicketNumberAlreadyUsed(enteredCallNumber, todayTickets)
+    ? `El número de llamado ${enteredCallNumber} ya fue utilizado hoy. Ingrese otro número para evitar duplicar el ticket.`
+    : ''
 
   const handleSelectPatientFromSearch = useCallback(
     (patientData) => {
@@ -51,6 +88,12 @@ export default function AdmisionScreen() {
 
   const handleSubmitAdmission = async (event) => {
     event.preventDefault()
+    setAdmissionError('')
+
+    if (ticketNumberError) {
+      setAdmissionError(ticketNumberError)
+      return
+    }
 
     const isFormValid = validateAdmissionForm()
     if (!isFormValid) return
@@ -62,7 +105,7 @@ export default function AdmisionScreen() {
         paciente_obra_social: formData.obraSocial.trim() || 'Particular',
         paciente_nombre: formData.nombre.trim(),
         paciente_apellido: formData.apellido.trim(),
-        num_llamado: formData.numLlamado.trim() || String(Math.floor(100 + Math.random() * 900)),
+        num_llamado: enteredCallNumber || generateUniqueCallNumber(todayTickets),
         clasificacion_triage: formData.selectedTriage,
         justificacion_otro: formData.justificacionOtro.trim(),
         estudios: formData.selectedStudies.length > 0 ? formData.selectedStudies : ['Rutina Básica'],
@@ -74,7 +117,13 @@ export default function AdmisionScreen() {
       resetAdmissionForm()
     } catch (submissionError) {
       console.error(submissionError)
-      alert(submissionError.message || 'Error al emitir el ticket.')
+      const serverMessage = submissionError.message || 'Error al emitir el ticket.'
+      const indicatesDuplicate = /duplic|unique|num_totem|num_llamado|ya existe/i.test(serverMessage)
+      setAdmissionError(
+        indicatesDuplicate
+          ? `No se pudo emitir el ticket porque el número de llamado ya está registrado. Verifique que no se repita. ${serverMessage}`
+          : serverMessage
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -97,7 +146,12 @@ export default function AdmisionScreen() {
           <AdmissionForm
             formData={formData}
             validationErrors={validationErrors}
-            onFieldChange={handleFieldChange}
+            ticketNumberError={ticketNumberError}
+            admissionError={admissionError}
+            onFieldChange={(fieldName, fieldValue) => {
+              setAdmissionError('')
+              handleFieldChange(fieldName, fieldValue)
+            }}
             onToggleStudy={handleToggleStudy}
             onOpenOcrModal={() => setShowOcrModal(true)}
             onSubmitForm={handleSubmitAdmission}

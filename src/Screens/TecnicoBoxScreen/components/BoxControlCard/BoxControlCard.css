@@ -30,6 +30,7 @@
   flex-direction: column;
   gap: 6px;
   margin-bottom: 18px;
+  position: relative;
 }
 
 .box-control-card__select-label {
@@ -39,7 +40,12 @@
 }
 
 .box-control-card__select-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
   height: 42px;
+  box-sizing: border-box;
   border: 1px solid #cbd5e1;
   border-radius: var(--radius-sm);
   padding: 0 12px;
@@ -47,12 +53,80 @@
   font-weight: 700;
   color: var(--text-primary);
   background: #ffffff;
+  cursor: pointer;
   outline: none;
   transition: border-color 0.15s;
 }
 
-.box-control-card__select-input:focus {
+.box-control-card__selector {
+  position: relative;
+}
+
+.box-control-card__select-input:focus,
+.box-control-card__select-input[aria-expanded='true'] {
   border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.box-control-card__select-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.box-control-card__select-icon {
+  width: 18px;
+  height: 18px;
+  color: #64748b;
+  transition: transform 0.15s ease;
+}
+
+.box-control-card__select-icon--open {
+  transform: rotate(180deg);
+}
+
+.box-control-card__options {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 168px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  box-shadow: var(--shadow-lg);
+}
+
+.box-control-card__option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.box-control-card__option:hover,
+.box-control-card__option:focus-visible {
+  outline: none;
+  background: #f0f9ff;
+}
+
+.box-control-card__option--selected {
+  background: #e0f2fe;
+  color: #0369a1;
 }
 
 .box-control-card__status-buttons {

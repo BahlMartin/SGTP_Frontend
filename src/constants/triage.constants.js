@@ -65,16 +65,40 @@ export const TRIAGE_CATEGORIES = {
 
 export const TRIAGE_LIST = Object.values(TRIAGE_CATEGORIES)
 
+function findTriageInfo(categoryKey) {
+  if (!categoryKey) return null
+
+  const normalizedKey = String(categoryKey)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+
+  return TRIAGE_LIST.find((category) =>
+    [category.key, category.id, category.label, category.code].some(
+      (value) =>
+        String(value)
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .toLowerCase() === normalizedKey
+    )
+  )
+}
+
 /**
  * Obtiene los metadatos de una categoría de triage por su key o id.
  * Retorna la categoría OTRO si no existe coincidencia.
  */
 export function getTriageInfo(categoryKey) {
-  if (!categoryKey) return TRIAGE_CATEGORIES.OTRO
-  const found = TRIAGE_LIST.find(
-    (category) =>
-      category.key.toLowerCase() === categoryKey.toLowerCase() ||
-      category.id.toLowerCase() === categoryKey.toLowerCase()
-  )
-  return found || TRIAGE_CATEGORIES.OTRO
+  return findTriageInfo(categoryKey) || TRIAGE_CATEGORIES.OTRO
+}
+
+export function getTriageApiValue(categoryKey) {
+  const category = findTriageInfo(categoryKey)
+  if (!category) {
+    throw new Error(`La categoría de triage "${categoryKey}" no es válida.`)
+  }
+
+  return category.id
 }

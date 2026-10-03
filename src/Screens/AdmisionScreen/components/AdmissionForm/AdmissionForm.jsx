@@ -11,6 +11,8 @@ import './AdmissionForm.css'
 export default function AdmissionForm({
   formData,
   validationErrors = {},
+  ticketNumberError = '',
+  admissionError = '',
   onFieldChange = () => {},
   onToggleStudy = () => {},
   onOpenOcrModal = () => {},
@@ -119,13 +121,27 @@ export default function AdmissionForm({
             <input
               id="admission-external-call-number"
               type="text"
-              className="admission-form__input admission-form__input--center"
+              className={`admission-form__input admission-form__input--center ${
+                ticketNumberError ? 'admission-form__input--error' : ''
+              }`}
               placeholder="ej: 104"
               value={formData.numLlamado}
               onChange={(event) => onFieldChange('numLlamado', event.target.value)}
+              aria-invalid={Boolean(ticketNumberError)}
             />
+            {ticketNumberError && (
+              <span className="admission-form__error-text" role="alert">
+                {ticketNumberError}
+              </span>
+            )}
           </div>
         </div>
+
+        {admissionError && (
+          <div className="admission-form__alert" role="alert" aria-live="assertive">
+            {admissionError}
+          </div>
+        )}
 
         {/* Categoría de Triage */}
         <TriageSelector
