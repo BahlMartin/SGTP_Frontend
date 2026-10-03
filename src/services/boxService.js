@@ -3,17 +3,59 @@ import { normalizeTicket } from './ticketService'
 
 let cachedBoxes = []
 
+function normalizeBoxStatus(rawStatus, isActive) {
+  const normalizedStatus = String(rawStatus || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, ' ')
+
+  if (normalizedStatus === 'disponible') return 'Disponible'
+  if (normalizedStatus === 'en atencion') return 'En atencion'
+  if (normalizedStatus === 'fuera de servicio') return 'Fuera de servicio'
+  if (isActive === false) return 'Fuera de servicio'
+  return rawStatus || 'Disponible'
+}
+
+function serializeBoxStatus(rawStatus) {
+  const normalizedStatus = String(rawStatus || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, ' ')
+
+  if (normalizedStatus === 'disponible') return 'Disponible'
+  if (normalizedStatus === 'en atencion') return 'En atención'
+  if (normalizedStatus === 'fuera de servicio') return 'Fuera de servicio'
+
+  throw new Error(`El estado de box "${rawStatus}" no es válido.`)
+}
+
 function normalizeBox(rawBox) {
   if (!rawBox) return null
+  const isActive = rawBox.activo !== false
+  const boxNumber = Number(rawBox.numero)
+
   return {
     ...rawBox,
     id: rawBox.id,
-    numero: rawBox.numero,
+    numero: Number.isFinite(boxNumber) ? boxNumber : rawBox.numero,
     nombre: `Box ${rawBox.numero}`,
-    estado: rawBox.estado || 'Disponible',
-    activo: rawBox.activo !== false,
+    estado: normalizeBoxStatus(rawBox.estado, isActive),
+    activo: isActive,
     discapacidad: Boolean(rawBox.discapacidad)
   }
+}
+
+function extractBoxList(response) {
+  if (Array.isArray(response)) return response
+
+  const list = response?.results || response?.data || response?.boxes
+  if (Array.isArray(list)) return list
+
+  throw new Error('La respuesta del servidor no contiene una lista válida de boxes.')
 }
 
 /**
@@ -21,8 +63,7 @@ function normalizeBox(rawBox) {
  */
 export async function fetchBoxesApi() {
   const response = await apiClient.get('/boxes/')
-  const listadoBoxes = Array.isArray(response) ? response : response.results || []
-  cachedBoxes = listadoBoxes.map(normalizeBox)
+  cachedBoxes = extractBoxList(response).map(normalizeBox).filter(Boolean)
   return cachedBoxes
 }
 
@@ -31,8 +72,7 @@ export async function fetchBoxesApi() {
  */
 export async function fetchBoxesEstadoGeneralApi() {
   const response = await apiClient.get('/boxes/estado-general/')
-  const listadoBoxes = Array.isArray(response) ? response : response.results || []
-  return listadoBoxes.map(normalizeBox)
+  return extractBoxList(response).map(normalizeBox).filter(Boolean)
 }
 
 /**
@@ -43,7 +83,8 @@ export async function resolveBoxId(boxIdentifier) {
     await fetchBoxesApi()
   }
   const boxEncontrado = cachedBoxes.find(
-    (currentBox) => currentBox.id === boxIdentifier || currentBox.numero === Number(boxIdentifier)
+    (currentBox) =>
+      currentBox.id === boxIdentifier || Number(currentBox.numero) === Number(boxIdentifier)
   )
   return boxEncontrado ? boxEncontrado.id : boxIdentifier
 }
@@ -60,9 +101,38 @@ export async function createBoxApi(boxData) {
 
 export async function updateBoxStateApi(boxIdentifier, nuevoEstado) {
   const boxId = await resolveBoxId(boxIdentifier)
-  const payload = typeof nuevoEstado === 'object' ? nuevoEstado : { estado: nuevoEstado }
+  const payload = typeof nuevoEstado === 'object'
+    ? { ...nuevoEstado, ...(nuevoEstado.estado ? { estado: serializeBoxStatus(nuevoEstado.estado) } : {}) }
+    : { estado: serializeBoxStatus(nuevoEstado) }
   const response = await apiClient.patch(`/boxes/${boxId}/`, payload)
-  return normalizeBox(response)
+  const normalizedResponse = normalizeBox(response)
+  const boxNumber = Number(boxIdentifier)
+  const cachedBoxIndex = cachedBoxes.findIndex(
+    (currentBox) => Number(currentBox.numero) === boxNumber
+  )
+  const existingBox = cachedBoxIndex >= 0 ? cachedBoxes[cachedBoxIndex] : {}
+  const hasServerStatus = response && response.estado
+  const updatedBox = {
+    ...existingBox,
+    ...(normalizedResponse || {}),
+    id: normalizedResponse?.id ?? existingBox.id ?? boxId,
+    numero: Number.isFinite(Number(normalizedResponse?.numero))
+      ? Number(normalizedResponse.numero)
+      : boxNumber,
+    nombre: normalizedResponse?.nombre || existingBox.nombre || `Box ${boxNumber}`,
+    estado: hasServerStatus && normalizedResponse
+      ? normalizedResponse.estado
+      : normalizeBoxStatus(payload.estado, undefined),
+    activo: normalizedResponse?.activo ?? existingBox.activo ?? true
+  }
+
+  if (cachedBoxIndex >= 0) {
+    cachedBoxes[cachedBoxIndex] = { ...cachedBoxes[cachedBoxIndex], ...updatedBox }
+  } else {
+    cachedBoxes.push(updatedBox)
+  }
+
+  return updatedBox
 }
 
 export async function deleteBoxApi(boxId) {

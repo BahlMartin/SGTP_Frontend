@@ -91,6 +91,17 @@
   font-weight: 500;
 }
 
+.admission-form__alert {
+  padding: 12px 14px;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-md);
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 .admission-form__submit-btn {
   background: #0284c7;
   color: #ffffff;

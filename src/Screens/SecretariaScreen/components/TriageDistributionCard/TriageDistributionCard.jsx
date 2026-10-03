@@ -23,7 +23,7 @@ export default function TriageDistributionCard({
   const renderColumnItems = (columnCategoriesList) => {
     return columnCategoriesList.map((categoryItem) => {
       const patientCount = triageDistribution[categoryItem.id] || 0
-      const percentageValue = calculatePercentage ? calculatePercentage(patientCount) : 5
+      const percentageValue = calculatePercentage ? calculatePercentage(patientCount) : 0
 
       return (
         <TriageDistributionItem
