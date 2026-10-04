@@ -34,9 +34,34 @@ export const AuthContextProvider = ({ children }) => {
       }
     }
 
+    const handleStorageChange = (event) => {
+      if (event.key !== STORAGE_KEY && event.key !== null) return
+
+      if (!event.newValue) {
+        setUserData(null)
+        setIsLogged(false)
+        return
+      }
+
+      try {
+        const nextUserData = JSON.parse(event.newValue)
+        if (!nextUserData || typeof nextUserData !== 'object' || !nextUserData.id) {
+          throw new Error('Los datos de sesión no contienen un usuario válido.')
+        }
+        setUserData(nextUserData)
+        setIsLogged(true)
+      } catch (error) {
+        console.error('No se pudo sincronizar la sesión entre pestañas:', error)
+        setUserData(null)
+        setIsLogged(false)
+      }
+    }
+
     window.addEventListener('auth:unauthorized', handleUnauthorized)
+    window.addEventListener('storage', handleStorageChange)
     return () => {
       window.removeEventListener('auth:unauthorized', handleUnauthorized)
+      window.removeEventListener('storage', handleStorageChange)
     }
   }, [])
 

@@ -8,7 +8,7 @@ export default function JefaHeader({ statusMessage }) {
       <div className="jefa-screen__header">
         <h1 className="jefa-screen__title">Supervisión</h1>
         <p className="jefa-screen__subtitle">
-          Metricas en tiempo real, auditoria y reportes diarios
+          Búsqueda de pacientes y gestión del personal asistencial
         </p>
       </div>
 

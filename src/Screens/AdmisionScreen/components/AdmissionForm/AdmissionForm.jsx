@@ -32,7 +32,7 @@ export default function AdmissionForm({
       </div>
 
       <form onSubmit={onSubmitForm} className="admission-form" noValidate>
-        {/* Fila 1: DNI y Obra Social */}
+        {/* Fila 1: DNI y número de afiliado */}
         <div className="admission-form__row">
           <div className="admission-form__field">
             <label htmlFor="admission-patient-dni" className="admission-form__label">
@@ -59,12 +59,17 @@ export default function AdmissionForm({
               Obra social
             </label>
             <input
-              id="admission-patient-obrasocial"
+              id="admission-patient-numero-afiliado"
               type="text"
+              inputMode="numeric"
               className="admission-form__input"
-              placeholder="ej: OSDE, PAMI, IOMA"
-              value={formData.obraSocial}
-              onChange={(event) => onFieldChange('obraSocial', event.target.value)}
+              placeholder="Número de afiliado"
+              value={formData.numeroAfiliado}
+              onChange={(event) =>
+                onFieldChange('numeroAfiliado', event.target.value.replace(/\D/g, ''))
+              }
+              pattern="[0-9]*"
+              autoComplete="off"
             />
           </div>
         </div>

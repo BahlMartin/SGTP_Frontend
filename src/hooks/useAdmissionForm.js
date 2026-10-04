@@ -16,7 +16,13 @@ export function useAdmissionForm() {
   const handleFieldChange = useCallback((fieldName, fieldValue) => {
     setFormData((previousFormData) => ({
       ...previousFormData,
-      [fieldName]: fieldValue
+      [fieldName]: fieldValue,
+      ...(
+        ['dni', 'nombre', 'apellido', 'numeroAfiliado'].includes(fieldName) &&
+        previousFormData[fieldName] !== fieldValue
+          ? { pacienteId: null }
+          : {}
+      )
     }))
 
     setValidationErrors((previousErrors) => {
@@ -32,12 +38,16 @@ export function useAdmissionForm() {
   /**
    * Agrega o remueve un estudio del listado seleccionado.
    */
-  const handleToggleStudy = useCallback((studyName) => {
+  const handleToggleStudy = useCallback((study) => {
     setFormData((previousFormData) => {
-      const alreadySelected = previousFormData.selectedStudies.includes(studyName)
+      const alreadySelected = previousFormData.selectedStudies.some(
+        (selectedStudy) => selectedStudy.id === study.id
+      )
       const updatedStudies = alreadySelected
-        ? previousFormData.selectedStudies.filter((studyItem) => studyItem !== studyName)
-        : [...previousFormData.selectedStudies, studyName]
+        ? previousFormData.selectedStudies.filter(
+            (selectedStudy) => selectedStudy.id !== study.id
+          )
+        : [...previousFormData.selectedStudies, study]
 
       return {
         ...previousFormData,
@@ -52,7 +62,13 @@ export function useAdmissionForm() {
   const handleSetStudies = useCallback((studiesList) => {
     setFormData((previousFormData) => ({
       ...previousFormData,
-      selectedStudies: Array.isArray(studiesList) ? studiesList : []
+      selectedStudies: Array.isArray(studiesList)
+        ? studiesList.map((study) => (
+            typeof study === 'string'
+              ? { id: null, nombre: study }
+              : { id: study.id ?? null, nombre: study.nombre || study.name || '' }
+          ))
+        : []
     }))
   }, [])
 
@@ -64,8 +80,9 @@ export function useAdmissionForm() {
 
     setFormData((previousFormData) => ({
       ...previousFormData,
+      pacienteId: patientData.id_paciente || patientData.id || null,
       dni: patientData.dni || '',
-      obraSocial: patientData.obraSocial || '',
+      numeroAfiliado: patientData.numeroAfiliado || '',
       nombre: patientData.nombre || '',
       apellido: patientData.apellido || ''
     }))

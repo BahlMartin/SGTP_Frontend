@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Camera, Upload, Check, X, Sparkles, FileText, AlertCircle } from 'lucide-react'
+import { Camera, Upload, Check, X, Sparkles, AlertCircle } from 'lucide-react'
 import { scanRecipeOcrApi } from '../../services/ocrService'
 import './RecipeOcrModal.css'
 
@@ -9,7 +9,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   const [analyzing, setAnalyzing] = useState(false)
   const [ocrError, setOcrError] = useState(null)
   const [ocrResult, setOcrResult] = useState(null)
-  const [selectedStudyNames, setSelectedStudyNames] = useState([])
+  const [selectedStudies, setSelectedStudies] = useState([])
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0]
@@ -27,8 +27,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     try {
       const res = await scanRecipeOcrApi(file)
       setOcrResult(res)
-      const names = (res.suggestedStudies || []).map((s) => s.nombre || s.categoria)
-      setSelectedStudyNames(Array.from(new Set(names)))
+      setSelectedStudies(res.suggestedStudies || [])
     } catch (err) {
       console.error('Error al procesar receta OCR:', err)
       setOcrError(err.message || 'No se pudo conectar con el microservicio OCR.')
@@ -37,14 +36,16 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     }
   }
 
-  const toggleStudy = (studyName) => {
-    setSelectedStudyNames((prev) =>
-      prev.includes(studyName) ? prev.filter((c) => c !== studyName) : [...prev, studyName]
+  const toggleStudy = (study) => {
+    setSelectedStudies((previousStudies) =>
+      previousStudies.some((selectedStudy) => selectedStudy.id === study.id)
+        ? previousStudies.filter((selectedStudy) => selectedStudy.id !== study.id)
+        : [...previousStudies, study]
     )
   }
 
   const handleConfirm = () => {
-    onConfirmStudies(selectedStudyNames)
+    onConfirmStudies(selectedStudies)
     onClose()
   }
 
@@ -130,28 +131,34 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
               </div>
             </div>
 
-            <div className="ocr-modal__studies-grid">
-              {(ocrResult.suggestedStudies && ocrResult.suggestedStudies.length > 0
-                ? ocrResult.suggestedStudies.map((s) => s.nombre)
-                : ['Hemograma', 'Bioquímica', 'Orina', 'Cultivo', 'Otro']
-              ).map((studyItem) => {
-                const isSelected = selectedStudyNames.includes(studyItem)
-                return (
-                  <label
-                    key={studyItem}
-                    className={`ocr-modal__study-item ${isSelected ? 'ocr-modal__study-item--selected' : ''}`}
-                    onClick={() => toggleStudy(studyItem)}
-                  >
-                    <input type="checkbox" className="ocr-modal__study-checkbox" checked={isSelected} readOnly />
-                    <span className="ocr-modal__study-name">{studyItem}</span>
-                  </label>
-                )
-              })}
-            </div>
+            {ocrResult.suggestedStudies?.length > 0 && (
+              <div className="ocr-modal__studies-grid">
+                {ocrResult.suggestedStudies.map((study) => {
+                  const isSelected = selectedStudies.some(
+                    (selectedStudy) => selectedStudy.id === study.id
+                  )
+                  return (
+                    <label
+                      key={study.id}
+                      className={`ocr-modal__study-item ${isSelected ? 'ocr-modal__study-item--selected' : ''}`}
+                      onClick={() => toggleStudy(study)}
+                    >
+                      <input
+                        type="checkbox"
+                        className="ocr-modal__study-checkbox"
+                        checked={isSelected}
+                        readOnly
+                      />
+                      <span className="ocr-modal__study-name">{study.nombre}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            )}
 
             <div className="ocr-modal__actions">
               <button className="ocr-modal__confirm-btn" onClick={handleConfirm}>
-                Confirmar Estudios ({selectedStudyNames.length})
+                Confirmar Estudios ({selectedStudies.length})
               </button>
               <button className="ocr-modal__cancel-btn" onClick={() => setOcrResult(null)}>
                 Volver a escanear

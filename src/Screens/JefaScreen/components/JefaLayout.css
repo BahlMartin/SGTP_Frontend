@@ -15,8 +15,8 @@
 
 .jefa-screen__grid {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(280px, 0.75fr) minmax(0, 1.75fr);
+  gap: 24px;
   align-items: start;
 }
 
@@ -33,7 +33,7 @@
 }
 
 .jefa-screen__search-panel {
-  margin-top: 20px;
+  margin: 0 0 24px;
   width: 100%;
 }
 
@@ -47,6 +47,6 @@
   }
 
   .jefa-screen__search-panel {
-    margin-top: 16px;
+    margin-bottom: 16px;
   }
 }

@@ -1,25 +1,21 @@
-import React, { useState, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import JefaLayout from './components/JefaLayout'
 import JefaHeader from './components/JefaHeader'
 import LabMatrixCard from './components/LabMatrixCard'
 import ActiveStaffCard from './components/ActiveStaffCard'
-import AuditTraceabilityCard from './components/AuditTraceabilityCard'
 import StaffShiftsCard from './components/StaffShiftsCard'
-import EditTicketModal from './components/EditTicketModal'
 import AddStaffModal from './components/AddStaffModal'
 import EditStaffModal from './components/EditStaffModal'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useTriageQueue } from '../../context/TriageQueueContext'
 import { useAuth } from '../../context/AuthContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
-import { useExportReportPdf } from '../../hooks/useExportReportPdf'
-import { useSendReportEmail } from '../../hooks/useSendReportEmail'
 import { useFeedbackNotice } from '../../hooks/useFeedbackNotice'
-import { getTodayLocalDateString } from '../../utils/formatters'
-import { computeDailyReportMetrics, computeLabMatrix } from '../../services/reportService'
+import { fetchAsignacionesBoxApi } from '../../services/boxService'
+import { computeLabMatrix } from '../../services/reportService'
 
 export default function JefaScreen() {
-  const { tickets, updateTicketAsJefa } = useTriageQueue()
+  const { tickets, refreshTickets } = useTriageQueue()
   const { userData } = useAuth()
   const {
     staffList,
@@ -31,43 +27,79 @@ export default function JefaScreen() {
     reactivateStaff
   } = useStaffManagement()
 
-  const [jornadaDate, setJornadaDate] = useState(() => getTodayLocalDateString())
   const { notice: statusNotice, showNotice } = useFeedbackNotice(4000)
-  const [editingTicket, setEditingTicket] = useState(null)
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
   const [editingStaff, setEditingStaff] = useState(null)
+  const [boxAssignments, setBoxAssignments] = useState([])
 
-  const labMatrix = useMemo(() => computeLabMatrix(tickets), [tickets])
+  useEffect(() => {
+    const refreshInterval = window.setInterval(() => {
+      refreshTickets()
+    }, 30_000)
 
-  const metrics = useMemo(
-    () => computeDailyReportMetrics(tickets, new Date(jornadaDate)),
-    [tickets, jornadaDate]
-  )
+    return () => window.clearInterval(refreshInterval)
+  }, [refreshTickets])
 
-  // Hook reutilizable para la generación y descarga del PDF
-  const { handleExportPdf } = useExportReportPdf({
-    jornadaDate,
-    metrics,
-    userData,
-    onSuccessNotice: showNotice
-  })
+  useEffect(() => {
+    let isMounted = true
+    fetchAsignacionesBoxApi()
+      .then((assignments) => {
+        if (isMounted) setBoxAssignments(assignments)
+      })
+      .catch((error) => {
+        console.error('Error al cargar las atenciones del personal:', error)
+        if (isMounted) {
+          showNotice(error.message || 'No se pudo cargar la carga de atenciones por personal.')
+        }
+      })
 
-  // Hook reutilizable para el envío del reporte por email
-  const { handleSendEmail } = useSendReportEmail({
-    jornadaDate,
-    recipientEmail: userData?.email,
-    onSuccessNotice: showNotice
-  })
-
-  const handleSaveTicketEdit = async (ticketId, updatePayload) => {
-    try {
-      await updateTicketAsJefa(ticketId, updatePayload, userData?.rol)
-      setEditingTicket(null)
-      showNotice('Ticket asistencial actualizado bajo auditoría inmutable de 24hs.')
-    } catch (errorInstance) {
-      alert(errorInstance.message || 'Error al actualizar el ticket.')
+    return () => {
+      isMounted = false
     }
-  }
+  }, [showNotice])
+
+  const workloadByStaff = useMemo(() => {
+    const completedTickets = tickets.filter(
+      (ticket) => ticket.estado === 'Atendido' || ticket.estado_backend === 'Finalizado'
+    )
+    const completedTicketIds = new Set(
+      completedTickets.map((ticket) => String(ticket.id_ticket || ticket.id))
+    )
+    const ticketsIssuedByStaff = {}
+
+    for (const ticket of tickets) {
+      const staffId = ticket.personal_admision
+      if (staffId !== null && staffId !== undefined) {
+        const key = String(staffId)
+        ticketsIssuedByStaff[key] = (ticketsIssuedByStaff[key] || 0) + 1
+      }
+    }
+
+    const boxPatientsByStaff = new Map()
+    for (const assignment of boxAssignments) {
+      const ticketId = assignment.ticket ? String(assignment.ticket) : ''
+      if (
+        !assignment.personal ||
+        !ticketId ||
+        !assignment.fecha_hora_final ||
+        assignment.motivo_cierre !== 'Finalizado' ||
+        !completedTicketIds.has(ticketId)
+      ) {
+        continue
+      }
+
+      const staffId = String(assignment.personal)
+      if (!boxPatientsByStaff.has(staffId)) boxPatientsByStaff.set(staffId, new Set())
+      boxPatientsByStaff.get(staffId).add(ticketId)
+    }
+
+    const patientsAttendedByBoxStaff = Object.fromEntries(
+      Array.from(boxPatientsByStaff, ([staffId, patientIds]) => [staffId, patientIds.size])
+    )
+
+    return { ticketsIssuedByStaff, patientsAttendedByBoxStaff }
+  }, [boxAssignments, tickets])
+  const labMatrix = useMemo(() => computeLabMatrix(tickets), [tickets])
 
   const handleCreateStaff = async (newStaffPayload) => {
     await createStaff(newStaffPayload, userData?.rol, showNotice)
@@ -106,39 +138,23 @@ export default function JefaScreen() {
         headerContent={<JefaHeader statusMessage={statusNotice} />}
         leftContent={
           <>
+            <ActiveStaffCard staffList={staffList} workloadByStaff={workloadByStaff} />
             <LabMatrixCard labMatrix={labMatrix} />
-            <ActiveStaffCard staffList={staffList} />
           </>
         }
         centerContent={
-          <>
-            <AuditTraceabilityCard
-              jornadaDate={jornadaDate}
-              onDateChange={setJornadaDate}
-              onExportPdf={handleExportPdf}
-              onSendEmail={handleSendEmail}
-              tickets={tickets}
-              onOpenEditTicket={setEditingTicket}
-            />
-            <StaffShiftsCard
-              staffList={staffList}
-              currentUserRole={userData?.rol}
-              onOpenAddStaff={() => setShowAddStaffModal(true)}
-              onToggleShift={handleToggleShift}
-              onDeleteStaff={handleDeleteStaff}
-              onEditStaff={setEditingStaff}
-              onUnlockStaff={handleUnlockStaff}
-              onReactivateStaff={handleReactivateStaff}
-            />
-          </>
+          <StaffShiftsCard
+            staffList={staffList}
+            currentUserRole={userData?.rol}
+            onOpenAddStaff={() => setShowAddStaffModal(true)}
+            onToggleShift={handleToggleShift}
+            onDeleteStaff={handleDeleteStaff}
+            onEditStaff={setEditingStaff}
+            onUnlockStaff={handleUnlockStaff}
+            onReactivateStaff={handleReactivateStaff}
+          />
         }
         searchContent={<PatientSearch onSelectPatient={handleSelectPatient} />}
-      />
-
-      <EditTicketModal
-        ticket={editingTicket}
-        onClose={() => setEditingTicket(null)}
-        onSave={handleSaveTicketEdit}
       />
 
       <AddStaffModal

@@ -43,16 +43,24 @@ export default function StudiesSelector({
       try {
         const studiesFromApi = await fetchStudiesApi(query)
         if (isCurrentSearch) {
-          const studyNames = studiesFromApi
-            .map((study) => (typeof study === 'string' ? study : study.nombre))
-            .filter(Boolean)
-          setStudiesResults(studyNames)
+          setStudiesResults(
+            studiesFromApi.filter((study) => study?.id && study?.nombre && study.activo)
+          )
         }
       } catch (error) {
         console.error('Error al buscar estudios:', error)
         if (isCurrentSearch) {
           setStudiesResults([])
-          setSearchError('No se pudo buscar en el catálogo de estudios. Intente nuevamente.')
+          const responseDetail =
+            error.status >= 400 &&
+            error.status < 500 &&
+            typeof error.data?.detail === 'string'
+              ? error.data.detail
+              : ''
+          setSearchError(
+            responseDetail ||
+              'No se pudo buscar en el catálogo de estudios. Intente nuevamente.'
+          )
         }
       } finally {
         if (isCurrentSearch) {
@@ -67,8 +75,8 @@ export default function StudiesSelector({
     }
   }, [searchQuery])
 
-  const handleSelectStudy = (studyName) => {
-    onToggleStudy(studyName)
+  const handleSelectStudy = (study) => {
+    onToggleStudy(study)
     setSearchQuery('')
     setStudiesResults([])
     setIsSearching(false)
@@ -94,15 +102,15 @@ export default function StudiesSelector({
 
       {selectedStudies.length > 0 && (
         <div className="studies-selector__selected" aria-label="Estudios seleccionados">
-          {selectedStudies.map((studyName) => (
-            <span className="studies-selector__selected-chip" key={studyName}>
+          {selectedStudies.map((study) => (
+            <span className="studies-selector__selected-chip" key={study.id ?? study.nombre}>
               <Check size={14} aria-hidden="true" />
-              {studyName}
+              {study.nombre}
               <button
                 type="button"
                 className="studies-selector__remove-btn"
-                onClick={() => onToggleStudy(studyName)}
-                aria-label={`Quitar ${studyName}`}
+                onClick={() => onToggleStudy(study)}
+                aria-label={`Quitar ${study.nombre}`}
               >
                 <X size={14} />
               </button>
@@ -145,25 +153,29 @@ export default function StudiesSelector({
               <div className="studies-selector__status studies-selector__status--error" role="alert">
                 {searchError}
               </div>
-            ) : studiesResults.filter((study) => !selectedStudies.includes(study)).length === 0 ? (
+            ) : studiesResults.filter(
+              (study) => !selectedStudies.some((selectedStudy) => selectedStudy.id === study.id)
+            ).length === 0 ? (
               <div className="studies-selector__status">
                 No se encontraron estudios disponibles.
               </div>
             ) : (
               <ul className="studies-selector__results">
                 {studiesResults
-                  .filter((study) => !selectedStudies.includes(study))
-                  .map((studyName) => (
-                    <li key={studyName}>
+                  .filter(
+                    (study) => !selectedStudies.some((selectedStudy) => selectedStudy.id === study.id)
+                  )
+                  .map((study) => (
+                    <li key={study.id}>
                       <button
                         type="button"
                         className="studies-selector__result"
-                        onClick={() => handleSelectStudy(studyName)}
+                        onClick={() => handleSelectStudy(study)}
                       >
                         <span className="studies-selector__result-icon">
                           <Check size={14} />
                         </span>
-                        {studyName}
+                        {study.nombre}
                       </button>
                     </li>
                   ))}

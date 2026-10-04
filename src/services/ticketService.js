@@ -29,6 +29,7 @@ export function normalizeTicket(t) {
     paciente_nombre: paciente.nombre || t.paciente_nombre || '',
     paciente_apellido: paciente.apellidos || t.paciente_apellido || '',
     paciente_obra_social: paciente.obra_social || t.paciente_obra_social || 'Particular',
+    paciente_numero_afiliado: paciente.num_obra_social || t.paciente_numero_afiliado || '',
     clasificacion_triage: getTriageInfo(t.clasificacion_triage).key,
     justificacion_otro: t.justificacion_otro || '',
     box_asignado: t.box_numero ? `Box ${t.box_numero}` : (t.box_asignado || null),
@@ -43,9 +44,28 @@ export function normalizeTicket(t) {
  * Obtiene todos los tickets registrados en el sistema.
  */
 export async function fetchTicketsApi() {
-  const response = await apiClient.get('/tickets/')
-  const list = Array.isArray(response) ? response : response.results || []
-  return list.map(normalizeTicket)
+  const allTickets = []
+  let page = 1
+  let hasNextPage = true
+
+  while (hasNextPage) {
+    const response = await apiClient.get(page === 1 ? '/tickets/' : `/tickets/?page=${page}`)
+    if (Array.isArray(response)) {
+      allTickets.push(...response)
+      hasNextPage = false
+      continue
+    }
+
+    if (!Array.isArray(response?.results)) {
+      throw new Error('La respuesta del servidor no contiene una lista válida de tickets.')
+    }
+
+    allTickets.push(...response.results)
+    hasNextPage = Boolean(response.next)
+    page += 1
+  }
+
+  return allTickets.map(normalizeTicket)
 }
 
 /**
@@ -86,7 +106,10 @@ export async function createTicketApi(ticketData) {
       dni: Number(String(ticketData.paciente_dni || ticketData.dni).replace(/\D/g, '')),
       nombre: ticketData.paciente_nombre || ticketData.nombre || 'Sin Nombre',
       apellidos: ticketData.paciente_apellido || ticketData.apellido || 'Sin Apellido',
-      obra_social: ticketData.paciente_obra_social || ticketData.obraSocial || 'Particular'
+      obra_social: ticketData.paciente_obra_social || 'No especificada',
+      num_obra_social: String(
+        ticketData.paciente_numero_afiliado || ticketData.numeroAfiliado || ''
+      ).replace(/\D/g, '')
     }
   }
 
@@ -136,7 +159,8 @@ export async function searchPatientsApi(query) {
             dni: String(found.dni),
             nombre: found.nombre,
             apellido: found.apellidos,
-            obraSocial: found.obra_social,
+            num_obra_social: found.num_obra_social || '',
+            numeroAfiliado: found.num_obra_social || '',
             id_paciente: found.id_paciente
           }
         ]
@@ -155,13 +179,15 @@ export async function searchPatientsApi(query) {
         String(p.dni).includes(q) ||
         (p.nombre && p.nombre.toLowerCase().includes(q)) ||
         (p.apellidos && p.apellidos.toLowerCase().includes(q)) ||
-        (p.obra_social && p.obra_social.toLowerCase().includes(q))
+        (p.obra_social && p.obra_social.toLowerCase().includes(q)) ||
+        (p.num_obra_social && p.num_obra_social.toLowerCase().includes(q))
       )
       .map((p) => ({
         dni: String(p.dni),
         nombre: p.nombre,
         apellido: p.apellidos,
-        obraSocial: p.obra_social,
+        num_obra_social: p.num_obra_social || '',
+        numeroAfiliado: p.num_obra_social || '',
         id_paciente: p.id_paciente
       }))
   } catch (err) {
