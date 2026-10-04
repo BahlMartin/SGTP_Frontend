@@ -13,19 +13,36 @@
   margin-bottom: 14px;
 }
 
+.online-boxes-card__message {
+  margin: 0;
+  color: var(--text-muted, #64748b);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.online-boxes-card__message--error {
+  color: #b91c1c;
+}
+
 .online-boxes-card__list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   margin: 0;
-  padding: 0;
+  padding: 0 4px 0 0;
+  max-height: 142px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .online-boxes-card__item {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+  flex-shrink: 0;
 }
 
 .online-boxes-card__label {

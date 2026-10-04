@@ -157,6 +157,22 @@
   cursor: pointer;
 }
 
+.jefa-screen__btn-edit-staff {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 7px;
+  border-radius: 4px;
+  background: #e0f2fe;
+  color: #075985;
+  border: 1px solid #7dd3fc;
+  cursor: pointer;
+}
+
+.jefa-screen__btn-edit-staff:hover {
+  background: #bae6fd;
+}
+
 .jefa-screen__btn-delete-staff:hover {
   background: #fecaca;
 }

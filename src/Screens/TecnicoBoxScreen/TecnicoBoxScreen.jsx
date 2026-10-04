@@ -12,6 +12,8 @@ import './TecnicoBoxScreen.css'
 export default function TecnicoBoxScreen() {
   const {
     boxes,
+    boxesLoading,
+    boxesError,
     currentBoxNumber,
     setCurrentBoxNumber,
     currentBoxKey,
@@ -50,6 +52,7 @@ export default function TecnicoBoxScreen() {
           {/* Columna Izquierda: Panel de control de box, Búsqueda y Boxes en línea */}
           <div className="box-screen__left-column">
             <BoxControlCard
+              boxesList={boxes}
               currentBoxNumber={currentBoxNumber}
               onSelectBox={(boxNumber) => setCurrentBoxNumber(boxNumber)}
               currentStatus={activeBoxData.estado}
@@ -65,7 +68,11 @@ export default function TecnicoBoxScreen() {
               }}
             />
 
-            <OnlineBoxesCard boxesList={boxes} />
+            <OnlineBoxesCard
+              boxesList={boxes}
+              isLoading={boxesLoading}
+              errorMessage={boxesError}
+            />
           </div>
 
           {/* Columna Derecha: Paciente en atención y Cola Multibox Centralizada */}

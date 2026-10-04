@@ -6,7 +6,14 @@ import { useAuth } from '../context/AuthContext'
 import { useFeedbackNotice } from './useFeedbackNotice'
 
 export function useTecnicoBox() {
-  const { boxes, currentBoxNumber, setCurrentBoxNumber, changeBoxStatus } = useBox()
+  const {
+    boxes,
+    boxesLoading,
+    boxesError,
+    currentBoxNumber,
+    setCurrentBoxNumber,
+    changeBoxStatus
+  } = useBox()
   const { waitingQueue, activeInBoxes, callNextPatient, finishAttention } = useTriageQueue()
   const { userData } = useAuth()
   const { notice: feedbackMsg, showNotice: showNotification, clearNotice } = useFeedbackNotice(4000)
@@ -15,7 +22,9 @@ export function useTecnicoBox() {
   const [isProcessing, setIsProcessing] = useState(false)
 
   const currentBoxKey = `Box ${currentBoxNumber}`
-  const activeBoxData = boxes.find((boxItem) => boxItem.numero === Number(currentBoxNumber)) || {
+  const activeBoxData = boxes.find(
+    (boxItem) => Number(boxItem.numero) === Number(currentBoxNumber)
+  ) || {
     numero: currentBoxNumber,
     nombre: currentBoxKey,
     estado: 'Disponible'
@@ -77,6 +86,8 @@ export function useTecnicoBox() {
 
   return {
     boxes,
+    boxesLoading,
+    boxesError,
     currentBoxNumber,
     setCurrentBoxNumber,
     currentBoxKey,

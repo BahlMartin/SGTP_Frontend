@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   fetchAllStaffApi,
   createStaffUserApi,
+  updateStaffUserApi,
   toggleShiftExceptionApi,
   deleteStaffUserApi,
   reactivateStaffUserApi
@@ -88,6 +89,14 @@ export function useStaffManagement() {
     }
   }
 
+  const updateStaff = async (staffMemberId, updatePayload, onSuccess) => {
+    await updateStaffUserApi(staffMemberId, updatePayload)
+    await loadStaff()
+    if (onSuccess) {
+      onSuccess('Datos y horario del personal actualizados correctamente.')
+    }
+  }
+
   const unlockStaff = async (staffMemberId, onSuccess) => {
     try {
       await unlockUserApi(staffMemberId)
@@ -120,6 +129,7 @@ export function useStaffManagement() {
     toggleShift,
     deleteStaff,
     createStaff,
+    updateStaff,
     unlockStaff,
     reactivateStaff
   }

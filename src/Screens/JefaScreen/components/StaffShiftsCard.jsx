@@ -1,5 +1,5 @@
 import React from 'react'
-import { UserPlus, Plus, Trash2 } from 'lucide-react'
+import { UserPlus, Plus, Trash2, Pencil } from 'lucide-react'
 import './StaffShiftsCard.css'
 
 export default function StaffShiftsCard({
@@ -8,6 +8,7 @@ export default function StaffShiftsCard({
   onOpenAddStaff,
   onToggleShift,
   onDeleteStaff,
+  onEditStaff,
   onUnlockStaff,
   onReactivateStaff
 }) {
@@ -94,16 +95,34 @@ export default function StaffShiftsCard({
                       Reactivar
                     </button>
                   )}
-                  {(currentUserRole === 'Admin' || currentUserRole === 'Jefa') && staffMember.activo && (
-                    <button
-                      className="jefa-screen__btn-delete-staff"
-                      title="Eliminar personal"
-                      onClick={() =>
-                        onDeleteStaff(staffMember.id, staffMember.nombre, staffMember.rol)
-                      }
-                    >
-                      <Trash2 className="jefa-screen__btn-delete-icon" />
-                    </button>
+                  {(currentUserRole === 'Admin' ||
+                    (currentUserRole === 'Jefa' &&
+                      staffMember.rol !== 'Admin' &&
+                      staffMember.rol !== 'Jefa')) && (
+                    <>
+                      {onEditStaff && (
+                        <button
+                          className="jefa-screen__btn-edit-staff"
+                          title="Editar datos y horario"
+                          aria-label={`Editar datos de ${staffMember.nombre}`}
+                          onClick={() => onEditStaff(staffMember)}
+                        >
+                          <Pencil className="jefa-screen__btn-delete-icon" />
+                        </button>
+                      )}
+                      {staffMember.activo && onDeleteStaff && (
+                        <button
+                          className="jefa-screen__btn-delete-staff"
+                          title="Eliminar personal"
+                          aria-label={`Eliminar a ${staffMember.nombre}`}
+                          onClick={() =>
+                            onDeleteStaff(staffMember.id, staffMember.nombre, staffMember.rol)
+                          }
+                        >
+                          <Trash2 className="jefa-screen__btn-delete-icon" />
+                        </button>
+                      )}
+                    </>
                   )}
                 </td>
               </tr>

@@ -58,10 +58,10 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
   const getPercentage = useCallback(
     (patientCount) => {
       if (!patientCount) {
-        return 5 // Ancho visual mínimo
+        return 0
       }
       const rawPercentage = (patientCount / totalPacientes) * 100
-      return Math.min(Math.max(rawPercentage, 10), 100)
+      return Math.min(rawPercentage, 100)
     },
     [totalPacientes]
   )
