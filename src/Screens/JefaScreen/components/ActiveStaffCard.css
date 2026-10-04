@@ -53,7 +53,18 @@
 }
 
 .jefa-screen__staff-dot--offline {
-  background: #94a3b8;
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.jefa-screen__staff-dot--blocked {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.jefa-screen__staff-dot--outside {
+  background: #eab308;
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2);
 }
 
 .jefa-screen__staff-titles {
@@ -87,4 +98,10 @@
 .jefa-screen__staff-load-lbl {
   font-size: 0.68rem;
   color: var(--text-muted);
+}
+
+.jefa-screen__staff-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }

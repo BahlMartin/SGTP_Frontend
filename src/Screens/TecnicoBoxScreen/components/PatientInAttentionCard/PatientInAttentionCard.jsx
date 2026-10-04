@@ -70,7 +70,7 @@ export default function PatientInAttentionCard({
                 DNI: <strong>{patientInBox.paciente_dni}</strong>
               </span>
               <span>
-                Obra Social: <strong>{patientInBox.paciente_obra_social}</strong>
+                N° afiliado: <strong>{patientInBox.paciente_numero_afiliado || 'No informado'}</strong>
               </span>
               <span>
                 Ingreso: <strong>{formatTimeHHMM(patientInBox.fecha_hora_admision)} hs</strong>

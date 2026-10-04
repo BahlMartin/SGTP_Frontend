@@ -27,7 +27,7 @@ function serializeBoxStatus(rawStatus) {
     .replace(/_/g, ' ')
 
   if (normalizedStatus === 'disponible') return 'Disponible'
-  if (normalizedStatus === 'en atencion') return 'En atención'
+  if (normalizedStatus === 'en atencion') return 'En atencion'
   if (normalizedStatus === 'fuera de servicio') return 'Fuera de servicio'
 
   throw new Error(`El estado de box "${rawStatus}" no es válido.`)

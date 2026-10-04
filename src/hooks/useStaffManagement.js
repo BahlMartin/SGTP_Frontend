@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   fetchAllStaffApi,
   createStaffUserApi,
@@ -8,11 +8,35 @@ import {
   reactivateStaffUserApi
 } from '../services/userService'
 import { unlockUserApi } from '../services/authService'
+import { isWithinShiftGrace } from '../utils/shiftTime.utils'
 
 export function useStaffManagement() {
   const [staffList, setStaffList] = useState([])
+  const [currentTime, setCurrentTime] = useState(() => new Date())
   const [loadingStaff, setLoadingStaff] = useState(false)
   const [staffError, setStaffError] = useState(null)
+
+  useEffect(() => {
+    const timerId = window.setInterval(() => setCurrentTime(new Date()), 30_000)
+    return () => window.clearInterval(timerId)
+  }, [])
+
+  const staffWithScheduleStatus = useMemo(
+    () => staffList.map((staffMember) => {
+      const horarioRestringido = ['Admision', 'Box', 'Secretaria'].includes(staffMember.rol)
+      const dentroHorario = !horarioRestringido || isWithinShiftGrace(
+        staffMember.inicio_turno,
+        staffMember.fin_turno,
+        currentTime
+      )
+      return {
+        ...staffMember,
+        dentro_horario: dentroHorario,
+        disponible: staffMember.activo && dentroHorario
+      }
+    }),
+    [currentTime, staffList]
+  )
 
   const loadStaff = useCallback(async () => {
     setLoadingStaff(true)
@@ -122,7 +146,7 @@ export function useStaffManagement() {
   }
 
   return {
-    staffList,
+    staffList: staffWithScheduleStatus,
     loadingStaff,
     staffError,
     loadStaff,

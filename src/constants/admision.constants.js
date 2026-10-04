@@ -12,8 +12,9 @@ export const AVAILABLE_STUDIES = [
 ]
 
 export const INITIAL_ADMISSION_FORM_STATE = {
+  pacienteId: null,
   dni: '',
-  obraSocial: '',
+  numeroAfiliado: '',
   nombre: '',
   apellido: '',
   numLlamado: '',

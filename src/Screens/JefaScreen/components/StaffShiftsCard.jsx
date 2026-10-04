@@ -1,5 +1,5 @@
 import React from 'react'
-import { UserPlus, Plus, Trash2, Pencil } from 'lucide-react'
+import { UserPlus, Plus, Trash2, Pencil, Unlock, RotateCcw, Clock3 } from 'lucide-react'
 import './StaffShiftsCard.css'
 
 export default function StaffShiftsCard({
@@ -12,6 +12,8 @@ export default function StaffShiftsCard({
   onUnlockStaff,
   onReactivateStaff
 }) {
+  const visibleStaff = staffList.filter((staffMember) => staffMember.rol !== 'Admin')
+
   return (
     <div className="jefa-screen__shifts-card">
       <div className="jefa-screen__shifts-header">
@@ -29,70 +31,76 @@ export default function StaffShiftsCard({
         <table className="jefa-screen__shifts-table">
           <thead>
             <tr>
-              <th>Nombre</th>
-              <th>Matricula</th>
+              <th>Personal / matrícula</th>
               <th>Rol</th>
               <th>Turno</th>
               <th>Estado</th>
-              <th>Habilitación Horaria</th>
-              <th>Acción</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {staffList.map((staffMember) => (
-              <tr key={staffMember.id}>
-                <td className="jefa-screen__shift-name">{staffMember.nombre}</td>
-                <td className="jefa-screen__shift-mat">{staffMember.matricula}</td>
+            {visibleStaff.map((staffMember) => {
+              const statusLabel = !staffMember.activo
+                ? (staffMember.cant_intentos >= 3 ? 'Cuenta bloqueada' : 'Cuenta inactiva')
+                : staffMember.dentro_horario === false
+                  ? 'Fuera de horario'
+                  : 'En horario'
+              const statusClass = !staffMember.activo
+                ? 'jefa-screen__status-dot--inactive'
+                : staffMember.dentro_horario === false
+                  ? 'jefa-screen__status-dot--outside'
+                  : 'jefa-screen__status-dot--active'
+              return (
+                <tr key={staffMember.id}>
+                <td className="jefa-screen__shift-person">
+                  <span className="jefa-screen__shift-name">{staffMember.nombre}</span>
+                  <span className="jefa-screen__shift-mat">{staffMember.matricula}</span>
+                </td>
                 <td>
                   <span className="jefa-screen__shift-role">{staffMember.rol}</span>
                 </td>
                 <td className="jefa-screen__shift-turno">{staffMember.turno}</td>
                 <td>
                   <span
-                    className={`jefa-screen__status-chip ${
-                      staffMember.estado === 'En turno'
-                        ? 'jefa-screen__status-chip--active'
-                        : 'jefa-screen__status-chip--offline'
-                    }`}
+                    className={`jefa-screen__status-dot ${statusClass}`}
+                    role="img"
+                    aria-label={statusLabel}
+                    title={statusLabel}
                   >
-                    {staffMember.estado}
                   </span>
                 </td>
-                <td>
-                  {staffMember.rol !== 'Admin' && staffMember.rol !== 'Jefa' ? (
+                <td className="jefa-screen__shift-actions">
+                  {staffMember.rol !== 'Jefa' && staffMember.activo && onToggleShift && (
                     <button
-                      className={`jefa-screen__btn-toggle-shift ${
-                        staffMember.estado === 'En turno'
-                          ? 'jefa-screen__btn-toggle-shift--disable'
-                          : 'jefa-screen__btn-toggle-shift--enable'
-                      }`}
-                      onClick={() => onToggleShift(staffMember.id, staffMember.estado)}
+                      className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
+                      title="Autorizar horario excepcional por hoy"
+                      aria-label={`Habilitar horario excepcional para ${staffMember.nombre}`}
+                      onClick={() => onToggleShift(staffMember.id)}
                     >
-                      {staffMember.estado === 'En turno' ? 'Restringir' : 'Habilitar'}
+                      <Clock3 className="jefa-screen__btn-action-icon" />
+                      <span>Habilitar</span>
                     </button>
-                  ) : (
-                    <span className="jefa-screen__permanent-badge">Acceso 24hs</span>
                   )}
-                </td>
-                <td style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                   {staffMember.cant_intentos >= 3 && onUnlockStaff && (
                     <button
                       className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
-                      style={{ padding: '4px 8px', fontSize: '0.75rem' }}
                       title="Desbloquear cuenta por intentos fallidos"
+                      aria-label={`Desbloquear a ${staffMember.nombre}`}
                       onClick={() => onUnlockStaff(staffMember.id)}
                     >
-                      Desbloquear
+                      <Unlock className="jefa-screen__btn-action-icon" />
+                      <span>Desbloquear</span>
                     </button>
                   )}
                   {!staffMember.activo && onReactivateStaff && (
                     <button
                       className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
-                      style={{ padding: '4px 8px', fontSize: '0.75rem' }}
                       title="Reactivar usuario"
+                      aria-label={`Reactivar a ${staffMember.nombre}`}
                       onClick={() => onReactivateStaff(staffMember.id)}
                     >
-                      Reactivar
+                      <RotateCcw className="jefa-screen__btn-action-icon" />
+                      <span>Reactivar</span>
                     </button>
                   )}
                   {(currentUserRole === 'Admin' ||
@@ -125,8 +133,14 @@ export default function StaffShiftsCard({
                     </>
                   )}
                 </td>
+                </tr>
+              )
+            })}
+            {visibleStaff.length === 0 && (
+              <tr>
+                <td className="jefa-screen__empty-row" colSpan={5}>No hay personal registrado.</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

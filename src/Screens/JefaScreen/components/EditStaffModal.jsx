@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import { AlertCircle, X } from 'lucide-react'
+import ShiftTimeInput from './ShiftTimeInput'
+import { isValidHalfHourTime } from '../../../utils/shiftTime.utils'
 import './AddStaffModal.css'
 
 function getInitialForm(staffMember) {
@@ -28,6 +30,12 @@ export default function EditStaffModal({ staffMember, onClose, onSubmit }) {
   const handleSubmit = async (event) => {
     event.preventDefault()
     setStaffError('')
+
+    if (!isValidHalfHourTime(formData.inicio_turno) || !isValidHalfHourTime(formData.fin_turno)) {
+      setStaffError('Ingresá las horas en formato HH:MM y en intervalos de 30 minutos (por ejemplo, 07:30).')
+      return
+    }
+
     setIsSaving(true)
 
     try {
@@ -119,26 +127,24 @@ export default function EditStaffModal({ staffMember, onClose, onSubmit }) {
               onChange={handleChange}
             />
           </div>
-          <div className="jefa-screen__modal-field">
-            <label htmlFor="edit-staff-inicio">Inicio del turno:</label>
-            <input
+          <div className="jefa-screen__modal-field jefa-screen__modal-field--shift">
+            <ShiftTimeInput
               id="edit-staff-inicio"
-              name="inicio_turno"
-              type="time"
-              required
+              label="Inicio del turno:"
               value={formData.inicio_turno}
-              onChange={handleChange}
+              onChange={(value) => setFormData((previousData) => ({
+                ...previousData,
+                inicio_turno: value
+              }))}
             />
-          </div>
-          <div className="jefa-screen__modal-field">
-            <label htmlFor="edit-staff-fin">Fin del turno:</label>
-            <input
+            <ShiftTimeInput
               id="edit-staff-fin"
-              name="fin_turno"
-              type="time"
-              required
+              label="Fin del turno:"
               value={formData.fin_turno}
-              onChange={handleChange}
+              onChange={(value) => setFormData((previousData) => ({
+                ...previousData,
+                fin_turno: value
+              }))}
             />
           </div>
 

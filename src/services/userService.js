@@ -21,7 +21,6 @@ function normalizeStaffUser(rawStaffMember) {
     turno: turnoDesc,
     inicio_turno: rawStaffMember.inicio_turno,
     fin_turno: rawStaffMember.fin_turno,
-    dentro_horario: rawStaffMember.activo,
     activo: rawStaffMember.activo !== false,
     cant_intentos: rawStaffMember.cant_intentos || 0,
     area: rawStaffMember.rol === 'Box' ? 'Área Asistencial' : 'Administración / Triage'
@@ -57,11 +56,13 @@ export async function createStaffUserApi(currentUserRole, newUserPayload) {
   const payload = {
     email: newUserPayload.email.trim().toLowerCase(),
     password: newUserPayload.password || 'SeguridadHospital2026!',
+    dni: Number(String(newUserPayload.dni).replace(/\D/g, '')),
     nombre: newUserPayload.nombre.trim(),
-    apellidos: (newUserPayload.apellidos || newUserPayload.apellido || 'Personal').trim(),
+    apellidos: (newUserPayload.apellidos || newUserPayload.apellido || '').trim(),
+    matricula: newUserPayload.matricula.trim(),
     rol: newUserPayload.rol || 'Box',
-    inicio_turno: newUserPayload.inicio_turno || '07:00:00',
-    fin_turno: newUserPayload.fin_turno || '15:00:00'
+    inicio_turno: `${newUserPayload.inicio_turno || '07:00'}:00`,
+    fin_turno: `${newUserPayload.fin_turno || '15:00'}:00`
   }
 
   const response = await apiClient.post('/users/', payload)

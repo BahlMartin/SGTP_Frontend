@@ -101,15 +101,27 @@ export default function AdmisionScreen() {
     setIsSubmitting(true)
     try {
       const payload = {
+        paciente_id: formData.pacienteId || null,
         paciente_dni: formData.dni.trim(),
-        paciente_obra_social: formData.obraSocial.trim() || 'Particular',
+        paciente_numero_afiliado: formData.numeroAfiliado.trim(),
         paciente_nombre: formData.nombre.trim(),
         paciente_apellido: formData.apellido.trim(),
         num_llamado: enteredCallNumber || generateUniqueCallNumber(todayTickets),
         clasificacion_triage: formData.selectedTriage,
         justificacion_otro: formData.justificacionOtro.trim(),
-        estudios: formData.selectedStudies.length > 0 ? formData.selectedStudies : ['Rutina Básica'],
+        estudios_ids: formData.selectedStudies.map((study) => study.id),
         mat_admision: userData?.matricula || 'ADM-4412'
+      }
+
+      if (
+        formData.selectedStudies.some(
+          (study) => study.id == null || !Number.isInteger(Number(study.id))
+        )
+      ) {
+        setAdmissionError(
+          'Uno o más estudios no están vinculados al catálogo. Selecciónelos nuevamente desde la búsqueda de estudios.'
+        )
+        return
       }
 
       const generatedTicket = await createTicket(payload)
