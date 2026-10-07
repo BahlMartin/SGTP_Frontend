@@ -6,36 +6,44 @@
   box-shadow: var(--shadow-sm);
 }
 
+.jefa-screen__matrix-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .jefa-screen__section-title {
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
   display: block;
-  margin-bottom: 14px;
+  margin: 0;
+}
+
+.jefa-screen__matrix-count {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--medical-primary);
 }
 
 .jefa-screen__matrix-table {
+  list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .jefa-screen__matrix-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .jefa-screen__matrix-row:last-child {
   border-bottom: none;
-  padding-bottom: 0;
-}
-
-.jefa-screen__matrix-cat {
-  display: flex;
-  flex-direction: column;
 }
 
 .jefa-screen__matrix-cat-name {
@@ -44,46 +52,26 @@
   color: var(--text-primary);
 }
 
-.jefa-screen__matrix-cat-total {
-  font-size: 0.75rem;
+.jefa-screen__matrix-stat {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.jefa-screen__matrix-total {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.jefa-screen__matrix-total-label {
+  font-size: 0.68rem;
   color: var(--text-muted);
 }
 
-.jefa-screen__matrix-tags {
-  display: flex;
-  gap: 6px;
-}
-
-.jefa-screen__matrix-tag {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2px 6px;
-  border-radius: 4px;
-  min-width: 32px;
-}
-
-.jefa-screen__matrix-tag--pend {
-  background: #ffedd5;
-  color: #c2410c;
-}
-
-.jefa-screen__matrix-tag--curso {
-  background: #e0f2fe;
-  color: #0369a1;
-}
-
-.jefa-screen__matrix-tag--listos {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.jefa-screen__matrix-tag-val {
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
-.jefa-screen__matrix-tag-lbl {
-  font-size: 0.65rem;
-  font-weight: 600;
+.jefa-screen__matrix-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }

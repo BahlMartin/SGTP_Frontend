@@ -5,7 +5,7 @@ import { fetchPatientHistoryApi } from '../../services/patientService'
 import PatientHistoryModal from '../PatientHistoryModal/PatientHistoryModal'
 import './PatientSearch.css'
 
-export default function PatientSearch({ onSelectPatient }) {
+export default function PatientSearch() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
@@ -72,20 +72,6 @@ export default function PatientSearch({ onSelectPatient }) {
     } finally {
       setIsLoadingHistory(false)
     }
-  }
-
-  const handleUsePatient = (patientData) => {
-    onSelectPatient?.({
-      ...patientData,
-      id_paciente: patientData.id_paciente || selectedPatient?.id_paciente,
-      dni: String(patientData.dni || selectedPatient?.dni || ''),
-      apellido: patientData.apellidos || patientData.apellido || selectedPatient?.apellido || '',
-      obraSocial: patientData.obra_social || patientData.obraSocial || selectedPatient?.obraSocial || '',
-      numeroAfiliado: patientData.num_obra_social || patientData.numeroAfiliado || selectedPatient?.numeroAfiliado || ''
-    })
-    setQuery(`${patientData.nombre || selectedPatient?.nombre || ''} ${patientData.apellidos || patientData.apellido || selectedPatient?.apellido || ''} (DNI: ${patientData.dni || selectedPatient?.dni || ''})`)
-    setSelectedPatient(null)
-    setPatientHistory(null)
   }
 
   const clearSearch = () => {
@@ -156,7 +142,6 @@ export default function PatientSearch({ onSelectPatient }) {
         history={patientHistory}
         isLoading={isLoadingHistory}
         error={historyError}
-        onUsePatient={handleUsePatient}
         onClose={() => {
           setSelectedPatient(null)
           setPatientHistory(null)

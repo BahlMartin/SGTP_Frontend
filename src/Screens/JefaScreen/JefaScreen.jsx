@@ -12,7 +12,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
 import { useFeedbackNotice } from '../../hooks/useFeedbackNotice'
 import { fetchAsignacionesBoxApi } from '../../services/boxService'
-import { computeLabMatrix } from '../../services/reportService'
+import { computeTopLabStudies } from '../../services/reportService'
 
 export default function JefaScreen() {
   const { tickets, refreshTickets } = useTriageQueue()
@@ -99,7 +99,7 @@ export default function JefaScreen() {
 
     return { ticketsIssuedByStaff, patientsAttendedByBoxStaff }
   }, [boxAssignments, tickets])
-  const labMatrix = useMemo(() => computeLabMatrix(tickets), [tickets])
+  const topLabStudies = useMemo(() => computeTopLabStudies(tickets), [tickets])
 
   const handleCreateStaff = async (newStaffPayload) => {
     await createStaff(newStaffPayload, userData?.rol, showNotice)
@@ -126,12 +126,6 @@ export default function JefaScreen() {
     reactivateStaff(staffMemberId, showNotice)
   }
 
-  const handleSelectPatient = (selectedPatient) => {
-    showNotice(
-      `Paciente encontrado: ${selectedPatient.nombre} ${selectedPatient.apellido} (DNI ${selectedPatient.dni})`
-    )
-  }
-
   return (
     <>
       <JefaLayout
@@ -139,7 +133,7 @@ export default function JefaScreen() {
         leftContent={
           <>
             <ActiveStaffCard staffList={staffList} workloadByStaff={workloadByStaff} />
-            <LabMatrixCard labMatrix={labMatrix} />
+            <LabMatrixCard labStudies={topLabStudies} />
           </>
         }
         centerContent={
@@ -154,7 +148,7 @@ export default function JefaScreen() {
             onReactivateStaff={handleReactivateStaff}
           />
         }
-        searchContent={<PatientSearch onSelectPatient={handleSelectPatient} />}
+        searchContent={<PatientSearch />}
       />
 
       <AddStaffModal

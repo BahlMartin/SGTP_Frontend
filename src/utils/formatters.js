@@ -1,15 +1,31 @@
+const ARGENTINA_TIME_ZONE = 'America/Argentina/Buenos_Aires'
+
+function getArgentinaDateParts(date) {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: ARGENTINA_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date).reduce((parts, part) => {
+    if (part.type !== 'literal') parts[part.type] = part.value
+    return parts
+  }, {})
+}
+
 /**
  * Formatea una fecha u objeto ISO string a formato estricto dd/mm/aaaa
  */
 export function formatDateDDMMAAAA(dateInput) {
   if (!dateInput) return '--/--/----'
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateInput))
+  if (dateOnlyMatch) {
+    return `${dateOnlyMatch[3]}/${dateOnlyMatch[2]}/${dateOnlyMatch[1]}`
+  }
+
   const date = new Date(dateInput)
   if (isNaN(date.getTime())) return '--/--/----'
 
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const year = date.getFullYear()
-
+  const { day, month, year } = getArgentinaDateParts(date)
   return `${day}/${month}/${year}`
 }
 
@@ -21,9 +37,19 @@ export function formatTimeHHMM(dateInput) {
   const date = new Date(dateInput)
   if (isNaN(date.getTime())) return '--:--'
 
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${hours}:${minutes}`
+  return new Intl.DateTimeFormat('es-AR', {
+    timeZone: ARGENTINA_TIME_ZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23'
+  }).format(date)
+}
+
+export function getArgentinaDateString(dateInput) {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput)
+  if (isNaN(date.getTime())) return ''
+  const { year, month, day } = getArgentinaDateParts(date)
+  return `${year}-${month}-${day}`
 }
 
 /**
@@ -62,7 +88,5 @@ export function getCurrentUtcIso() {
  */
 export function getTodayLocalDateString(referenceDate = new Date()) {
   const safeDate = referenceDate instanceof Date ? referenceDate : new Date(referenceDate)
-  const offsetInMinutes = safeDate.getTimezoneOffset()
-  const localDate = new Date(safeDate.getTime() - offsetInMinutes * 60 * 1000)
-  return localDate.toISOString().slice(0, 10)
+  return getArgentinaDateString(safeDate)
 }

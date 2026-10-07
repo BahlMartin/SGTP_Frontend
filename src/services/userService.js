@@ -1,4 +1,5 @@
 import apiClient from './apiClient'
+import { getTodayLocalDateString } from '../utils/formatters'
 
 function normalizeStaffUser(rawStaffMember) {
   if (!rawStaffMember) return null
@@ -124,7 +125,7 @@ export async function reactivateHabilitacionHorariaApi(habilitacionId) {
  */
 export async function toggleShiftExceptionApi(userId, habilitado) {
   if (habilitado) {
-    const todayStr = new Date().toISOString().split('T')[0]
+    const todayStr = getTodayLocalDateString()
     return await createHabilitacionHorariaApi({
       personal: userId,
       fecha: todayStr,

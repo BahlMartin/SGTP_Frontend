@@ -1,5 +1,5 @@
 import apiClient from './apiClient'
-import { formatDurationHuman } from '../utils/formatters'
+import { formatDurationHuman, getArgentinaDateString, getTodayLocalDateString } from '../utils/formatters'
 import { TRIAGE_LIST, TRIAGE_CATEGORIES, getTriageInfo } from '../constants/triage.constants'
 
 /**
@@ -8,14 +8,14 @@ import { TRIAGE_LIST, TRIAGE_CATEGORIES, getTriageInfo } from '../constants/tria
 export function computeDailyReportMetrics(tickets = [], targetDate = new Date()) {
   let targetDateStr = ''
   if (targetDate instanceof Date) {
-    targetDateStr = targetDate.toISOString().split('T')[0]
+    targetDateStr = getArgentinaDateString(targetDate)
   } else if (typeof targetDate === 'string') {
     targetDateStr = targetDate.slice(0, 10)
   }
 
   const dayTickets = tickets.filter((ticket) => {
     if (!ticket.fecha_hora_admision) return false
-    return ticket.fecha_hora_admision.slice(0, 10) === targetDateStr
+    return getArgentinaDateString(ticket.fecha_hora_admision) === targetDateStr
   })
 
   let atendidos = 0
@@ -31,12 +31,14 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
     const triageInfo = getTriageInfo(ticket.clasificacion_triage)
     triageCounts[triageInfo.id] = (triageCounts[triageInfo.id] || 0) + 1
 
-    if (triageInfo.id === TRIAGE_CATEGORIES.GUARDIA.id || triageInfo.id === TRIAGE_CATEGORIES.MEDICOS.id) {
-      criticos++
-    }
-
     if (ticket.estado === 'Atendido' || ticket.estado === 'Finalizado') {
       atendidos++
+      if (
+        triageInfo.id === TRIAGE_CATEGORIES.GUARDIA.id ||
+        triageInfo.id === TRIAGE_CATEGORIES.MEDICOS.id
+      ) {
+        criticos++
+      }
     } else if (ticket.estado === 'En atencion' || ticket.estado === 'En Atencion') {
       enCurso++
     } else if (ticket.estado === 'Espera' || ticket.estado === 'Pendiente') {
@@ -60,7 +62,7 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
  * Consulta las métricas consolidadas del reporte diario en el backend.
  */
 export async function fetchMetricasDiariasApi(fechaStr) {
-  const query = fechaStr ? `?fecha=${fechaStr}` : ''
+  const query = `?fecha=${fechaStr || getTodayLocalDateString()}`
   const data = await apiClient.get(`/reports/metricas-diarias/${query}`)
 
   // Mapear distribución de triage al formato esperado por los componentes React
@@ -86,7 +88,7 @@ export async function fetchMetricasDiariasApi(fechaStr) {
     atendidos: data.total_atendidos || 0,
     ingresos: data.total_emitidos || 0,
     enCurso,
-    criticos: (triageMap['guardia'] || 0) + (triageMap['medicos'] || 0),
+    criticos: data.total_criticos_atendidos || 0,
     esperaPromedio: data.promedio_espera_minutos ? formatDurationHuman(Math.round(data.promedio_espera_minutos)) : '—',
     atencionPromedio: data.promedio_atencion_minutos ? formatDurationHuman(Math.round(data.promedio_atencion_minutos)) : '—',
     triageDistribution: triageMap,
@@ -142,38 +144,17 @@ export async function fetchHistorialReporteByIdApi(id) {
   return await apiClient.get(`/reports/historial/${id}/`)
 }
 
-export const LAB_STUDY_CATEGORIES = ['Hemograma', 'Bioquímica', 'Orina', 'Cultivo', 'Otro']
+export function computeTopLabStudies(tickets = []) {
+  const studyCounts = new Map()
 
-export function computeLabMatrix(tickets = []) {
-  return LAB_STUDY_CATEGORIES.map((categoryName) => {
-    let total = 0
-    let pendientes = 0
-    let enCurso = 0
-    let listos = 0
-
-    tickets.forEach((ticketItem) => {
-      const tieneCategoria = ticketItem.estudios?.some((studyName) =>
-        String(studyName).toLowerCase().includes(categoryName.toLowerCase())
-      )
-
-      if (tieneCategoria) {
-        total++
-        if (ticketItem.estado === 'Espera') {
-          pendientes++
-        } else if (ticketItem.estado === 'En atencion') {
-          enCurso++
-        } else if (ticketItem.estado === 'Atendido') {
-          listos++
-        }
-      }
+  tickets.forEach((ticketItem) => {
+    ticketItem.estudios?.forEach((studyName) => {
+      const name = String(studyName).trim()
+      if (name) studyCounts.set(name, (studyCounts.get(name) || 0) + 1)
     })
-
-    return {
-      nombre: categoryName,
-      total,
-      pend: pendientes,
-      curso: enCurso,
-      listos
-    }
   })
+
+  return Array.from(studyCounts, ([nombre, total]) => ({ nombre, total }))
+    .sort((a, b) => b.total - a.total || a.nombre.localeCompare(b.nombre))
+    .slice(0, 5)
 }

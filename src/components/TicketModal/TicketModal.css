@@ -207,19 +207,78 @@
   background: #e2e8f0;
 }
 
+body.ticket-printing {
+  width: 80mm !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body.ticket-printing .ticket-print-hidden {
+  display: none !important;
+}
+
+body.ticket-printing .ticket-print-ancestor {
+  display: block !important;
+  position: static !important;
+  width: 80mm !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+}
+
+body.ticket-printing .ticket-modal {
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+body.ticket-printing .ticket-modal__card {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.ticket-printing .ticket-modal__card > :not(#printable-ticket) {
+  display: none !important;
+}
+
+body.ticket-printing #printable-ticket {
+  box-sizing: border-box;
+  width: 72mm !important;
+  max-width: 72mm !important;
+  margin: 0 auto !important;
+  padding: 3mm;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  break-inside: avoid-page;
+  page-break-inside: avoid;
+}
+
 @media print {
-  body * {
+  @page {
+    size: 80mm 200mm;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 80mm !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.ticket-printing * {
     visibility: hidden;
   }
-  #printable-ticket,
-  #printable-ticket * {
+
+  body.ticket-printing #printable-ticket,
+  body.ticket-printing #printable-ticket * {
     visibility: visible;
-  }
-  #printable-ticket {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 80mm;
-    border: none;
   }
 }

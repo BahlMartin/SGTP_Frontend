@@ -14,7 +14,7 @@
 }
 
 .admission-form-card__icon {
-  color: #0284c7;
+  color: var(--medical-primary);
 }
 
 .admission-form-card__title {
@@ -70,8 +70,8 @@
 }
 
 .admission-form__input:focus {
-  border-color: #0284c7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(22, 135, 201, 0.14);
 }
 
 .admission-form__input--center {
@@ -103,21 +103,21 @@
 }
 
 .admission-form__submit-btn {
-  background: #0284c7;
+  background: var(--medical-primary);
   color: #ffffff;
   font-size: 1rem;
   font-weight: 700;
   height: 48px;
   border-radius: var(--radius-md);
   margin-top: 10px;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+  box-shadow: 0 2px 8px rgba(22, 135, 201, 0.2);
   transition: background 0.15s;
   cursor: pointer;
   border: none;
 }
 
 .admission-form__submit-btn:hover {
-  background: #0369a1;
+  background: var(--medical-primary-hover);
 }
 
 .admission-form__submit-btn:disabled {

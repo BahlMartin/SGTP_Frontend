@@ -27,8 +27,7 @@ export default function TecnicoBoxScreen() {
     handleStatusChange,
     handleCallNext,
     handleFinishConsultation,
-    toggleStudyCheck,
-    showNotification
+    toggleStudyCheck
   } = useTecnicoBox()
 
   return (
@@ -60,13 +59,7 @@ export default function TecnicoBoxScreen() {
               disabled={isProcessing}
             />
 
-            <PatientSearch
-              onSelectPatient={(selectedPatient) => {
-                showNotification(
-                  `Paciente localizado: ${selectedPatient.nombre} ${selectedPatient.apellido} (DNI ${selectedPatient.dni})`
-                )
-              }}
-            />
+            <PatientSearch />
 
             <OnlineBoxesCard
               boxesList={boxes}

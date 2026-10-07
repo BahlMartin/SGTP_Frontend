@@ -135,16 +135,6 @@
   cursor: pointer;
 }
 
-.patient-history-modal__use {
-  background: #0284c7;
-  color: #ffffff;
-}
-
-.patient-history-modal__use:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .patient-history-modal__cancel {
   background: #f1f5f9;
   color: #334155;
