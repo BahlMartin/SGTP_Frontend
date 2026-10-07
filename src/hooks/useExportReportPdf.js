@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { downloadReportePdfApi } from '../services/reportService'
 import { generateDailyReportPdf } from '../utils/pdfGenerator'
+import { getArgentinaDateString } from '../utils/formatters'
 
 /**
  * Hook reutilizable para la exportación y descarga del reporte diario en formato PDF.
@@ -15,7 +16,7 @@ export function useExportReportPdf({
   const handleExportPdf = useCallback(async () => {
     let dateStr = ''
     if (jornadaDate instanceof Date) {
-      dateStr = jornadaDate.toISOString().split('T')[0]
+      dateStr = getArgentinaDateString(jornadaDate)
     } else if (typeof jornadaDate === 'string') {
       dateStr = jornadaDate
     }

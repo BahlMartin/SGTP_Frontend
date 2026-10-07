@@ -38,9 +38,9 @@
 }
 
 .triage-selector__card--selected {
-  border-color: #0284c7;
-  background: #f0f9ff;
-  box-shadow: 0 0 0 2px #0284c7;
+  border-color: var(--border-focus);
+  background: var(--surface-hover);
+  box-shadow: 0 0 0 2px var(--medical-primary);
 }
 
 .triage-selector__dot {
@@ -86,12 +86,12 @@
 .triage-selector__item-label {
   font-size: 0.88rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .triage-selector__item-desc {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .triage-selector__justification {
@@ -118,7 +118,7 @@
 }
 
 .triage-selector__justification-input:focus {
-  border-color: #0284c7;
+  border-color: var(--border-focus);
 }
 
 .triage-selector__justification-input--error {

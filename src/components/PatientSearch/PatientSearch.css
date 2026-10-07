@@ -23,19 +23,19 @@
 .patient-search__input {
   width: 100%;
   height: 42px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-card);
   border-radius: var(--radius-sm);
   padding: 0 36px 0 14px;
   font-size: 0.9rem;
   color: var(--text-primary);
-  background: #ffffff;
+  background: var(--bg-card);
   outline: none;
   transition: all 0.15s ease;
 }
 
 .patient-search__input:focus {
-  border-color: #0284c7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(22, 135, 201, 0.14);
 }
 
 .patient-search__icon {
@@ -43,7 +43,7 @@
   right: 12px;
   width: 16px;
   height: 16px;
-  color: #94a3b8;
+  color: var(--text-light);
   pointer-events: none;
 }
 
@@ -53,7 +53,7 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  color: #64748b;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -67,8 +67,8 @@
 }
 
 .patient-search__clear-btn:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--bg-card-subtle);
+  color: var(--text-primary);
 }
 
 .patient-search__dropdown {
@@ -76,7 +76,7 @@
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
@@ -105,7 +105,7 @@
   padding: 10px 16px;
   cursor: pointer;
   transition: background 0.15s;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .patient-search__item:last-child {
@@ -113,15 +113,15 @@
 }
 
 .patient-search__item:hover {
-  background: #f0f9ff;
+  background: var(--bg-card-subtle);
 }
 
 .patient-search__avatar {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #e0f2fe;
-  color: #0284c7;
+  background: var(--surface-hover);
+  color: var(--medical-primary);
   display: flex;
   align-items: center;
   justify-content: center;

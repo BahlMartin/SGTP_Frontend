@@ -1,7 +1,14 @@
 .jefa-screen__modal-overlay {
+  --text-primary: #183b4a;
+  --text-secondary: #647a85;
+  --text-muted: #647a85;
+  --border-card: #d9e5ea;
+  --border-focus: #1687c9;
+  --shadow-lg: 0 12px 28px rgba(24, 59, 74, 0.14);
+  color: #183b4a;
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(7, 59, 76, 0.62);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -55,7 +62,7 @@
 .jefa-screen__modal-field input,
 .jefa-screen__modal-field select,
 .jefa-screen__modal-select {
-  border: 1px solid #cbd5e1;
+  border: 1px solid #d9e5ea;
   border-radius: var(--radius-sm);
   padding: 8px 12px;
   font-size: 0.9rem;
@@ -79,7 +86,7 @@
 .jefa-screen__time-input {
   display: flex;
   align-items: stretch;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #d9e5ea;
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
@@ -93,14 +100,14 @@
 }
 
 .jefa-screen__time-input input:focus {
-  outline: 2px solid #0284c7;
+  outline: 2px solid #1687c9;
   outline-offset: -2px;
 }
 
 .jefa-screen__time-stepper {
   display: flex;
   flex-direction: column;
-  border-left: 1px solid #cbd5e1;
+  border-left: 1px solid #d9e5ea;
 }
 
 .jefa-screen__time-stepper button {
@@ -110,19 +117,19 @@
   width: 32px;
   flex: 1;
   padding: 2px;
-  color: #475569;
-  background: #f8fafc;
+  color: #647a85;
+  background: #f4f8fb;
   border: 0;
   cursor: pointer;
 }
 
 .jefa-screen__time-stepper button + button {
-  border-top: 1px solid #cbd5e1;
+  border-top: 1px solid #d9e5ea;
 }
 
 .jefa-screen__time-stepper button:hover {
-  color: #0369a1;
-  background: #e0f2fe;
+  color: #1687c9;
+  background: #dff3fa;
 }
 
 .jefa-screen__time-stepper svg {
@@ -144,7 +151,7 @@
 
 .jefa-screen__btn-save {
   flex: 1;
-  background: #0284c7;
+  background: #1687c9;
   color: #ffffff;
   font-weight: 700;
   padding: 10px;
@@ -154,12 +161,12 @@
 }
 
 .jefa-screen__btn-save:hover {
-  background: #0369a1;
+  background: #1175ae;
 }
 
 .jefa-screen__btn-cancel {
-  background: #f1f5f9;
-  color: #475569;
+  background: #f4f8fb;
+  color: #647a85;
   font-weight: 600;
   padding: 10px 16px;
   border-radius: var(--radius-md);
@@ -168,14 +175,14 @@
 }
 
 .jefa-screen__btn-cancel:hover {
-  background: #e2e8f0;
+  background: #eaf1f5;
 }
 
 .jefa-screen__modal-close {
   position: absolute;
   top: 16px;
   right: 16px;
-  color: #94a3b8;
+  color: #647a85;
   padding: 4px;
   border-radius: 50%;
   border: none;
@@ -187,14 +194,14 @@
 }
 
 .jefa-screen__modal-close:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: #f4f8fb;
+  color: #183b4a;
 }
 
 .jefa-screen__modal-error {
-  background: #fee2e2;
-  border: 1px solid #fca5a5;
-  color: #991b1b;
+  background: #fff0ef;
+  border: 1px solid #f6c5c1;
+  color: #b42323;
   border-radius: var(--radius-sm);
   padding: 8px 12px;
   font-size: 0.82rem;

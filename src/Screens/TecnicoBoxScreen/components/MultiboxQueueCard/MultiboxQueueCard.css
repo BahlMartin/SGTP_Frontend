@@ -22,7 +22,7 @@
 .multibox-queue-card__live-icon {
   width: 18px;
   height: 18px;
-  color: #0284c7;
+  color: var(--medical-primary);
   animation: pulseQueue 1.5s infinite;
 }
 
@@ -43,7 +43,7 @@
 
 .multibox-queue-card__badge {
   background: #f1f5f9;
-  color: #475569;
+  color: var(--text-secondary);
   font-size: 0.8rem;
   font-weight: 700;
   padding: 4px 10px;
@@ -63,7 +63,7 @@
 .multibox-queue-card__th {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted);
   letter-spacing: 0.5px;
   padding: 10px 12px;
   border-bottom: 1px solid #e2e8f0;
@@ -82,7 +82,7 @@
 .multibox-queue-card__call-pill {
   font-size: 1rem;
   font-weight: 800;
-  color: #0284c7;
+  color: var(--medical-primary);
 }
 
 .multibox-queue-card__patient-info {
@@ -116,13 +116,13 @@
 
 .multibox-queue-card__studies {
   font-size: 0.8rem;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 .multibox-queue-card__call-btn {
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  color: #0284c7;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-card);
+  color: var(--medical-primary);
   font-size: 0.78rem;
   font-weight: 700;
   padding: 6px 12px;
@@ -132,7 +132,7 @@
 }
 
 .multibox-queue-card__call-btn:hover:not(:disabled) {
-  background: #0284c7;
+  background: var(--medical-primary);
   color: #ffffff;
 }
 

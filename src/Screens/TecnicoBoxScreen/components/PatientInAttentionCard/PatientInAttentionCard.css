@@ -37,7 +37,7 @@
 }
 
 .patient-attention-card__btn-call {
-  background: #0284c7;
+  background: var(--medical-primary);
   color: #ffffff;
   font-size: 0.92rem;
   font-weight: 700;
@@ -52,7 +52,7 @@
 }
 
 .patient-attention-card__btn-call:hover:not(:disabled) {
-  background: #0369a1;
+  background: var(--medical-primary-hover);
 }
 
 .patient-attention-card__btn-finish {
@@ -89,13 +89,13 @@
 .patient-attention-card__empty-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-secondary);
   margin-bottom: 6px;
 }
 
 .patient-attention-card__empty-hint {
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .patient-attention-card__details {
@@ -116,14 +116,14 @@
 .patient-attention-card__call-label {
   font-size: 0.7rem;
   font-weight: 700;
-  color: #0369a1;
+  color: var(--medical-primary);
   display: block;
 }
 
 .patient-attention-card__call-number {
   font-size: 2.4rem;
   font-weight: 900;
-  color: #0284c7;
+  color: var(--medical-primary);
   display: block;
 }
 

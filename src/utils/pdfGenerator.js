@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf'
-import { formatDateDDMMAAAA } from './formatters'
+import { formatDateDDMMAAAA, formatTimeHHMM } from './formatters'
 
 export function generateDailyReportPdf({
   jornadaDate,
@@ -126,7 +126,8 @@ export function generateDailyReportPdf({
   // Pie de página
   doc.setFontSize(8)
   doc.setTextColor(148, 163, 184)
-  doc.text(`Documento generado electrónicamente bajo políticas de auditoría inmutable SGTP. UTC: ${new Date().toISOString()}`, 14, 290)
+  const generatedAt = new Date()
+  doc.text(`Documento generado electrónicamente bajo políticas de auditoría inmutable SGTP. Argentina: ${formatDateDDMMAAAA(generatedAt)} ${formatTimeHHMM(generatedAt)}`, 14, 290)
 
   // Descarga del PDF
   const filename = `Reporte_Diario_SGTP_${formattedDate.replace(/\//g, '-')}.pdf`

@@ -58,7 +58,6 @@ export default function AdmisionScreen() {
     handleFieldChange,
     handleToggleStudy,
     handleSetStudies,
-    handleLoadPatient,
     validateAdmissionForm,
     resetAdmissionForm
   } = useAdmissionForm()
@@ -74,13 +73,6 @@ export default function AdmisionScreen() {
   const ticketNumberError = enteredCallNumber && isTicketNumberAlreadyUsed(enteredCallNumber, todayTickets)
     ? `El número de llamado ${enteredCallNumber} ya fue utilizado hoy. Ingrese otro número para evitar duplicar el ticket.`
     : ''
-
-  const handleSelectPatientFromSearch = useCallback(
-    (patientData) => {
-      handleLoadPatient(patientData)
-    },
-    [handleLoadPatient]
-  )
 
   const handleTicketItemClick = useCallback((selectedTicket) => {
     setIssuedTicket(selectedTicket)
@@ -180,7 +172,7 @@ export default function AdmisionScreen() {
               onTicketClick={handleTicketItemClick}
             />
 
-            <PatientSearch onSelectPatient={handleSelectPatientFromSearch} />
+            <PatientSearch />
           </aside>
         </div>
       </main>

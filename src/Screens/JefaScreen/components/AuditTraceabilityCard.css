@@ -29,7 +29,7 @@
 
 .jefa-screen__date-box input,
 .jefa-screen__date-input {
-  border: 1px solid #cbd5e1;
+  border: 1px solid #d9e5ea;
   border-radius: var(--radius-sm);
   padding: 6px 10px;
   font-size: 0.82rem;
@@ -37,7 +37,7 @@
 }
 
 .jefa-screen__btn-export {
-  background: #0d9488;
+  background: #1687c9;
   color: #ffffff;
   font-size: 0.8rem;
   font-weight: 700;
@@ -51,7 +51,7 @@
 }
 
 .jefa-screen__btn-export:hover {
-  background: #0f766e;
+  background: #1175ae;
 }
 
 .jefa-screen__btn-export-icon,
@@ -62,8 +62,8 @@
 
 .jefa-screen__btn-email {
   background: #ffffff;
-  border: 1px solid #cbd5e1;
-  color: #0f172a;
+  border: 1px solid #d9e5ea;
+  color: #183b4a;
   font-size: 0.8rem;
   font-weight: 700;
   padding: 7px 14px;
@@ -75,7 +75,7 @@
 }
 
 .jefa-screen__btn-email:hover {
-  background: #f8fafc;
+  background: #f4f8fb;
 }
 
 .jefa-screen__audit-table-wrap {
@@ -98,21 +98,21 @@
 .jefa-screen__audit-table th {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #64748b;
+  color: #647a85;
   letter-spacing: 0.5px;
   padding: 8px 10px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #d9e5ea;
 }
 
 .jefa-screen__audit-table td {
   padding: 10px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #edf2f5;
   font-size: 0.82rem;
 }
 
 .jefa-screen__audit-id {
   font-weight: 700;
-  color: #0284c7;
+  color: #1687c9;
 }
 
 .jefa-screen__audit-patient {
@@ -126,7 +126,7 @@
 
 .jefa-screen__audit-time {
   font-size: 0.78rem;
-  color: #64748b;
+  color: #647a85;
 }
 
 .jefa-screen__state-pill {
@@ -137,31 +137,31 @@
 }
 
 .jefa-screen__state-pill--done {
-  background: #dcfce7;
-  color: #15803d;
+  background: #edf8f1;
+  color: #177245;
 }
 
 .jefa-screen__state-pill--progress {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: #dff3fa;
+  color: #176184;
 }
 
 .jefa-screen__state-pill--wait {
-  background: #f1f5f9;
-  color: #475569;
+  background: #f4f8fb;
+  color: #647a85;
 }
 
 .jefa-screen__btn-edit-ticket {
-  color: #0284c7;
+  color: #1687c9;
   padding: 4px 6px;
   border-radius: 4px;
-  border: 1px solid #bae6fd;
-  background: #f0f9ff;
+  border: 1px solid #b9dce8;
+  background: #dff3fa;
   cursor: pointer;
 }
 
 .jefa-screen__btn-edit-ticket:hover {
-  background: #0284c7;
+  background: #1687c9;
   color: #ffffff;
 }
 
@@ -169,4 +169,3 @@
   width: 13px;
   height: 13px;
 }
-

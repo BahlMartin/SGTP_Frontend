@@ -8,7 +8,6 @@ export default function PatientHistoryModal({
   history,
   isLoading = false,
   error = '',
-  onUsePatient,
   onClose
 }) {
   useEffect(() => {
@@ -24,6 +23,12 @@ export default function PatientHistoryModal({
 
   const patientData = history?.paciente || patient
   const visits = history?.atenciones || []
+  const getStudyNames = (studies = []) => studies
+    .map((study) => {
+      if (typeof study === 'string') return study
+      return study?.estudio_detalle?.nombre || study?.estudio?.nombre || study?.nombre || ''
+    })
+    .filter(Boolean)
 
   return (
     <div
@@ -54,7 +59,6 @@ export default function PatientHistoryModal({
           <dl>
             <div><dt>DNI</dt><dd>{patientData.dni || 'No informado'}</dd></div>
             <div><dt>Número de afiliado</dt><dd>{patientData.num_obra_social || patientData.numeroAfiliado || 'No informado'}</dd></div>
-            <div><dt>Alta en sistema</dt><dd>{patientData.fecha_creacion ? formatDateDDMMAAAA(patientData.fecha_creacion) : 'No informado'}</dd></div>
           </dl>
         </div>
 
@@ -71,15 +75,17 @@ export default function PatientHistoryModal({
               {visits.map((visit) => (
                 <li key={visit.id_ticket}>
                   <div className="patient-history-modal__visit-header">
-                    <strong>{formatDateDDMMAAAA(visit.fecha_hora_admision)} · {formatTimeHHMM(visit.fecha_hora_admision)}</strong>
-                    <span>{visit.box_numero ? `Box ${visit.box_numero}` : 'Box no informado'}</span>
+                    <strong>
+                      Atención: {(visit.fecha_hora_atencion || visit.fecha_hora_admision)
+                        ? `${formatDateDDMMAAAA(visit.fecha_hora_atencion || visit.fecha_hora_admision)} · ${formatTimeHHMM(visit.fecha_hora_atencion || visit.fecha_hora_admision)}`
+                        : 'Fecha y hora no informadas'}
+                    </strong>
+                    <span>{visit.box_numero || visit.box_actual
+                      ? `Box ${visit.box_numero || visit.box_actual}`
+                      : 'Box no informado'}</span>
                   </div>
                   <p>Ticket: {visit.num_totem} · Estado: {visit.estado}</p>
-                  <p>Estudios: {
-                    visit.estudios?.length
-                      ? visit.estudios.map((study) => study.estudio_detalle?.nombre || study.nombre).filter(Boolean).join(', ')
-                      : 'Sin estudios registrados'
-                  }</p>
+                  <p>Estudios: {getStudyNames(visit.estudios).join(', ') || 'Sin estudios registrados'}</p>
                 </li>
               ))}
             </ul>
@@ -87,14 +93,6 @@ export default function PatientHistoryModal({
         </div>
 
         <div className="patient-history-modal__actions">
-          <button
-            type="button"
-            className="patient-history-modal__use"
-            onClick={() => onUsePatient?.(patientData)}
-            disabled={isLoading}
-          >
-            Seleccionar paciente
-          </button>
           <button type="button" className="patient-history-modal__cancel" onClick={onClose}>
             Cerrar
           </button>

@@ -5,6 +5,33 @@
   flex-direction: column;
 }
 
+.jefa-screen .patient-search__input {
+  border-color: var(--border-card);
+}
+
+.jefa-screen .patient-search__input:focus {
+  border-color: var(--medical-primary);
+  box-shadow: 0 0 0 3px rgba(22, 135, 201, 0.14);
+}
+
+.jefa-screen .patient-search__icon {
+  color: var(--text-muted);
+}
+
+.jefa-screen .patient-search__clear-btn:hover,
+.jefa-screen .patient-search__item:hover {
+  background: var(--surface-hover);
+}
+
+.jefa-screen .patient-search__clear-btn:hover {
+  color: var(--text-primary);
+}
+
+.jefa-screen .patient-search__avatar {
+  background: var(--surface-hover);
+  color: var(--medical-primary);
+}
+
 .jefa-screen__main {
   flex: 1;
   max-width: 1440px;

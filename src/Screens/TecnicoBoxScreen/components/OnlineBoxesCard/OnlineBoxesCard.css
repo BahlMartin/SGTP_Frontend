@@ -15,7 +15,7 @@
 
 .online-boxes-card__message {
   margin: 0;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   font-size: 0.85rem;
   line-height: 1.45;
 }
@@ -64,7 +64,7 @@
 }
 
 .online-boxes-card__pill--atencion {
-  background: #0284c7;
+  background: var(--medical-primary);
   color: #ffffff;
 }
 

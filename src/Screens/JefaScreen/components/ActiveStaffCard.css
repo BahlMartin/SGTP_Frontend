@@ -16,7 +16,7 @@
 .jefa-screen__staff-count {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #0284c7;
+  color: var(--medical-primary);
 }
 
 .jefa-screen__staff-list {
@@ -31,7 +31,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px solid #f8fafc;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .jefa-screen__staff-info {
@@ -49,22 +49,22 @@
 
 .jefa-screen__staff-dot--active {
   background: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.16);
 }
 
 .jefa-screen__staff-dot--offline {
-  background: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+  background: #d95a58;
+  box-shadow: 0 0 0 3px rgba(217, 90, 88, 0.14);
 }
 
 .jefa-screen__staff-dot--blocked {
-  background: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+  background: #d95a58;
+  box-shadow: 0 0 0 3px rgba(217, 90, 88, 0.14);
 }
 
 .jefa-screen__staff-dot--outside {
   background: #eab308;
-  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2);
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.16);
 }
 
 .jefa-screen__staff-titles {
