@@ -22,7 +22,7 @@ export default function PatientHistoryModal({
   if (!patient) return null
 
   const patientData = history?.paciente || patient
-  const visits = history?.atenciones || []
+  const visits = Array.isArray(history) ? history : history?.atenciones || []
   const getStudyNames = (studies = []) => studies
     .map((study) => {
       if (typeof study === 'string') return study
