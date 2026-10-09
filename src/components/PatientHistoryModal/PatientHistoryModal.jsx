@@ -8,6 +8,7 @@ export default function PatientHistoryModal({
   history,
   isLoading = false,
   error = '',
+  onSelectPatient,
   onClose
 }) {
   useEffect(() => {
@@ -93,6 +94,15 @@ export default function PatientHistoryModal({
         </div>
 
         <div className="patient-history-modal__actions">
+          {onSelectPatient && (
+            <button
+              type="button"
+              className="patient-history-modal__select"
+              onClick={onSelectPatient}
+            >
+              Seleccionar paciente
+            </button>
+          )}
           <button type="button" className="patient-history-modal__cancel" onClick={onClose}>
             Cerrar
           </button>

@@ -17,7 +17,7 @@ function normalizeStaffUser(rawStaffMember) {
     primerNombre: rawStaffMember.nombre || nombreCompleto,
     apellidos: rawStaffMember.apellidos || '',
     email: rawStaffMember.email,
-    matricula: rawStaffMember.matricula || `MAT-${idPersonal}`,
+    matricula: rawStaffMember.matricula || '',
     rol: rawStaffMember.rol,
     turno: turnoDesc,
     inicio_turno: rawStaffMember.inicio_turno,

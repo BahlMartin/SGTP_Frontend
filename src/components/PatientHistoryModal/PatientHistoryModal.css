@@ -140,6 +140,15 @@
   color: #334155;
 }
 
+.patient-history-modal__select {
+  background: var(--medical-primary);
+  color: #ffffff;
+}
+
+.patient-history-modal__select:hover {
+  background: var(--medical-primary-hover);
+}
+
 @media (max-width: 520px) {
   .patient-history-modal__card {
     padding: 20px 16px;

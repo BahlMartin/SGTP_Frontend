@@ -58,6 +58,7 @@ export default function AdmisionScreen() {
     handleFieldChange,
     handleToggleStudy,
     handleSetStudies,
+    handleLoadPatient,
     validateAdmissionForm,
     resetAdmissionForm
   } = useAdmissionForm()
@@ -102,7 +103,7 @@ export default function AdmisionScreen() {
         clasificacion_triage: formData.selectedTriage,
         justificacion_otro: formData.justificacionOtro.trim(),
         estudios_ids: formData.selectedStudies.map((study) => study.id),
-        mat_admision: userData?.matricula || 'ADM-4412'
+        mat_admision: userData?.matricula || ''
       }
 
       if (
@@ -172,7 +173,7 @@ export default function AdmisionScreen() {
               onTicketClick={handleTicketItemClick}
             />
 
-            <PatientSearch />
+            <PatientSearch onSelectPatient={handleLoadPatient} />
           </aside>
         </div>
       </main>

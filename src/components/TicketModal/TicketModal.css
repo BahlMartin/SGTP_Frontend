@@ -261,7 +261,7 @@ body.ticket-printing #printable-ticket {
 
 @media print {
   @page {
-    size: 80mm 200mm;
+    size: 80mm auto;
     margin: 0;
   }
 

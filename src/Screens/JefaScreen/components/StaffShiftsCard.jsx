@@ -54,7 +54,9 @@ export default function StaffShiftsCard({
                 <tr key={staffMember.id}>
                 <td className="jefa-screen__shift-person">
                   <span className="jefa-screen__shift-name">{staffMember.nombre}</span>
-                  <span className="jefa-screen__shift-mat">{staffMember.matricula}</span>
+                  <span className="jefa-screen__shift-mat">
+                    Matrícula: {staffMember.matricula || 'No informada'}
+                  </span>
                 </td>
                 <td>
                   <span className="jefa-screen__shift-role">{staffMember.rol}</span>

@@ -83,9 +83,6 @@ export default function TecnicoBoxScreen() {
 
             <MultiboxQueueCard
               waitingQueue={waitingQueue}
-              currentBoxKey={currentBoxKey}
-              hasPatientInBox={Boolean(patientInBox)}
-              onCallNext={handleCallNext}
             />
           </div>
         </div>

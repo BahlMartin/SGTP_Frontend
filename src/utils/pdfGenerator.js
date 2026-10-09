@@ -113,7 +113,7 @@ export function generateDailyReportPdf({
       doc.text(String(t.paciente_nombre || '—').substring(0, 24), 42, y + 4)
       doc.text(String(t.clasificacion_triage || '—').substring(0, 16), 90, y + 4)
       doc.text(String(t.estado || '—'), 125, y + 4)
-      doc.text(String(t.mat_admision || 'TEC-ADM'), 150, y + 4)
+      doc.text(String(t.mat_admision || '—'), 150, y + 4)
       doc.text(String(t.box_asignado || '—'), 178, y + 4)
       y += 6
       if (y > 275) {

@@ -5,10 +5,7 @@ import { calculateMinutesDiff } from '../../../../utils/formatters'
 import './MultiboxQueueCard.css'
 
 export default function MultiboxQueueCard({
-  waitingQueue = [],
-  currentBoxKey,
-  hasPatientInBox = false,
-  onCallNext
+  waitingQueue = []
 }) {
   return (
     <div className="multibox-queue-card">
@@ -36,7 +33,6 @@ export default function MultiboxQueueCard({
                 <th className="multibox-queue-card__th">CLASIFICACIÓN TRIAGE</th>
                 <th className="multibox-queue-card__th">ESPERA</th>
                 <th className="multibox-queue-card__th">ESTUDIOS</th>
-                <th className="multibox-queue-card__th">ACCIÓN</th>
               </tr>
             </thead>
             <tbody>
@@ -80,17 +76,6 @@ export default function MultiboxQueueCard({
                       <span className="multibox-queue-card__studies">
                         {ticketItem.estudios?.length || 1} estudio(s)
                       </span>
-                    </td>
-                    <td className="multibox-queue-card__td">
-                      <button
-                        type="button"
-                        className="multibox-queue-card__call-btn"
-                        disabled={hasPatientInBox}
-                        onClick={onCallNext}
-                        title="Convocar a este paciente al box activo"
-                      >
-                        Llamar a {currentBoxKey}
-                      </button>
                     </td>
                   </tr>
                 )

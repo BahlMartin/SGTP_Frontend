@@ -100,25 +100,6 @@ export default function StudiesSelector({
         </button>
       </div>
 
-      {selectedStudies.length > 0 && (
-        <div className="studies-selector__selected" aria-label="Estudios seleccionados">
-          {selectedStudies.map((study) => (
-            <span className="studies-selector__selected-chip" key={study.id ?? study.nombre}>
-              <Check size={14} aria-hidden="true" />
-              {study.nombre}
-              <button
-                type="button"
-                className="studies-selector__remove-btn"
-                onClick={() => onToggleStudy(study)}
-                aria-label={`Quitar ${study.nombre}`}
-              >
-                <X size={14} />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
       <div className="studies-selector__search" ref={searchContainerRef}>
         <div className="studies-selector__input-wrapper">
           <input
@@ -184,6 +165,25 @@ export default function StudiesSelector({
           </div>
         )}
       </div>
+
+      {selectedStudies.length > 0 && (
+        <div className="studies-selector__selected" aria-label="Estudios seleccionados">
+          {selectedStudies.map((study) => (
+            <span className="studies-selector__selected-chip" key={study.id ?? study.nombre}>
+              <Check size={14} aria-hidden="true" />
+              {study.nombre}
+              <button
+                type="button"
+                className="studies-selector__remove-btn"
+                onClick={() => onToggleStudy(study)}
+                aria-label={`Quitar ${study.nombre}`}
+              >
+                <X size={14} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

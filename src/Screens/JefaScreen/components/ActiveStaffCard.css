@@ -78,6 +78,11 @@
   color: var(--text-primary);
 }
 
+.jefa-screen__staff-matricula {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
 .jefa-screen__staff-subarea {
   font-size: 0.72rem;
   color: var(--text-muted);

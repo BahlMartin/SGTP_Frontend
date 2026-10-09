@@ -119,28 +119,6 @@
   color: var(--text-secondary);
 }
 
-.multibox-queue-card__call-btn {
-  background: var(--surface-hover);
-  border: 1px solid var(--border-card);
-  color: var(--medical-primary);
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  transition: all 0.15s;
-  cursor: pointer;
-}
-
-.multibox-queue-card__call-btn:hover:not(:disabled) {
-  background: var(--medical-primary);
-  color: #ffffff;
-}
-
-.multibox-queue-card__call-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 .multibox-queue-card__empty {
   padding: 30px;
   text-align: center;

@@ -55,8 +55,8 @@ export default function AdmissionForm({
           </div>
 
           <div className="admission-form__field">
-            <label htmlFor="admission-patient-obrasocial" className="admission-form__label">
-              Obra social
+            <label htmlFor="admission-patient-numero-afiliado" className="admission-form__label">
+              N° de afiliado
             </label>
             <input
               id="admission-patient-numero-afiliado"

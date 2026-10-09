@@ -5,7 +5,7 @@ import { fetchPatientHistoryApi } from '../../services/patientService'
 import PatientHistoryModal from '../PatientHistoryModal/PatientHistoryModal'
 import './PatientSearch.css'
 
-export default function PatientSearch() {
+export default function PatientSearch({ onSelectPatient }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
@@ -142,6 +142,12 @@ export default function PatientSearch() {
         history={patientHistory}
         isLoading={isLoadingHistory}
         error={historyError}
+        onSelectPatient={onSelectPatient ? () => {
+          onSelectPatient(selectedPatient)
+          setSelectedPatient(null)
+          setPatientHistory(null)
+          setHistoryError('')
+        } : undefined}
         onClose={() => {
           setSelectedPatient(null)
           setPatientHistory(null)
