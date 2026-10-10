@@ -78,20 +78,18 @@ export default function ActiveStaffCard({
 
           return (
             <li key={staffMember.id} className="jefa-screen__staff-item">
-              <div className="jefa-screen__staff-info">
-                <span
-                  className={`jefa-screen__staff-dot ${statusClass}`}
-                  role="img"
-                  aria-label={statusLabel}
-                />
-                <div className="jefa-screen__staff-titles">
-                  <span className="jefa-screen__staff-name">{staffMember.nombre}</span>
-                  <span className="jefa-screen__staff-matricula">
-                    Matrícula: {staffMember.matricula || 'No informada'}
-                  </span>
-                  <span className="jefa-screen__staff-subarea">
-                    {staffMember.rol} · {statusLabel}
-                  </span>
+                <div className="jefa-screen__staff-info">
+                  <span
+                    className={`jefa-screen__staff-dot ${statusClass}`}
+                    role="img"
+                    aria-label={statusLabel}
+                  />
+                  <div className="jefa-screen__staff-titles">
+                    <span className="jefa-screen__staff-name">{staffMember.nombre}</span>
+                    <span className="jefa-screen__staff-subarea">
+                      {staffMember.rol} · {statusLabel}
+                    </span>
+                  </div>
                 </div>
                 {attendsPatients && (
                   <div className="jefa-screen__staff-stat">
