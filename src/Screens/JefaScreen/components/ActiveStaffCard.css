@@ -9,8 +9,99 @@
 .jefa-screen__staff-header {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+
+.jefa-screen__staff-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jefa-screen__date-controls {
+  display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 6px;
+}
+
+.jefa-screen__date-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-surface, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-md, 6px);
+  padding: 3px 8px;
+  transition: border-color 0.2s ease;
+}
+
+.jefa-screen__date-picker-wrap:focus-within {
+  border-color: var(--medical-primary, #3b82f6);
+}
+
+.jefa-screen__date-icon {
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.jefa-screen__date-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #f1f5f9);
+  font-size: 0.76rem;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.jefa-screen__date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.6);
+  opacity: 0.7;
+}
+
+.jefa-screen__date-today-btn {
+  background: var(--medical-primary, #3b82f6);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.jefa-screen__date-today-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.jefa-screen__staff-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 0;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.8rem;
+}
+
+.jefa-screen__mini-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  border-top-color: var(--medical-primary, #3b82f6);
+  border-radius: 50%;
+  animation: jefaStaffSpin 0.7s linear infinite;
+}
+
+@keyframes jefaStaffSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .jefa-screen__staff-count {

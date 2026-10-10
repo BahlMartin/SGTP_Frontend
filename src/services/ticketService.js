@@ -199,3 +199,25 @@ export async function searchPatientsApi(query) {
     return []
   }
 }
+
+/**
+ * Consulta el rendimiento y carga del personal (tickets emitidos / pacientes atendidos) para una fecha determinada.
+ */
+export async function fetchRendimientoPersonalApi(fechaStr) {
+  const query = fechaStr ? `?fecha=${fechaStr}` : ''
+  return await apiClient.get(`/tickets/rendimiento-personal/${query}`)
+}
+
+/**
+ * Consulta el resumen de estudios de laboratorio realizados en una fecha, con soporte para Top N y búsqueda específica.
+ */
+export async function fetchResumenEstudiosApi({ fechaStr, search = '', top = null } = {}) {
+  const params = new URLSearchParams()
+  if (fechaStr) params.append('fecha', fechaStr)
+  if (search && search.trim()) params.append('search', search.trim())
+  if (top) params.append('top', String(top))
+
+  const queryString = params.toString() ? `?${params.toString()}` : ''
+  return await apiClient.get(`/tickets/resumen-estudios/${queryString}`)
+}
+

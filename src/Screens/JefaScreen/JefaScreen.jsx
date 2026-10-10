@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import JefaLayout from './components/JefaLayout'
 import JefaHeader from './components/JefaHeader'
 import LabMatrixCard from './components/LabMatrixCard'
@@ -7,15 +7,16 @@ import StaffShiftsCard from './components/StaffShiftsCard'
 import AddStaffModal from './components/AddStaffModal'
 import EditStaffModal from './components/EditStaffModal'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
-import { useTriageQueue } from '../../context/TriageQueueContext'
 import { useAuth } from '../../context/AuthContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
 import { useFeedbackNotice } from '../../hooks/useFeedbackNotice'
-import { fetchAsignacionesBoxApi } from '../../services/boxService'
-import { computeTopLabStudies } from '../../services/reportService'
+import {
+  fetchRendimientoPersonalApi,
+  fetchResumenEstudiosApi
+} from '../../services/ticketService'
+import { getTodayLocalDateString } from '../../utils/formatters'
 
 export default function JefaScreen() {
-  const { tickets, refreshTickets } = useTriageQueue()
   const { userData } = useAuth()
   const {
     staffList,
@@ -30,76 +31,80 @@ export default function JefaScreen() {
   const { notice: statusNotice, showNotice } = useFeedbackNotice(4000)
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
   const [editingStaff, setEditingStaff] = useState(null)
-  const [boxAssignments, setBoxAssignments] = useState([])
 
-  useEffect(() => {
-    const refreshInterval = window.setInterval(() => {
-      refreshTickets()
-    }, 30_000)
+  // Estado para rendimiento de personal por fecha
+  const [staffDate, setStaffDate] = useState(() => getTodayLocalDateString())
+  const [workloadByStaff, setWorkloadByStaff] = useState({
+    ticketsIssuedByStaff: {},
+    patientsAttendedByBoxStaff: {}
+  })
+  const [loadingStaffWorkload, setLoadingStaffWorkload] = useState(false)
 
-    return () => window.clearInterval(refreshInterval)
-  }, [refreshTickets])
+  // Estado para estudios de laboratorio (Top 5 y búsqueda con lupa por fecha)
+  const [studiesDate, setStudiesDate] = useState(() => getTodayLocalDateString())
+  const [studiesSearch, setStudiesSearch] = useState('')
+  const [labStudies, setLabStudies] = useState([])
+  const [loadingStudies, setLoadingStudies] = useState(false)
 
+  // Carga reactiva de rendimiento de personal al cambiar la fecha seleccionada
   useEffect(() => {
     let isMounted = true
-    fetchAsignacionesBoxApi()
-      .then((assignments) => {
-        if (isMounted) setBoxAssignments(assignments)
+    setLoadingStaffWorkload(true)
+
+    fetchRendimientoPersonalApi(staffDate)
+      .then((data) => {
+        if (!isMounted) return
+        setWorkloadByStaff({
+          ticketsIssuedByStaff: data.tickets_por_personal || {},
+          patientsAttendedByBoxStaff: data.atenciones_por_personal || {}
+        })
       })
       .catch((error) => {
-        console.error('Error al cargar las atenciones del personal:', error)
+        console.error('Error al cargar la carga de personal:', error)
         if (isMounted) {
           showNotice(error.message || 'No se pudo cargar la carga de atenciones por personal.')
         }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingStaffWorkload(false)
       })
 
     return () => {
       isMounted = false
     }
-  }, [showNotice])
+  }, [staffDate, showNotice])
 
-  const workloadByStaff = useMemo(() => {
-    const completedTickets = tickets.filter(
-      (ticket) => ticket.estado === 'Atendido' || ticket.estado_backend === 'Finalizado'
-    )
-    const completedTicketIds = new Set(
-      completedTickets.map((ticket) => String(ticket.id_ticket || ticket.id))
-    )
-    const ticketsIssuedByStaff = {}
+  // Carga reactiva de estudios de laboratorio al cambiar fecha o término de búsqueda (con debounce sutil)
+  useEffect(() => {
+    let isMounted = true
+    setLoadingStudies(true)
 
-    for (const ticket of tickets) {
-      const staffId = ticket.personal_admision
-      if (staffId !== null && staffId !== undefined) {
-        const key = String(staffId)
-        ticketsIssuedByStaff[key] = (ticketsIssuedByStaff[key] || 0) + 1
-      }
+    const timer = setTimeout(() => {
+      fetchResumenEstudiosApi({
+        fechaStr: studiesDate,
+        search: studiesSearch,
+        top: studiesSearch.trim() ? null : 5
+      })
+        .then((data) => {
+          if (!isMounted) return
+          setLabStudies(data.estudios || [])
+        })
+        .catch((error) => {
+          console.error('Error al consultar estudios de laboratorio:', error)
+          if (isMounted) {
+            showNotice(error.message || 'No se pudo cargar el resumen de estudios.')
+          }
+        })
+        .finally(() => {
+          if (isMounted) setLoadingStudies(false)
+        })
+    }, studiesSearch ? 250 : 0)
+
+    return () => {
+      isMounted = false
+      clearTimeout(timer)
     }
-
-    const boxPatientsByStaff = new Map()
-    for (const assignment of boxAssignments) {
-      const ticketId = assignment.ticket ? String(assignment.ticket) : ''
-      if (
-        !assignment.personal ||
-        !ticketId ||
-        !assignment.fecha_hora_final ||
-        assignment.motivo_cierre !== 'Finalizado' ||
-        !completedTicketIds.has(ticketId)
-      ) {
-        continue
-      }
-
-      const staffId = String(assignment.personal)
-      if (!boxPatientsByStaff.has(staffId)) boxPatientsByStaff.set(staffId, new Set())
-      boxPatientsByStaff.get(staffId).add(ticketId)
-    }
-
-    const patientsAttendedByBoxStaff = Object.fromEntries(
-      Array.from(boxPatientsByStaff, ([staffId, patientIds]) => [staffId, patientIds.size])
-    )
-
-    return { ticketsIssuedByStaff, patientsAttendedByBoxStaff }
-  }, [boxAssignments, tickets])
-  const topLabStudies = useMemo(() => computeTopLabStudies(tickets), [tickets])
+  }, [studiesDate, studiesSearch, showNotice])
 
   const handleCreateStaff = async (newStaffPayload) => {
     await createStaff(newStaffPayload, userData?.rol, showNotice)
@@ -132,8 +137,22 @@ export default function JefaScreen() {
         headerContent={<JefaHeader statusMessage={statusNotice} />}
         leftContent={
           <>
-            <ActiveStaffCard staffList={staffList} workloadByStaff={workloadByStaff} />
-            <LabMatrixCard labStudies={topLabStudies} />
+            <ActiveStaffCard
+              staffList={staffList}
+              selectedDate={staffDate}
+              onDateChange={setStaffDate}
+              workloadByStaff={workloadByStaff}
+              isLoading={loadingStaffWorkload}
+            />
+            <LabMatrixCard
+              labStudies={labStudies}
+              selectedDate={studiesDate}
+              onDateChange={setStudiesDate}
+              searchQuery={studiesSearch}
+              onSearchChange={setStudiesSearch}
+              onClearSearch={() => setStudiesSearch('')}
+              isLoading={loadingStudies}
+            />
           </>
         }
         centerContent={
