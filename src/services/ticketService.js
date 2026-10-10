@@ -25,6 +25,12 @@ export function normalizeTicket(t) {
     num_llamado: t.num_totem ? t.num_totem.replace(/[^\d]/g, '') || t.num_totem : (t.num_llamado || '101'),
     fecha_hora_admision: t.fecha_hora_admision,
     mat_admision: t.personal_admision_matricula || t.mat_admision || '',
+    personal_admision_matricula: t.personal_admision_matricula || t.mat_admision || '',
+    personal_admision_nombre: t.personal_admision_nombre || '',
+    personal_box_nombre: t.personal_box_nombre || '',
+    personal_box_matricula: t.personal_box_matricula || '',
+    fecha_hora_atencion_box: t.fecha_hora_atencion_box || null,
+    motivo_cierre_box: t.motivo_cierre_box || '',
     paciente_id: t.paciente,
     paciente_dni: paciente.dni ? String(paciente.dni) : (t.paciente_dni || ''),
     paciente_nombre: paciente.nombre || t.paciente_nombre || '',
@@ -33,6 +39,7 @@ export function normalizeTicket(t) {
     paciente_numero_afiliado: paciente.num_obra_social || t.paciente_numero_afiliado || '',
     clasificacion_triage: getTriageInfo(t.clasificacion_triage).key,
     justificacion_otro: t.justificacion_otro || '',
+    box_numero: t.box_numero || null,
     box_asignado: t.box_numero ? `Box ${t.box_numero}` : (t.box_asignado || null),
     estado: estadoNormalizado,
     estado_backend: t.estado,
@@ -115,9 +122,12 @@ export async function createTicketApi(ticketData) {
   }
 
   const response = await apiClient.post('/tickets/', payload)
+  const normalized = normalizeTicket(response)
   return {
-    ...normalizeTicket(response),
-    mat_admision: response.personal_admision_matricula || ticketData.mat_admision || ''
+    ...normalized,
+    mat_admision: response.personal_admision_matricula || normalized.mat_admision || ticketData.mat_admision || '',
+    personal_admision_matricula: response.personal_admision_matricula || normalized.personal_admision_matricula || ticketData.mat_admision || '',
+    personal_admision_nombre: response.personal_admision_nombre || normalized.personal_admision_nombre || ticketData.personal_admision_nombre || ''
   }
 }
 
@@ -199,3 +209,25 @@ export async function searchPatientsApi(query) {
     return []
   }
 }
+
+/**
+ * Consulta el rendimiento y carga del personal (tickets emitidos / pacientes atendidos) para una fecha determinada.
+ */
+export async function fetchRendimientoPersonalApi(fechaStr) {
+  const query = fechaStr ? `?fecha=${fechaStr}` : ''
+  return await apiClient.get(`/tickets/rendimiento-personal/${query}`)
+}
+
+/**
+ * Consulta el resumen de estudios de laboratorio realizados en una fecha, con soporte para Top N y búsqueda específica.
+ */
+export async function fetchResumenEstudiosApi({ fechaStr, search = '', top = null } = {}) {
+  const params = new URLSearchParams()
+  if (fechaStr) params.append('fecha', fechaStr)
+  if (search && search.trim()) params.append('search', search.trim())
+  if (top) params.append('top', String(top))
+
+  const queryString = params.toString() ? `?${params.toString()}` : ''
+  return await apiClient.get(`/tickets/resumen-estudios/${queryString}`)
+}
+

@@ -103,7 +103,11 @@ export default function AdmisionScreen() {
         clasificacion_triage: formData.selectedTriage,
         justificacion_otro: formData.justificacionOtro.trim(),
         estudios_ids: formData.selectedStudies.map((study) => study.id),
-        mat_admision: userData?.matricula || ''
+        mat_admision: userData?.matricula || '',
+        personal_admision_matricula: userData?.matricula || '',
+        personal_admision_nombre: userData?.nombre && userData?.apellidos
+          ? `${userData.apellidos}, ${userData.nombre}`
+          : userData?.nombre || ''
       }
 
       if (

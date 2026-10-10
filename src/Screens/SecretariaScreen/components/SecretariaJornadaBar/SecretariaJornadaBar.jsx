@@ -1,5 +1,5 @@
 import React from 'react'
-import { Download, Mail } from 'lucide-react'
+import { ArrowUpRight, Download, Mail } from 'lucide-react'
 import './SecretariaJornadaBar.css'
 
 export default function SecretariaJornadaBar({
@@ -32,18 +32,23 @@ export default function SecretariaJornadaBar({
           className="secretaria-jornada-bar__btn-export"
           onClick={onExportPdf}
           disabled={isSendingEmail}
+          aria-label="Descargar reporte como PDF"
+          title="Descargar reporte como PDF"
         >
           <Download className="secretaria-jornada-bar__btn-icon" />
-          <span>exportar PDF</span>
         </button>
         <button
           type="button"
           className="secretaria-jornada-bar__btn-email"
           onClick={onSendEmail}
           disabled={isSendingEmail}
+          aria-label={isSendingEmail ? 'Enviando reporte por mail' : 'Enviar reporte por mail'}
+          title={isSendingEmail ? 'Enviando reporte por mail' : 'Enviar reporte por mail'}
         >
-          <Mail className="secretaria-jornada-bar__btn-icon" />
-          <span>{isSendingEmail ? 'enviando...' : 'enviar por mail'}</span>
+          <span className="secretaria-jornada-bar__email-icon" aria-hidden="true">
+            <Mail className="secretaria-jornada-bar__btn-icon" />
+            <ArrowUpRight className="secretaria-jornada-bar__email-arrow" />
+          </span>
         </button>
       </div>
     </div>

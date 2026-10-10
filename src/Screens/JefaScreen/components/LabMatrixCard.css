@@ -9,22 +9,134 @@
 .jefa-screen__matrix-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 12px;
+  gap: 10px;
 }
 
-.jefa-screen__section-title {
-  font-size: 0.95rem;
+.jefa-screen__matrix-header-title-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jefa-screen__matrix-badge {
+  font-size: 0.72rem;
   font-weight: 700;
-  color: var(--text-primary);
-  display: block;
-  margin: 0;
+  color: var(--medical-primary, #3b82f6);
+  background: rgba(59, 130, 246, 0.12);
+  padding: 2px 7px;
+  border-radius: var(--radius-sm, 4px);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.jefa-screen__matrix-count {
+.jefa-screen__matrix-date-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jefa-screen__matrix-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-md, 6px);
+  padding: 6px 10px;
+  margin-bottom: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.jefa-screen__matrix-search-bar:focus-within {
+  border-color: var(--medical-primary, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.jefa-screen__matrix-search-icon {
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.jefa-screen__matrix-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #f1f5f9);
   font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--medical-primary);
+  outline: none;
+  font-family: inherit;
+}
+
+.jefa-screen__matrix-search-input::placeholder {
+  color: var(--text-muted, #64748b);
+}
+
+.jefa-screen__matrix-clear-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 50%;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.jefa-screen__matrix-clear-btn:hover {
+  color: var(--text-primary, #f1f5f9);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.jefa-screen__matrix-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 0;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.8rem;
+}
+
+.jefa-screen__matrix-cat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jefa-screen__matrix-cat-code {
+  font-size: 0.68rem;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.jefa-screen__matrix-empty-wrap {
+  text-align: center;
+  padding: 16px 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.jefa-screen__matrix-reset-btn {
+  background: var(--bg-surface, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  color: var(--medical-primary, #3b82f6);
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.jefa-screen__matrix-reset-btn:hover {
+  background: rgba(59, 130, 246, 0.15);
 }
 
 .jefa-screen__matrix-table {

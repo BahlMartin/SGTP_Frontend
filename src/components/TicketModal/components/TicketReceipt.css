@@ -1,0 +1,124 @@
+/* Comprobante / Recibo Térmico de Ticket (80mm) */
+.ticket-modal__receipt {
+  background: #fafaf9;
+  border: 1px solid #e7e5e4;
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  width: 100%;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.03);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.ticket-modal__receipt-header {
+  text-align: center;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #d6d3d1;
+}
+
+.ticket-modal__hospital-name {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #1c1917;
+}
+
+.ticket-modal__hospital-sub {
+  font-size: 0.78rem;
+  color: #78716c;
+}
+
+.ticket-modal__call-box {
+  text-align: center;
+  padding: 8px 0 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #d6d3d1;
+}
+
+.ticket-modal__call-label {
+  display: block;
+  font-size: 0.72rem;
+  color: #78716c;
+  letter-spacing: 1px;
+}
+
+.ticket-modal__call-number {
+  display: block;
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: #0c4a6e;
+  line-height: 1.1;
+  font-family: var(--font-family);
+}
+
+.ticket-modal__totem-id {
+  display: block;
+  font-size: 0.75rem;
+  color: #0369a1;
+  font-weight: 600;
+}
+
+.ticket-modal__details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #d6d3d1;
+}
+
+.ticket-modal__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ticket-modal__row-label {
+  color: #78716c;
+}
+
+.ticket-modal__row-value {
+  font-weight: 700;
+  color: #1c1917;
+  text-align: right;
+}
+
+.ticket-modal__row-value--small {
+  font-size: 0.75rem;
+  max-width: 60%;
+}
+
+.ticket-modal__receipt-footer {
+  text-align: center;
+  font-size: 0.72rem;
+  color: #78716c;
+}
+
+.ticket-modal__uuid {
+  display: block;
+  font-size: 0.65rem;
+  color: #a8a29e;
+  margin-top: 4px;
+}
+
+/* Reglas de impresión específicas para el comprobante #printable-ticket */
+body.ticket-printing #printable-ticket {
+  box-sizing: border-box;
+  width: 72mm !important;
+  max-width: 72mm !important;
+  margin: 0 auto !important;
+  padding: 3mm;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  break-inside: avoid-page;
+  page-break-inside: avoid;
+}
+
+@media print {
+  body.ticket-printing #printable-ticket,
+  body.ticket-printing #printable-ticket * {
+    visibility: visible;
+  }
+}
