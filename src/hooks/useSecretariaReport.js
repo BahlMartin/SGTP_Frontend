@@ -42,7 +42,7 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
     return () => {
       cancelled = true
     }
-  }, [jornadaDate, tickets])
+  }, [jornadaDate])
 
   // Total de pacientes para proporciones visuales
   const totalPacientes = useMemo(() => {
