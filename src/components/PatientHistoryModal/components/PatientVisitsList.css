@@ -1,0 +1,85 @@
+/* Contenedor y Lista de Atenciones Históricas */
+.patient-history-modal__visits {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-lg);
+  background: #ffffff;
+}
+
+.patient-history-modal__visits-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.patient-history-modal__visits-head h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.patient-history-modal__visits-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.patient-history-modal__fetch-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-md);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.patient-history-modal__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.patient-history-modal__status--error {
+  color: #b91c1c;
+}
+
+.patient-history-modal__empty {
+  text-align: center;
+  padding: 28px 16px;
+  color: #64748b;
+}
+
+.patient-history-modal__empty-icon {
+  margin: 0 auto 10px;
+  color: #94a3b8;
+}
+
+.patient-history-modal__empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.patient-history-modal__visit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

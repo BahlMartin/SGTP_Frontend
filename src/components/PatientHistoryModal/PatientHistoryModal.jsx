@@ -1,6 +1,9 @@
-import React, { useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
-import { formatDateDDMMAAAA, formatTimeHHMM } from '../../utils/formatters'
+import { fetchTicketByIdApi } from '../../services/ticketService'
+import TicketModal from '../TicketModal/TicketModal'
+import PatientProfileHeader from './components/PatientProfileHeader'
+import PatientVisitsList from './components/PatientVisitsList'
 import './PatientHistoryModal.css'
 
 export default function PatientHistoryModal({
@@ -11,103 +14,120 @@ export default function PatientHistoryModal({
   onSelectPatient,
   onClose
 }) {
+  const [selectedTicketDetail, setSelectedTicketDetail] = useState(null)
+  const [isFetchingTicketId, setIsFetchingTicketId] = useState(null)
+  const [ticketFetchError, setTicketFetchError] = useState('')
+  const ticketCacheRef = useRef({})
+
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') onClose?.()
+      if (event.key === 'Escape') {
+        if (selectedTicketDetail) {
+          setSelectedTicketDetail(null)
+        } else {
+          onClose?.()
+        }
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+  }, [selectedTicketDetail, onClose])
 
   if (!patient) return null
 
   const patientData = history?.paciente || patient
   const visits = Array.isArray(history) ? history : history?.atenciones || []
-  const getStudyNames = (studies = []) => studies
-    .map((study) => {
-      if (typeof study === 'string') return study
-      return study?.estudio_detalle?.nombre || study?.estudio?.nombre || study?.nombre || ''
-    })
-    .filter(Boolean)
+
+  const handleViewTicket = async (ticketId) => {
+    if (!ticketId) return
+    setTicketFetchError('')
+
+    // 1. Reutilización instantánea desde la caché en memoria (0 ms)
+    if (ticketCacheRef.current[ticketId]) {
+      setSelectedTicketDetail(ticketCacheRef.current[ticketId])
+      return
+    }
+
+    // 2. Consulta al endpoint oficial de ticket
+    setIsFetchingTicketId(ticketId)
+    try {
+      const ticketData = await fetchTicketByIdApi(ticketId)
+      ticketCacheRef.current[ticketId] = ticketData
+      setSelectedTicketDetail(ticketData)
+    } catch (err) {
+      console.error('Error al consultar ticket asistencial:', err)
+      setTicketFetchError(
+        err.message || 'No se pudo obtener el comprobante del ticket desde el servidor.'
+      )
+    } finally {
+      setIsFetchingTicketId(null)
+    }
+  }
 
   return (
-    <div
-      className="patient-history-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="patient-history-title"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose?.()
-      }}
-    >
-      <section className="patient-history-modal__card">
-        <button
-          type="button"
-          className="patient-history-modal__close"
-          onClick={onClose}
-          aria-label="Cerrar historial"
-        >
-          <X size={20} />
-        </button>
-
-        <h2 id="patient-history-title" className="patient-history-modal__title">
-          Historial del paciente
-        </h2>
-
-        <div className="patient-history-modal__patient">
-          <h3>{patientData.nombre} {patientData.apellidos || patientData.apellido}</h3>
-          <dl>
-            <div><dt>DNI</dt><dd>{patientData.dni || 'No informado'}</dd></div>
-            <div><dt>Número de afiliado</dt><dd>{patientData.num_obra_social || patientData.numeroAfiliado || 'No informado'}</dd></div>
-          </dl>
-        </div>
-
-        <div className="patient-history-modal__visits">
-          <h3>Atenciones, estudios y box</h3>
-          {isLoading ? (
-            <p className="patient-history-modal__status" role="status">Cargando historial...</p>
-          ) : error ? (
-            <p className="patient-history-modal__status patient-history-modal__status--error" role="alert">{error}</p>
-          ) : visits.length === 0 ? (
-            <p className="patient-history-modal__status">No hay atenciones registradas para este paciente.</p>
-          ) : (
-            <ul className="patient-history-modal__visit-list">
-              {visits.map((visit) => (
-                <li key={visit.id_ticket}>
-                  <div className="patient-history-modal__visit-header">
-                    <strong>
-                      Atención: {(visit.fecha_hora_atencion || visit.fecha_hora_admision)
-                        ? `${formatDateDDMMAAAA(visit.fecha_hora_atencion || visit.fecha_hora_admision)} · ${formatTimeHHMM(visit.fecha_hora_atencion || visit.fecha_hora_admision)}`
-                        : 'Fecha y hora no informadas'}
-                    </strong>
-                    <span>{visit.box_numero || visit.box_actual
-                      ? `Box ${visit.box_numero || visit.box_actual}`
-                      : 'Box no informado'}</span>
-                  </div>
-                  <p>Ticket: {visit.num_totem} · Estado: {visit.estado}</p>
-                  <p>Estudios: {getStudyNames(visit.estudios).join(', ') || 'Sin estudios registrados'}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="patient-history-modal__actions">
-          {onSelectPatient && (
-            <button
-              type="button"
-              className="patient-history-modal__select"
-              onClick={onSelectPatient}
-            >
-              Seleccionar paciente
-            </button>
-          )}
-          <button type="button" className="patient-history-modal__cancel" onClick={onClose}>
-            Cerrar
+    <>
+      <div
+        className="patient-history-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="patient-history-title"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) onClose?.()
+        }}
+      >
+        <section className="patient-history-modal__card">
+          <button
+            type="button"
+            className="patient-history-modal__close"
+            onClick={onClose}
+            aria-label="Cerrar historial"
+          >
+            <X size={20} />
           </button>
-        </div>
-      </section>
-    </div>
+
+          <h2 id="patient-history-title" className="patient-history-modal__title">
+            Historial Clínico del Paciente
+          </h2>
+
+          {/* Ficha demográfica del paciente */}
+          <PatientProfileHeader patientData={patientData} totalVisits={visits.length} />
+
+          {/* Lista modular de atenciones históricas */}
+          <PatientVisitsList
+            visits={visits}
+            isLoading={isLoading}
+            error={error}
+            ticketFetchError={ticketFetchError}
+            isFetchingTicketId={isFetchingTicketId}
+            onViewTicket={handleViewTicket}
+          />
+
+          <div className="patient-history-modal__actions">
+            {onSelectPatient && (
+              <button
+                type="button"
+                className="patient-history-modal__select"
+                onClick={onSelectPatient}
+              >
+                Seleccionar paciente
+              </button>
+            )}
+            <button type="button" className="patient-history-modal__cancel" onClick={onClose}>
+              Cerrar
+            </button>
+          </div>
+        </section>
+      </div>
+
+      {/* Comprobante modal reutilizable */}
+      {selectedTicketDetail && (
+        <TicketModal
+          ticket={selectedTicketDetail}
+          title="Comprobante Asistencial - Historial"
+          onClose={() => setSelectedTicketDetail(null)}
+        />
+      )}
+    </>
   )
 }

@@ -1,0 +1,213 @@
+/* Tarjeta Interactiva de Atención / Visita */
+.patient-history-modal__visit-item {
+  list-style: none;
+}
+
+.patient-history-modal__visit-card {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.patient-history-modal__visit-card:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.patient-history-modal__visit-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #cbd5e1;
+}
+
+.patient-history-modal__visit-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #1e293b;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.patient-history-modal__visit-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.patient-history-modal__badge-totem {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.patient-history-modal__badge-box {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.patient-history-modal__badge-state {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.74rem;
+  font-weight: 600;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.patient-history-modal__badge-state--finalizado,
+.patient-history-modal__badge-state--atendido {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.patient-history-modal__badge-state--pendiente,
+.patient-history-modal__badge-state--espera {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.patient-history-modal__badge-state--en-atencion {
+  background: #fefce8;
+  color: #a16207;
+}
+
+.patient-history-modal__badge-state--cancelado {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.patient-history-modal__visit-card-body {
+  padding: 10px 0;
+}
+
+.patient-history-modal__pro-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.patient-history-modal__pro-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.patient-history-modal__pro-caption {
+  font-size: 0.74rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.patient-history-modal__pro-val {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.patient-history-modal__studies-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #334155;
+  margin-top: 4px;
+}
+
+.patient-history-modal__studies-caption {
+  font-weight: 600;
+  color: #475569;
+}
+
+.patient-history-modal__studies-val {
+  color: #1e293b;
+}
+
+.patient-history-modal__visit-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.patient-history-modal__view-ticket-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid #0284c7;
+  border-radius: var(--radius-md);
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.patient-history-modal__view-ticket-btn:hover:not(:disabled) {
+  background: #0369a1;
+  border-color: #0369a1;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
+}
+
+.patient-history-modal__view-ticket-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.patient-history-modal__view-ticket-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.patient-history-modal__spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .patient-history-modal__pro-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .patient-history-modal__view-ticket-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -33,6 +33,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .ticket-modal__close-btn:hover {
@@ -62,109 +64,6 @@
   flex-shrink: 0;
 }
 
-.ticket-modal__receipt {
-  background: #fafaf9;
-  border: 1px solid #e7e5e4;
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  width: 100%;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.03);
-  font-family: 'Courier New', Courier, monospace;
-}
-
-.ticket-modal__receipt-header {
-  text-align: center;
-  padding-bottom: 10px;
-  margin-bottom: 10px;
-  border-bottom: 1px dashed #d6d3d1;
-}
-
-.ticket-modal__hospital-name {
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  color: #1c1917;
-}
-
-.ticket-modal__hospital-sub {
-  font-size: 0.78rem;
-  color: #78716c;
-}
-
-.ticket-modal__call-box {
-  text-align: center;
-  padding: 8px 0 10px;
-  margin-bottom: 10px;
-  border-bottom: 1px dashed #d6d3d1;
-}
-
-.ticket-modal__call-label {
-  display: block;
-  font-size: 0.72rem;
-  color: #78716c;
-  letter-spacing: 1px;
-}
-
-.ticket-modal__call-number {
-  display: block;
-  font-size: 2.8rem;
-  font-weight: 900;
-  color: #0c4a6e;
-  line-height: 1.1;
-  font-family: var(--font-family);
-}
-
-.ticket-modal__totem-id {
-  display: block;
-  font-size: 0.75rem;
-  color: #0369a1;
-  font-weight: 600;
-}
-
-.ticket-modal__details {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 0.82rem;
-  padding-bottom: 10px;
-  margin-bottom: 10px;
-  border-bottom: 1px dashed #d6d3d1;
-}
-
-.ticket-modal__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.ticket-modal__row-label {
-  color: #78716c;
-}
-
-.ticket-modal__row-value {
-  font-weight: 700;
-  color: #1c1917;
-  text-align: right;
-}
-
-.ticket-modal__row-value--small {
-  font-size: 0.75rem;
-  max-width: 60%;
-}
-
-.ticket-modal__receipt-footer {
-  text-align: center;
-  font-size: 0.72rem;
-  color: #78716c;
-}
-
-.ticket-modal__uuid {
-  display: block;
-  font-size: 0.65rem;
-  color: #a8a29e;
-  margin-top: 4px;
-}
-
 .ticket-modal__actions {
   display: flex;
   gap: 12px;
@@ -183,6 +82,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .ticket-modal__print-btn:hover {
@@ -201,12 +102,15 @@
   font-weight: 600;
   padding: 10px 20px;
   border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .ticket-modal__done-btn:hover {
   background: #e2e8f0;
 }
 
+/* Reglas globales de aislamiento para la impresión térmica */
 body.ticket-printing {
   width: 80mm !important;
   min-width: 0 !important;
@@ -246,19 +150,6 @@ body.ticket-printing .ticket-modal__card > :not(#printable-ticket) {
   display: none !important;
 }
 
-body.ticket-printing #printable-ticket {
-  box-sizing: border-box;
-  width: 72mm !important;
-  max-width: 72mm !important;
-  margin: 0 auto !important;
-  padding: 3mm;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  break-inside: avoid-page;
-  page-break-inside: avoid;
-}
-
 @media print {
   @page {
     size: 80mm auto;
@@ -275,10 +166,5 @@ body.ticket-printing #printable-ticket {
 
   body.ticket-printing * {
     visibility: hidden;
-  }
-
-  body.ticket-printing #printable-ticket,
-  body.ticket-printing #printable-ticket * {
-    visibility: visible;
   }
 }
