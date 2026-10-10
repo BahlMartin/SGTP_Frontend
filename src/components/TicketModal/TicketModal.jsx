@@ -77,6 +77,22 @@ export default function TicketModal({ ticket, onClose }) {
     }
   }
 
+  const formatAdmision = () => {
+    const nombre = ticket.personal_admision_nombre?.trim()
+    const matricula = (ticket.personal_admision_matricula || ticket.mat_admision)?.trim()
+
+    if (nombre && matricula) {
+      return `${nombre} (Mat. ${matricula})`
+    }
+    if (nombre) {
+      return nombre
+    }
+    if (matricula) {
+      return `Mat. ${matricula}`
+    }
+    return 'No informada'
+  }
+
   const detailRows = [
     { label: 'Paciente:', value: `${ticket.paciente_nombre} ${ticket.paciente_apellido}` },
     { label: 'DNI:', value: ticket.paciente_dni },
@@ -91,7 +107,7 @@ export default function TicketModal({ ticket, onClose }) {
       label: 'Fecha y Hora:',
       value: `${formatDateDDMMAAAA(ticket.fecha_hora_admision)} ${formatTimeHHMM(ticket.fecha_hora_admision)}`
     },
-    { label: 'Admisión:', value: ticket.mat_admision || 'No informada' },
+    { label: 'Admisión:', value: formatAdmision() },
     {
       label: 'Estudios:',
       value: ticket.estudios?.length > 0 ? ticket.estudios.join(', ') : 'Rutina estándar',

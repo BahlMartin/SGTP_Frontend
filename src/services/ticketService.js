@@ -25,6 +25,8 @@ export function normalizeTicket(t) {
     num_llamado: t.num_totem ? t.num_totem.replace(/[^\d]/g, '') || t.num_totem : (t.num_llamado || '101'),
     fecha_hora_admision: t.fecha_hora_admision,
     mat_admision: t.personal_admision_matricula || t.mat_admision || '',
+    personal_admision_matricula: t.personal_admision_matricula || t.mat_admision || '',
+    personal_admision_nombre: t.personal_admision_nombre || '',
     paciente_id: t.paciente,
     paciente_dni: paciente.dni ? String(paciente.dni) : (t.paciente_dni || ''),
     paciente_nombre: paciente.nombre || t.paciente_nombre || '',
@@ -115,9 +117,12 @@ export async function createTicketApi(ticketData) {
   }
 
   const response = await apiClient.post('/tickets/', payload)
+  const normalized = normalizeTicket(response)
   return {
-    ...normalizeTicket(response),
-    mat_admision: response.personal_admision_matricula || ticketData.mat_admision || ''
+    ...normalized,
+    mat_admision: response.personal_admision_matricula || normalized.mat_admision || ticketData.mat_admision || '',
+    personal_admision_matricula: response.personal_admision_matricula || normalized.personal_admision_matricula || ticketData.mat_admision || '',
+    personal_admision_nombre: response.personal_admision_nombre || normalized.personal_admision_nombre || ticketData.personal_admision_nombre || ''
   }
 }
 
