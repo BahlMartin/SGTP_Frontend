@@ -4,12 +4,13 @@ import { printThermalTicket } from '../../utils/ticketPrint.utils'
 import TicketReceipt from './components/TicketReceipt'
 import './TicketModal.css'
 
-export default function TicketModal({ ticket, onClose, title = '' }) {
+export default function TicketModal({ ticket, onClose, title = '', className = '' }) {
   useEffect(() => {
     if (!ticket) return
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
+        event.stopPropagation()
         onClose?.()
       }
     }
@@ -35,7 +36,7 @@ export default function TicketModal({ ticket, onClose, title = '' }) {
 
   return (
     <div
-      className="ticket-modal"
+      className={`ticket-modal ${className}`.trim()}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
