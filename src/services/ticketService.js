@@ -21,8 +21,8 @@ export function normalizeTicket(t) {
     ...t,
     id: t.id_ticket || t.id,
     id_ticket: t.id_ticket || t.id,
-    num_totem: t.num_totem,
-    num_llamado: t.num_totem ? t.num_totem.replace(/[^\d]/g, '') || t.num_totem : (t.num_llamado || '101'),
+    num_totem: t.num_totem || '',
+    num_llamado: t.num_totem || t.num_llamado || 'S/N',
     fecha_hora_admision: t.fecha_hora_admision,
     mat_admision: t.personal_admision_matricula || t.mat_admision || '',
     personal_admision_matricula: t.personal_admision_matricula || t.mat_admision || '',
@@ -99,7 +99,7 @@ export async function fetchTicketByIdApi(idTicket) {
  */
 export async function createTicketApi(ticketData) {
   const payload = {
-    num_totem: ticketData.num_totem || (ticketData.num_llamado ? `T-${ticketData.num_llamado}` : ''),
+    num_totem: ticketData.num_totem || ticketData.num_llamado || '',
     clasificacion_triage: getTriageApiValue(
       ticketData.clasificacion_triage || 'Extraccion sin turno'
     ),

@@ -117,23 +117,48 @@ export default function AdmissionForm({
           </div>
         </div>
 
-        {/* Fila 3: Número de Llamado (sistema externo) */}
+        {/* Fila 3: Número de Llamado (sistema externo compuesto) */}
         <div className="admission-form__row admission-form__row--center">
           <div className="admission-form__field admission-form__field--center">
-            <label htmlFor="admission-external-call-number" className="admission-form__label">
-              N° de llamado(sistema externo)
+            <label htmlFor="admission-call-seq" className="admission-form__label">
+              N° de llamado (sistema externo)
             </label>
-            <input
-              id="admission-external-call-number"
-              type="text"
-              className={`admission-form__input admission-form__input--center ${
-                ticketNumberError ? 'admission-form__input--error' : ''
+            <div
+              className={`admission-form__call-group ${
+                ticketNumberError ? 'admission-form__call-group--error' : ''
               }`}
-              placeholder="ej: 104"
-              value={formData.numLlamado}
-              onChange={(event) => onFieldChange('numLlamado', event.target.value)}
-              aria-invalid={Boolean(ticketNumberError)}
-            />
+            >
+              <select
+                id="admission-call-prefix"
+                className="admission-form__prefix-select"
+                value={formData.prefijoLlamado || 'Ext'}
+                onChange={(event) => onFieldChange('prefijoLlamado', event.target.value)}
+                aria-label="Prefijo de llamado externo"
+              >
+                <option value="Ext">Ext (Extracción)</option>
+                <option value="G">G (Guardia)</option>
+                <option value="Med">Med (Médicos)</option>
+                <option value="Csl">Csl (Consulta)</option>
+              </select>
+
+              <span className="admission-form__call-dash">-</span>
+
+              <input
+                id="admission-call-seq"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                className="admission-form__seq-input"
+                placeholder="ej: 01"
+                value={formData.numeroLlamado || ''}
+                onChange={(event) => {
+                  const numericOnly = event.target.value.replace(/\D/g, '')
+                  onFieldChange('numeroLlamado', numericOnly)
+                }}
+                aria-invalid={Boolean(ticketNumberError)}
+              />
+            </div>
             {ticketNumberError && (
               <span className="admission-form__error-text" role="alert">
                 {ticketNumberError}

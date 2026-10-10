@@ -85,6 +85,65 @@
   background: #fef2f2;
 }
 
+.admission-form__call-group {
+  display: flex;
+  align-items: center;
+  height: 42px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease-in-out;
+  overflow: hidden;
+}
+
+.admission-form__call-group:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(22, 135, 201, 0.14);
+}
+
+.admission-form__call-group--error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.admission-form__prefix-select {
+  height: 100%;
+  border: none;
+  background: #f8fafc;
+  padding: 0 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  border-right: 1px solid #cbd5e1;
+  transition: background-color 0.15s;
+}
+
+.admission-form__prefix-select:hover {
+  background: #f1f5f9;
+}
+
+.admission-form__call-dash {
+  padding: 0 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.admission-form__seq-input {
+  flex: 1;
+  height: 100%;
+  border: none;
+  background: transparent;
+  padding: 0 12px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  outline: none;
+}
+
 .admission-form__error-text {
   font-size: 0.75rem;
   color: #dc2626;

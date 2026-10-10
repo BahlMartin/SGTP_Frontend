@@ -12,9 +12,14 @@ import { useTodayTickets } from '../../hooks/useTodayTickets'
 import './AdmisionScreen.css'
 
 function getTicketNumberKey(ticketNumber) {
-  const normalizedNumber = String(ticketNumber || '').trim().toUpperCase()
-  const digits = normalizedNumber.replace(/\D/g, '')
-  return digits || normalizedNumber
+  if (!ticketNumber) return ''
+  const trimmed = String(ticketNumber).trim().toUpperCase()
+  const match = trimmed.match(/^([A-Z]+)[-\s]?(\d+)$/)
+  if (match) {
+    const [, prefix, num] = match
+    return `${prefix}-${String(parseInt(num, 10)).padStart(2, '0')}`
+  }
+  return trimmed
 }
 
 function isTicketNumberAlreadyUsed(ticketNumber, existingTickets) {
@@ -36,11 +41,11 @@ function generateUniqueCallNumber(existingTickets) {
   const firstCandidate = Math.floor(Math.random() * 900)
 
   for (let offset = 0; offset < 900; offset += 1) {
-    const candidate = String(100 + ((firstCandidate + offset) % 900))
+    const candidate = `T-${String(100 + ((firstCandidate + offset) % 900))}`
     if (!usedNumbers.has(candidate)) return candidate
   }
 
-  throw new Error('No quedan números de llamado disponibles entre 100 y 999 para hoy.')
+  throw new Error('No quedan números de llamado disponibles para hoy.')
 }
 
 /**
@@ -70,7 +75,12 @@ export default function AdmisionScreen() {
 
   // Filtrado de tickets emitidos hoy delegado al hook
   const todayTickets = useTodayTickets(tickets)
-  const enteredCallNumber = formData.numLlamado.trim()
+  const formattedSequence = formData.numeroLlamado && formData.numeroLlamado.trim()
+    ? String(parseInt(formData.numeroLlamado.trim(), 10)).padStart(2, '0')
+    : ''
+  const enteredCallNumber = formattedSequence
+    ? `${formData.prefijoLlamado || 'Ext'}-${formattedSequence}`
+    : ''
   const ticketNumberError = enteredCallNumber && isTicketNumberAlreadyUsed(enteredCallNumber, todayTickets)
     ? `El número de llamado ${enteredCallNumber} ya fue utilizado hoy. Ingrese otro número para evitar duplicar el ticket.`
     : ''
@@ -93,13 +103,15 @@ export default function AdmisionScreen() {
 
     setIsSubmitting(true)
     try {
+      const resolvedCallNumber = enteredCallNumber || generateUniqueCallNumber(todayTickets)
       const payload = {
         paciente_id: formData.pacienteId || null,
         paciente_dni: formData.dni.trim(),
         paciente_numero_afiliado: formData.numeroAfiliado.trim(),
         paciente_nombre: formData.nombre.trim(),
         paciente_apellido: formData.apellido.trim(),
-        num_llamado: enteredCallNumber || generateUniqueCallNumber(todayTickets),
+        num_totem: resolvedCallNumber,
+        num_llamado: resolvedCallNumber,
         clasificacion_triage: formData.selectedTriage,
         justificacion_otro: formData.justificacionOtro.trim(),
         estudios_ids: formData.selectedStudies.map((study) => study.id),
