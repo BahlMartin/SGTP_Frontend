@@ -71,7 +71,7 @@ export async function fetchMetricasDiariasApi(fechaStr) {
     data.distribucion_triage.forEach((item) => {
       const catKey = String(item.clasificacion_triage || '').toLowerCase().replace(/\s+/g, '_')
       const matched = TRIAGE_LIST.find(
-        (t) => t.id === catKey || t.nombre.toLowerCase() === String(item.clasificacion_triage).toLowerCase()
+        (t) => t.id === catKey || t.nombre?.toLowerCase() === String(item.clasificacion_triage).toLowerCase()
       )
       if (matched) {
         triageMap[matched.id] = (triageMap[matched.id] || 0) + item.cantidad
