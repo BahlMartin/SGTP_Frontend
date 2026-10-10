@@ -88,15 +88,15 @@ export default function TicketModal({ ticket, onClose }) {
       small: true
     },
     {
-      label: 'Estudios:',
-      value: ticket.estudios?.length > 0 ? ticket.estudios.join(', ') : 'Rutina estándar',
-      small: true
-    },
-    {
       label: 'Fecha y Hora:',
       value: `${formatDateDDMMAAAA(ticket.fecha_hora_admision)} ${formatTimeHHMM(ticket.fecha_hora_admision)}`
     },
-    { label: 'Admisión:', value: ticket.mat_admision || 'TEC-ADM' }
+    { label: 'Admisión:', value: ticket.mat_admision || 'No informada' },
+    {
+      label: 'Estudios:',
+      value: ticket.estudios?.length > 0 ? ticket.estudios.join(', ') : 'Rutina estándar',
+      small: true
+    }
   ].filter(Boolean)
 
   return (

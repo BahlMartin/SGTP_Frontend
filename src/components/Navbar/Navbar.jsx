@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { LogOut, User } from 'lucide-react'
+import { LogOut, User, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { getHomePathByRole } from '../../utils/navigation'
 import Logo from '../Logo/Logo'
@@ -18,9 +18,22 @@ export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { userData, logout } = useAuth()
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
 
   const firstName = userData?.nombre?.split(' ')[0] || 'Usuario'
+  const fullName = [userData?.nombre, userData?.apellidos].filter(Boolean).join(' ') || 'No informado'
   const userRole = userData?.rol || 'Personal'
+
+  useEffect(() => {
+    if (!isProfileModalOpen) return undefined
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setIsProfileModalOpen(false)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isProfileModalOpen])
 
   // Pestañas visibles según rol (Jefa y Admin ven y navegan libremente entre Supervisión y Reportes)
   const visibleTabs = NAV_TABS.filter((tab) => {
@@ -66,15 +79,24 @@ export default function Navbar() {
       </div>
 
       <div className="navbar__right">
-        <div className="navbar__profile" title={`Usuario: ${userData?.nombre || ''}`}>
+        <button
+          type="button"
+          className="navbar__profile"
+          title={`Ver perfil de ${fullName}`}
+          aria-haspopup="dialog"
+          onClick={() => setIsProfileModalOpen(true)}
+        >
           <div className="navbar__avatar" aria-hidden="true">
             <User size={15} />
           </div>
           <div className="navbar__user-meta">
             <span className="navbar__user-name">{firstName}</span>
+            <span className="navbar__user-matricula">
+              Matrícula: {userData?.matricula || 'No informada'}
+            </span>
             <span className="navbar__user-role">{userRole}</span>
           </div>
-        </div>
+        </button>
 
         <button
           type="button"
@@ -86,6 +108,56 @@ export default function Navbar() {
           <LogOut size={17} />
         </button>
       </div>
+
+      {isProfileModalOpen && (
+        <div
+          className="navbar__profile-modal"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setIsProfileModalOpen(false)
+          }}
+        >
+          <section
+            className="navbar__profile-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="navbar-profile-title"
+          >
+            <button
+              type="button"
+              className="navbar__profile-close"
+              onClick={() => setIsProfileModalOpen(false)}
+              aria-label="Cerrar perfil"
+            >
+              <X size={20} />
+            </button>
+            <div className="navbar__profile-dialog-avatar" aria-hidden="true">
+              <User size={22} />
+            </div>
+            <h2 id="navbar-profile-title" className="navbar__profile-dialog-title">
+              Información del personal
+            </h2>
+            <dl className="navbar__profile-details">
+              <div>
+                <dt>Mail</dt>
+                <dd>{userData?.email || 'No informado'}</dd>
+              </div>
+              <div>
+                <dt>Nombre completo</dt>
+                <dd>{fullName}</dd>
+              </div>
+              <div>
+                <dt>Matrícula</dt>
+                <dd>{userData?.matricula || 'No informada'}</dd>
+              </div>
+              <div>
+                <dt>Rol</dt>
+                <dd>{userRole}</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+      )}
     </header>
   )
 }

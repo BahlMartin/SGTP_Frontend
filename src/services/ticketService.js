@@ -24,6 +24,7 @@ export function normalizeTicket(t) {
     num_totem: t.num_totem,
     num_llamado: t.num_totem ? t.num_totem.replace(/[^\d]/g, '') || t.num_totem : (t.num_llamado || '101'),
     fecha_hora_admision: t.fecha_hora_admision,
+    mat_admision: t.personal_admision_matricula || t.mat_admision || '',
     paciente_id: t.paciente,
     paciente_dni: paciente.dni ? String(paciente.dni) : (t.paciente_dni || ''),
     paciente_nombre: paciente.nombre || t.paciente_nombre || '',
@@ -114,7 +115,10 @@ export async function createTicketApi(ticketData) {
   }
 
   const response = await apiClient.post('/tickets/', payload)
-  return normalizeTicket(response)
+  return {
+    ...normalizeTicket(response),
+    mat_admision: response.personal_admision_matricula || ticketData.mat_admision || ''
+  }
 }
 
 /**

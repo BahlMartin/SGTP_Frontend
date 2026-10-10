@@ -71,6 +71,23 @@
   padding: 4px 12px 4px 6px;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.18);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.navbar__profile:hover,
+.navbar__profile:focus-visible {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.navbar__profile:focus-visible,
+.navbar__profile-close:focus-visible {
+  outline: 2px solid #22C7C9;
+  outline-offset: 2px;
 }
 
 .navbar__avatar {
@@ -95,6 +112,11 @@
   color: #FFFFFF;
 }
 
+.navbar__user-matricula {
+  font-size: 0.66rem;
+  color: #D5E8EC;
+}
+
 .navbar__user-role {
   font-size: 0.68rem;
   color: #B8D7DD;
@@ -117,6 +139,93 @@
 .navbar__logout-btn:hover {
   background: rgba(239, 68, 68, 0.20);
   color: #EF4444;
+}
+
+.navbar__profile-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.68);
+}
+
+.navbar__profile-dialog {
+  position: relative;
+  width: min(440px, 100%);
+  padding: 28px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  color: var(--text-primary);
+}
+
+.navbar__profile-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-card-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.navbar__profile-dialog-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: var(--surface-hover);
+  color: var(--medical-primary);
+}
+
+.navbar__profile-dialog-title {
+  margin: 0 32px 20px 0;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.navbar__profile-details {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.navbar__profile-details div {
+  min-width: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.navbar__profile-details div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.navbar__profile-details dt {
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.navbar__profile-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {
