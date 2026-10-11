@@ -60,6 +60,7 @@ export default function AdmisionScreen() {
   const {
     formData,
     validationErrors,
+    existingPatient,
     handleFieldChange,
     handleToggleStudy,
     handleSetStudies,
@@ -171,6 +172,8 @@ export default function AdmisionScreen() {
             validationErrors={validationErrors}
             ticketNumberError={ticketNumberError}
             admissionError={admissionError}
+            existingPatient={existingPatient}
+            onLoadPatient={handleLoadPatient}
             onFieldChange={(fieldName, fieldValue) => {
               setAdmissionError('')
               handleFieldChange(fieldName, fieldValue)

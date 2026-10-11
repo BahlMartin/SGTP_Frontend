@@ -2,6 +2,7 @@ import React from 'react'
 import { UserPlus } from 'lucide-react'
 import TriageSelector from '../TriageSelector/TriageSelector'
 import StudiesSelector from '../StudiesSelector/StudiesSelector'
+import { searchPatientByDniApi } from '../../../../services/patientService'
 import './AdmissionForm.css'
 
 /**
@@ -13,6 +14,8 @@ export default function AdmissionForm({
   validationErrors = {},
   ticketNumberError = '',
   admissionError = '',
+  existingPatient = null,
+  onLoadPatient = () => {},
   onFieldChange = () => {},
   onToggleStudy = () => {},
   onOpenOcrModal = () => {},
@@ -22,6 +25,21 @@ export default function AdmissionForm({
   const handleDniInputChange = (event) => {
     const numericOnlyValue = event.target.value.replace(/\D/g, '')
     onFieldChange('dni', numericOnlyValue)
+  }
+
+  const handleDniBlur = async () => {
+    const cleanDni = formData.dni?.trim()
+    if (!cleanDni || cleanDni.length < 7) return
+    if (existingPatient && String(existingPatient.dni) === cleanDni) return
+
+    try {
+      const patient = await searchPatientByDniApi(cleanDni)
+      if (patient) {
+        onLoadPatient(patient)
+      }
+    } catch {
+      // Continuar con carga manual si no se encuentra
+    }
   }
 
   return (
@@ -47,6 +65,7 @@ export default function AdmissionForm({
               placeholder="ej: 38472910"
               value={formData.dni}
               onChange={handleDniInputChange}
+              onBlur={handleDniBlur}
               aria-invalid={Boolean(validationErrors.dni)}
             />
             {validationErrors.dni && (
@@ -175,7 +194,9 @@ export default function AdmissionForm({
               id="admission-patient-numero-afiliado"
               type="text"
               inputMode="numeric"
-              className="admission-form__input"
+              className={`admission-form__input ${
+                validationErrors.numeroAfiliado ? 'admission-form__input--error' : ''
+              }`}
               placeholder="Número de afiliado"
               value={formData.numeroAfiliado}
               onChange={(event) =>
@@ -183,7 +204,11 @@ export default function AdmissionForm({
               }
               pattern="[0-9]*"
               autoComplete="off"
+              aria-invalid={Boolean(validationErrors.numeroAfiliado)}
             />
+            {validationErrors.numeroAfiliado && (
+              <span className="admission-form__error-text">{validationErrors.numeroAfiliado}</span>
+            )}
           </div>
         </div>
 
