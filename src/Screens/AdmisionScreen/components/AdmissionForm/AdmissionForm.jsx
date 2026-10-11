@@ -27,6 +27,7 @@ export default function AdmissionForm({
   const [isSearching, setIsSearching] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef(null)
+  const searchRequestIdRef = useRef(0)
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -44,22 +45,32 @@ export default function AdmissionForm({
     const numericOnlyValue = event.target.value.replace(/\D/g, '')
     onFieldChange('dni', numericOnlyValue)
 
-    if (numericOnlyValue.length >= 4) {
+    if (numericOnlyValue.length >= 2) {
       setIsSearching(true)
       setShowDropdown(true)
+      const currentRequestId = ++searchRequestIdRef.current
+
       searchPatientsApi(numericOnlyValue)
         .then((results) => {
-          setSearchResults(results || [])
+          if (searchRequestIdRef.current === currentRequestId) {
+            setSearchResults(results || [])
+          }
         })
         .catch(() => {
-          setSearchResults([])
+          if (searchRequestIdRef.current === currentRequestId) {
+            setSearchResults([])
+          }
         })
         .finally(() => {
-          setIsSearching(false)
+          if (searchRequestIdRef.current === currentRequestId) {
+            setIsSearching(false)
+          }
         })
     } else {
+      searchRequestIdRef.current += 1
       setSearchResults([])
       setShowDropdown(false)
+      setIsSearching(false)
     }
   }
 
@@ -100,7 +111,7 @@ export default function AdmissionForm({
               value={formData.dni}
               onChange={handleDniInputChange}
               onFocus={() => {
-                if (formData.dni?.length >= 4 && searchResults.length > 0) {
+                if (formData.dni?.length >= 2 && searchResults.length > 0) {
                   setShowDropdown(true)
                 }
               }}
@@ -116,7 +127,7 @@ export default function AdmissionForm({
 
             {/* Dropdown predictivo de coincidencia de paciente */}
             <PatientDropdown
-              isOpen={showDropdown && formData.dni?.length >= 4}
+              isOpen={showDropdown && formData.dni?.length >= 2}
               isSearching={isSearching}
               results={searchResults}
               emptyMessage="Sin registros previos con este DNI (Paciente nuevo)"

@@ -27,7 +27,7 @@ export const INITIAL_ADMISSION_FORM_STATE = {
   obraSocial: 'IOMA',
   prefijoLlamado: 'Ext',
   numeroLlamado: '',
-  selectedTriage: 'Guardia',
+  selectedTriage: 'Extraccion sin turno',
   justificacionOtro: '',
   selectedStudies: []
 }

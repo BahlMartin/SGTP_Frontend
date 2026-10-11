@@ -196,6 +196,12 @@ export async function searchPatientsApi(query) {
         (p.obra_social && p.obra_social.toLowerCase().includes(q)) ||
         (p.num_obra_social && p.num_obra_social.toLowerCase().includes(q))
       )
+      .sort((a, b) => {
+        const aStarts = String(a.dni).startsWith(q) ? 1 : 0
+        const bStarts = String(b.dni).startsWith(q) ? 1 : 0
+        if (aStarts !== bStarts) return bStarts - aStarts
+        return String(a.dni).localeCompare(String(b.dni))
+      })
       .map((p) => ({
         dni: String(p.dni),
         nombre: p.nombre,
