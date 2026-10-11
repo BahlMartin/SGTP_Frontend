@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { UserPlus, UserCheck, RotateCcw, X } from 'lucide-react'
+import { UserPlus, UserCheck, RotateCcw } from 'lucide-react'
 import TriageSelector from '../TriageSelector/TriageSelector'
 import StudiesSelector from '../StudiesSelector/StudiesSelector'
 import PatientDropdown from '../../../../components/PatientDropdown/PatientDropdown'
@@ -119,15 +119,6 @@ export default function AdmissionForm({
               {existingPatient && String(existingPatient.dni) === formData.dni && (
                 <span className="admission-form__patient-badge">
                   <UserCheck size={12} /> {existingPatient.nombre} {existingPatient.apellido}
-                  <button
-                    type="button"
-                    className="admission-form__badge-clear-btn"
-                    onClick={handleResetForm}
-                    title="Descartar paciente y limpiar formulario"
-                    aria-label="Descartar paciente seleccionado"
-                  >
-                    <X size={12} />
-                  </button>
                 </span>
               )}
             </div>
@@ -333,28 +324,15 @@ export default function AdmissionForm({
           onOpenOcrModal={onOpenOcrModal}
         />
 
-        {/* Acciones del Formulario */}
-        <div className="admission-form__actions">
-          <button
-            type="button"
-            className="admission-form__reset-btn"
-            onClick={handleResetForm}
-            disabled={isSubmitting}
-            title="Borrar todos los datos del formulario y volver a empezar"
-          >
-            <RotateCcw size={16} />
-            <span>Limpiar / Volver a empezar</span>
-          </button>
-
-          <button
-            type="submit"
-            className="admission-form__submit-btn"
-            disabled={isSubmitting}
-            aria-busy={isSubmitting}
-          >
-            {isSubmitting ? 'Generando ticket...' : 'Emitir Ticket Asistencial'}
-          </button>
-        </div>
+        {/* Botón de Emisión */}
+        <button
+          type="submit"
+          className="admission-form__submit-btn"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
+        >
+          {isSubmitting ? 'Generando ticket...' : 'Emitir Ticket Asistencial'}
+        </button>
       </form>
     </div>
   )

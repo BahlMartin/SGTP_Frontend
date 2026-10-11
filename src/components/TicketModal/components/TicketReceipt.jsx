@@ -29,7 +29,7 @@ export default function TicketReceipt({ ticket }) {
   const boxOperador = formatBoxOperador()
   const boxIdentificador = ticket.box_numero
     ? `Box ${ticket.box_numero}`
-    : (ticket.box_asignado || (ticket.estado === 'Atendido' || ticket.estado === 'Finalizado' ? 'Box asignado' : 'En espera'))
+    : (ticket.box_asignado || (ticket.estado === 'Atendido' || ticket.estado === 'Finalizado' ? 'Box asignado' : ''))
 
   const detailRows = [
     { label: 'Paciente:', value: `${ticket.paciente_nombre} ${ticket.paciente_apellido}` },
@@ -47,7 +47,7 @@ export default function TicketReceipt({ ticket }) {
       value: `${formatDateDDMMAAAA(ticket.fecha_hora_admision)} ${formatTimeHHMM(ticket.fecha_hora_admision)}`
     },
     { label: 'Admisión:', value: formatAdmision() },
-    { label: 'Box de Atención:', value: boxIdentificador },
+    boxIdentificador && { label: 'Box de Atención:', value: boxIdentificador },
     boxOperador && { label: 'Técnico de Box:', value: boxOperador },
     ticket.fecha_hora_atencion_box && {
       label: 'Hora Box:',
