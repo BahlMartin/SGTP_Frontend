@@ -9,8 +9,15 @@
 .admission-form-card__header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 24px;
+}
+
+.admission-form-card__header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .admission-form-card__icon {
@@ -164,14 +171,65 @@
   line-height: 1.45;
 }
 
+.admission-form__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.admission-form__reset-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.92rem;
+  font-weight: 600;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
+}
+
+.admission-form__reset-btn:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.admission-form__reset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admission-form__reset-btn--header {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border-color: #e2e8f0;
+}
+
+.admission-form__reset-btn--header:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
 .admission-form__submit-btn {
+  flex: 1;
   background: var(--medical-primary);
   color: #ffffff;
   font-size: 1rem;
   font-weight: 700;
   height: 48px;
   border-radius: var(--radius-md);
-  margin-top: 10px;
+  margin-top: 0;
   box-shadow: 0 2px 8px rgba(22, 135, 201, 0.2);
   transition: background 0.15s;
   cursor: pointer;
@@ -212,6 +270,25 @@
   animation: fadeIn 0.2s ease-in;
 }
 
+.admission-form__badge-clear-btn {
+  background: none;
+  border: none;
+  color: #0284c7;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  margin-left: 2px;
+  border-radius: 50%;
+  transition: all 0.15s;
+}
+
+.admission-form__badge-clear-btn:hover {
+  background: #bae6fd;
+  color: #b91c1c;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -224,7 +301,17 @@
 }
 
 @media (max-width: 640px) {
+  .admission-form-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
   .admission-form__row {
     grid-template-columns: 1fr;
+  }
+
+  .admission-form__actions {
+    flex-direction: column-reverse;
   }
 }

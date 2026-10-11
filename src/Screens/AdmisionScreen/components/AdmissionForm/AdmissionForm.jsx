@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { UserPlus, UserCheck } from 'lucide-react'
+import { UserPlus, UserCheck, RotateCcw, X } from 'lucide-react'
 import TriageSelector from '../TriageSelector/TriageSelector'
 import StudiesSelector from '../StudiesSelector/StudiesSelector'
 import PatientDropdown from '../../../../components/PatientDropdown/PatientDropdown'
@@ -21,6 +21,7 @@ export default function AdmissionForm({
   onToggleStudy = () => {},
   onOpenOcrModal = () => {},
   onSubmitForm = () => {},
+  onResetForm = () => {},
   isSubmitting = false
 }) {
   const [searchResults, setSearchResults] = useState([])
@@ -80,11 +81,31 @@ export default function AdmissionForm({
     setSearchResults([])
   }
 
+  const handleResetForm = () => {
+    setSearchResults([])
+    setShowDropdown(false)
+    searchRequestIdRef.current += 1
+    onResetForm()
+  }
+
   return (
     <div className="admission-form-card">
       <div className="admission-form-card__header">
-        <UserPlus size={24} className="admission-form-card__icon" />
-        <h2 className="admission-form-card__title">Ingreso y clasificacion de pacientes</h2>
+        <div className="admission-form-card__header-title-group">
+          <UserPlus size={24} className="admission-form-card__icon" />
+          <h2 className="admission-form-card__title">Ingreso y clasificacion de pacientes</h2>
+        </div>
+        <button
+          type="button"
+          className="admission-form__reset-btn admission-form__reset-btn--header"
+          onClick={handleResetForm}
+          title="Borrar todos los datos y volver a empezar"
+          aria-label="Limpiar formulario"
+          disabled={isSubmitting}
+        >
+          <RotateCcw size={15} />
+          <span>Limpiar formulario</span>
+        </button>
       </div>
 
       <form onSubmit={onSubmitForm} className="admission-form" noValidate>
@@ -98,6 +119,15 @@ export default function AdmissionForm({
               {existingPatient && String(existingPatient.dni) === formData.dni && (
                 <span className="admission-form__patient-badge">
                   <UserCheck size={12} /> {existingPatient.nombre} {existingPatient.apellido}
+                  <button
+                    type="button"
+                    className="admission-form__badge-clear-btn"
+                    onClick={handleResetForm}
+                    title="Descartar paciente y limpiar formulario"
+                    aria-label="Descartar paciente seleccionado"
+                  >
+                    <X size={12} />
+                  </button>
                 </span>
               )}
             </div>
@@ -303,15 +333,28 @@ export default function AdmissionForm({
           onOpenOcrModal={onOpenOcrModal}
         />
 
-        {/* Botón de Emisión */}
-        <button
-          type="submit"
-          className="admission-form__submit-btn"
-          disabled={isSubmitting}
-          aria-busy={isSubmitting}
-        >
-          {isSubmitting ? 'Generando ticket...' : 'Emitir Ticket Asistencial'}
-        </button>
+        {/* Acciones del Formulario */}
+        <div className="admission-form__actions">
+          <button
+            type="button"
+            className="admission-form__reset-btn"
+            onClick={handleResetForm}
+            disabled={isSubmitting}
+            title="Borrar todos los datos del formulario y volver a empezar"
+          >
+            <RotateCcw size={16} />
+            <span>Limpiar / Volver a empezar</span>
+          </button>
+
+          <button
+            type="submit"
+            className="admission-form__submit-btn"
+            disabled={isSubmitting}
+            aria-busy={isSubmitting}
+          >
+            {isSubmitting ? 'Generando ticket...' : 'Emitir Ticket Asistencial'}
+          </button>
+        </div>
       </form>
     </div>
   )

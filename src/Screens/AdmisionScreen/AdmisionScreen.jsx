@@ -181,6 +181,10 @@ export default function AdmisionScreen() {
             onToggleStudy={handleToggleStudy}
             onOpenOcrModal={() => setShowOcrModal(true)}
             onSubmitForm={handleSubmitAdmission}
+            onResetForm={() => {
+              setAdmissionError('')
+              resetAdmissionForm()
+            }}
             isSubmitting={isSubmitting}
           />
 
