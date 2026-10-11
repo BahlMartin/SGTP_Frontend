@@ -25,7 +25,7 @@ export function useAdmissionForm() {
       ...previousFormData,
       [fieldName]: fieldValue,
       ...(
-        ['dni', 'nombre', 'apellido', 'numeroAfiliado'].includes(fieldName) &&
+        ['dni', 'nombre', 'apellido', 'numeroAfiliado', 'obraSocial'].includes(fieldName) &&
         previousFormData[fieldName] !== fieldValue
           ? { pacienteId: null }
           : {}
@@ -94,9 +94,10 @@ export function useAdmissionForm() {
       ...previousFormData,
       pacienteId: patientData.id_paciente || patientData.id || null,
       dni: patientData.dni || '',
-      numeroAfiliado: patientData.numeroAfiliado || '',
+      numeroAfiliado: patientData.numeroAfiliado || patientData.num_obra_social || '',
       nombre: patientData.nombre || '',
-      apellido: patientData.apellido || ''
+      apellido: patientData.apellido || patientData.apellidos || '',
+      obraSocial: patientData.obra_social || patientData.obraSocial || 'IOMA'
     }))
 
     setValidationErrors({})
@@ -122,6 +123,10 @@ export function useAdmissionForm() {
     const surnameValidationResult = validatePersonName(formData.apellido)
     if (!surnameValidationResult.isValid) {
       calculatedErrors.apellido = surnameValidationResult.error
+    }
+
+    if (!formData.obraSocial || !formData.obraSocial.trim()) {
+      calculatedErrors.obraSocial = 'El nombre de la obra social es obligatorio.'
     }
 
     if (

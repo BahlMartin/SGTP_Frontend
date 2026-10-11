@@ -114,7 +114,7 @@ export async function createTicketApi(ticketData) {
       dni: Number(String(ticketData.paciente_dni || ticketData.dni).replace(/\D/g, '')),
       nombre: ticketData.paciente_nombre || ticketData.nombre || 'Sin Nombre',
       apellidos: ticketData.paciente_apellido || ticketData.apellido || 'Sin Apellido',
-      obra_social: ticketData.paciente_obra_social || 'No especificada',
+      obra_social: ticketData.paciente_obra_social || ticketData.obra_social || ticketData.obraSocial || 'IOMA',
       num_obra_social: String(
         ticketData.paciente_numero_afiliado || ticketData.numeroAfiliado || ''
       ).replace(/\D/g, '')

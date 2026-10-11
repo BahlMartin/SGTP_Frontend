@@ -110,6 +110,8 @@ export default function AdmisionScreen() {
         paciente_numero_afiliado: formData.numeroAfiliado.trim(),
         paciente_nombre: formData.nombre.trim(),
         paciente_apellido: formData.apellido.trim(),
+        paciente_obra_social: formData.obraSocial ? formData.obraSocial.trim() : 'IOMA',
+        obraSocial: formData.obraSocial ? formData.obraSocial.trim() : 'IOMA',
         num_totem: resolvedCallNumber,
         num_llamado: resolvedCallNumber,
         clasificacion_triage: formData.selectedTriage,

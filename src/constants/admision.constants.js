@@ -24,6 +24,7 @@ export const INITIAL_ADMISSION_FORM_STATE = {
   numeroAfiliado: '',
   nombre: '',
   apellido: '',
+  obraSocial: 'IOMA',
   prefijoLlamado: 'Ext',
   numeroLlamado: '',
   selectedTriage: 'Guardia',

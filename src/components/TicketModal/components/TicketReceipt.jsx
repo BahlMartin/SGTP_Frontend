@@ -34,6 +34,7 @@ export default function TicketReceipt({ ticket }) {
   const detailRows = [
     { label: 'Paciente:', value: `${ticket.paciente_nombre} ${ticket.paciente_apellido}` },
     { label: 'DNI:', value: ticket.paciente_dni },
+    { label: 'Obra Social:', value: ticket.paciente_obra_social || ticket.obra_social || 'IOMA' },
     { label: 'N° Afiliado:', value: ticket.paciente_numero_afiliado || 'No informado' },
     { label: 'Triage:', value: <TriageBadge categoryKey={ticket.clasificacion_triage} /> },
     ticket.justificacion_otro && {
