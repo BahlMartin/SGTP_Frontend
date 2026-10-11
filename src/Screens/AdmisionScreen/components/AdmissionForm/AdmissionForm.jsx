@@ -1,8 +1,9 @@
-import React from 'react'
-import { UserPlus } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { UserPlus, UserCheck } from 'lucide-react'
 import TriageSelector from '../TriageSelector/TriageSelector'
 import StudiesSelector from '../StudiesSelector/StudiesSelector'
-import { searchPatientByDniApi } from '../../../../services/patientService'
+import PatientDropdown from '../../../../components/PatientDropdown/PatientDropdown'
+import { searchPatientsApi } from '../../../../services/ticketService'
 import './AdmissionForm.css'
 
 /**
@@ -22,24 +23,50 @@ export default function AdmissionForm({
   onSubmitForm = () => {},
   isSubmitting = false
 }) {
+  const [searchResults, setSearchResults] = useState([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
   const handleDniInputChange = (event) => {
     const numericOnlyValue = event.target.value.replace(/\D/g, '')
     onFieldChange('dni', numericOnlyValue)
+
+    if (numericOnlyValue.length >= 4) {
+      setIsSearching(true)
+      setShowDropdown(true)
+      searchPatientsApi(numericOnlyValue)
+        .then((results) => {
+          setSearchResults(results || [])
+        })
+        .catch(() => {
+          setSearchResults([])
+        })
+        .finally(() => {
+          setIsSearching(false)
+        })
+    } else {
+      setSearchResults([])
+      setShowDropdown(false)
+    }
   }
 
-  const handleDniBlur = async () => {
-    const cleanDni = formData.dni?.trim()
-    if (!cleanDni || cleanDni.length < 7) return
-    if (existingPatient && String(existingPatient.dni) === cleanDni) return
-
-    try {
-      const patient = await searchPatientByDniApi(cleanDni)
-      if (patient) {
-        onLoadPatient(patient)
-      }
-    } catch {
-      // Continuar con carga manual si no se encuentra
-    }
+  const handleSelectPatient = (patient) => {
+    onLoadPatient(patient)
+    setShowDropdown(false)
+    setSearchResults([])
   }
 
   return (
@@ -52,10 +79,17 @@ export default function AdmissionForm({
       <form onSubmit={onSubmitForm} className="admission-form" noValidate>
         {/* Fila 1: DNI y Número de Llamado (sistema externo) */}
         <div className="admission-form__row">
-          <div className="admission-form__field">
-            <label htmlFor="admission-patient-dni" className="admission-form__label">
-              DNI
-            </label>
+          <div className="admission-form__field admission-form__field--relative" ref={dropdownRef}>
+            <div className="admission-form__label-wrapper">
+              <label htmlFor="admission-patient-dni" className="admission-form__label">
+                DNI
+              </label>
+              {existingPatient && String(existingPatient.dni) === formData.dni && (
+                <span className="admission-form__patient-badge">
+                  <UserCheck size={12} /> {existingPatient.nombre} {existingPatient.apellido}
+                </span>
+              )}
+            </div>
             <input
               id="admission-patient-dni"
               type="text"
@@ -65,12 +99,29 @@ export default function AdmissionForm({
               placeholder="ej: 38472910"
               value={formData.dni}
               onChange={handleDniInputChange}
-              onBlur={handleDniBlur}
+              onFocus={() => {
+                if (formData.dni?.length >= 4 && searchResults.length > 0) {
+                  setShowDropdown(true)
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setShowDropdown(false)
+              }}
+              autoComplete="off"
               aria-invalid={Boolean(validationErrors.dni)}
             />
             {validationErrors.dni && (
               <span className="admission-form__error-text">{validationErrors.dni}</span>
             )}
+
+            {/* Dropdown predictivo de coincidencia de paciente */}
+            <PatientDropdown
+              isOpen={showDropdown && formData.dni?.length >= 4}
+              isSearching={isSearching}
+              results={searchResults}
+              emptyMessage="Sin registros previos con este DNI (Paciente nuevo)"
+              onSelectPatient={handleSelectPatient}
+            />
           </div>
 
           <div className="admission-form__field">
