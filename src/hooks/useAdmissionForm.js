@@ -2,6 +2,13 @@ import { useState, useCallback } from 'react'
 import { INITIAL_ADMISSION_FORM_STATE } from '../constants/admision.constants'
 import { validatePersonName, validateDni } from '../utils/validators'
 
+const PREFIX_TO_TRIAGE_MAP = {
+  G: 'Guardia',
+  Med: 'Medicos',
+  Ext: 'Extraccion sin turno',
+  Csl: 'Otro'
+}
+
 /**
  * Hook para gestionar el estado, validaciones reactivas y reseteo
  * del formulario de ingreso y clasificación de pacientes en Admisión.
@@ -21,6 +28,11 @@ export function useAdmissionForm() {
         ['dni', 'nombre', 'apellido', 'numeroAfiliado'].includes(fieldName) &&
         previousFormData[fieldName] !== fieldValue
           ? { pacienteId: null }
+          : {}
+      ),
+      ...(
+        fieldName === 'prefijoLlamado' && PREFIX_TO_TRIAGE_MAP[fieldValue]
+          ? { selectedTriage: PREFIX_TO_TRIAGE_MAP[fieldValue] }
           : {}
       )
     }))

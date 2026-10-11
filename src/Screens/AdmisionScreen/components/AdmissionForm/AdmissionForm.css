@@ -98,7 +98,6 @@
 
 .admission-form__call-group:focus-within {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(22, 135, 201, 0.14);
 }
 
 .admission-form__call-group--error {
