@@ -6,6 +6,7 @@ import ActiveStaffCard from './components/ActiveStaffCard'
 import StaffShiftsCard from './components/StaffShiftsCard'
 import AddStaffModal from './components/AddStaffModal'
 import EditStaffModal from './components/EditStaffModal'
+import AuthorizeOvertimeModal from './components/AuthorizeOvertimeModal'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useAuth } from '../../context/AuthContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
@@ -21,6 +22,8 @@ export default function JefaScreen() {
   const {
     staffList,
     toggleShift,
+    authorizeShiftException,
+    revokeShiftException,
     deleteStaff,
     createStaff,
     updateStaff,
@@ -31,6 +34,7 @@ export default function JefaScreen() {
   const { notice: statusNotice, showNotice } = useFeedbackNotice(4000)
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
   const [editingStaff, setEditingStaff] = useState(null)
+  const [staffForOvertime, setStaffForOvertime] = useState(null)
 
   // Estado para rendimiento de personal por fecha
   const [staffDate, setStaffDate] = useState(() => getTodayLocalDateString())
@@ -119,6 +123,14 @@ export default function JefaScreen() {
     toggleShift(staffMemberId, currentStatus, showNotice)
   }
 
+  const handleAuthorizeOvertime = async (payload) => {
+    await authorizeShiftException(payload, showNotice)
+  }
+
+  const handleRevokeOvertime = async (habilitacionId) => {
+    await revokeShiftException(habilitacionId, showNotice)
+  }
+
   const handleDeleteStaff = (staffMemberId, staffMemberName, staffMemberRole) => {
     deleteStaff(staffMemberId, staffMemberName, staffMemberRole, userData?.rol, showNotice)
   }
@@ -160,6 +172,7 @@ export default function JefaScreen() {
             staffList={staffList}
             currentUserRole={userData?.rol}
             onOpenAddStaff={() => setShowAddStaffModal(true)}
+            onAuthorizeOvertime={setStaffForOvertime}
             onToggleShift={handleToggleShift}
             onDeleteStaff={handleDeleteStaff}
             onEditStaff={setEditingStaff}
@@ -182,6 +195,16 @@ export default function JefaScreen() {
           staffMember={editingStaff}
           onClose={() => setEditingStaff(null)}
           onSubmit={handleUpdateStaff}
+        />
+      )}
+
+      {staffForOvertime && (
+        <AuthorizeOvertimeModal
+          isOpen={Boolean(staffForOvertime)}
+          staffMember={staffForOvertime}
+          onClose={() => setStaffForOvertime(null)}
+          onSubmit={handleAuthorizeOvertime}
+          onRevoke={handleRevokeOvertime}
         />
       )}
     </>

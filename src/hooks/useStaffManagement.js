@@ -5,7 +5,9 @@ import {
   updateStaffUserApi,
   toggleShiftExceptionApi,
   deleteStaffUserApi,
-  reactivateStaffUserApi
+  reactivateStaffUserApi,
+  createHabilitacionHorariaApi,
+  revokeHabilitacionHorariaApi
 } from '../services/userService'
 import { unlockUserApi } from '../services/authService'
 import { isWithinShiftGrace } from '../utils/shiftTime.utils'
@@ -24,15 +26,30 @@ export function useStaffManagement() {
   const staffWithScheduleStatus = useMemo(
     () => staffList.map((staffMember) => {
       const horarioRestringido = ['Admision', 'Box', 'Secretaria'].includes(staffMember.rol)
-      const dentroHorario = !horarioRestringido || isWithinShiftGrace(
+      const diaSemanaHoy = currentTime.getDay() === 0 ? 6 : currentTime.getDay() - 1 // 0=Lun ... 6=Dom
+      const trabajaHoy = !staffMember.dias_laborales_detalle || staffMember.dias_laborales_detalle.includes(diaSemanaHoy)
+
+      const dentroTurnoHabitual = trabajaHoy && isWithinShiftGrace(
         staffMember.inicio_turno,
         staffMember.fin_turno,
         currentTime
       )
+
+      // Verificar si tiene extensión horaria activa en este instante
+      const extensiones = staffMember.habilitaciones_activas_hoy || []
+      const horaActualStr = currentTime.toTimeString().slice(0, 5)
+      const tieneExtensionActiva = extensiones.some(
+        (ext) => horaActualStr >= ext.hora_inicio && horaActualStr <= ext.hora_fin
+      )
+
+      const dentroHorario = !horarioRestringido || dentroTurnoHabitual || tieneExtensionActiva
+
       return {
         ...staffMember,
         dentro_horario: dentroHorario,
-        disponible: staffMember.activo && dentroHorario
+        disponible: staffMember.activo && dentroHorario,
+        tiene_extension_hoy: extensiones.length > 0,
+        extension_vigente: extensiones[0] || null
       }
     }),
     [currentTime, staffList]
@@ -145,12 +162,30 @@ export function useStaffManagement() {
     }
   }
 
+  const authorizeShiftException = async (payload, onSuccess) => {
+    await createHabilitacionHorariaApi(payload)
+    await loadStaff()
+    if (onSuccess) {
+      onSuccess('Horario excepcional autorizado correctamente.')
+    }
+  }
+
+  const revokeShiftException = async (habilitacionId, onSuccess) => {
+    await revokeHabilitacionHorariaApi(habilitacionId)
+    await loadStaff()
+    if (onSuccess) {
+      onSuccess('Horario excepcional revocado correctamente.')
+    }
+  }
+
   return {
     staffList: staffWithScheduleStatus,
     loadingStaff,
     staffError,
     loadStaff,
     toggleShift,
+    authorizeShiftException,
+    revokeShiftException,
     deleteStaff,
     createStaff,
     updateStaff,

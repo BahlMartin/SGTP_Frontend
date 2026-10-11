@@ -226,3 +226,66 @@
   color: var(--text-muted);
   text-align: center;
 }
+
+.jefa-screen__shift-dias-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 105px;
+}
+
+.jefa-screen__shift-dias-text {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary, #183b4a);
+}
+
+.jefa-screen__shift-dias-chips {
+  display: flex;
+  gap: 2px;
+}
+
+.jefa-screen__dia-chip {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #a0b2ba;
+  background: #edf2f5;
+}
+
+.jefa-screen__dia-chip--active {
+  background: #e6f4fb;
+  color: #1687c9;
+  border: 1px solid #b9dce8;
+}
+
+.jefa-screen__extension-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #e6f4fb;
+  border: 1px solid #b9dce8;
+  color: #1687c9;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.jefa-screen__extension-badge-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.jefa-screen__extension-none {
+  font-size: 0.74rem;
+  color: #a0b2ba;
+  font-style: italic;
+  white-space: nowrap;
+}

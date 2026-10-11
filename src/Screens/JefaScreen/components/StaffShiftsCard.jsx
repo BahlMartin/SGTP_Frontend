@@ -1,11 +1,13 @@
 import React from 'react'
 import { UserPlus, Plus, Trash2, Pencil, Unlock, RotateCcw, Clock3 } from 'lucide-react'
+import { formatDiasLaborales, DIAS_SEMANA_LETRAS } from '../../../utils/shiftValidation.utils'
 import './StaffShiftsCard.css'
 
 export default function StaffShiftsCard({
   staffList = [],
   currentUserRole,
   onOpenAddStaff,
+  onAuthorizeOvertime,
   onToggleShift,
   onDeleteStaff,
   onEditStaff,
@@ -33,7 +35,9 @@ export default function StaffShiftsCard({
             <tr>
               <th>Personal / matrícula</th>
               <th>Rol</th>
-              <th>Turno</th>
+              <th>Días Habilitados</th>
+              <th>Turno Habitual</th>
+              <th>Extensión Horaria (Hoy)</th>
               <th>Estado</th>
               <th>Acciones</th>
             </tr>
@@ -44,103 +48,159 @@ export default function StaffShiftsCard({
                 ? (staffMember.cant_intentos >= 3 ? 'Cuenta bloqueada' : 'Cuenta inactiva')
                 : staffMember.dentro_horario === false
                   ? 'Fuera de horario'
-                  : 'En horario'
+                  : staffMember.tiene_extension_hoy
+                    ? 'En horario (Extensión activa)'
+                    : 'En horario'
+
               const statusClass = !staffMember.activo
                 ? 'jefa-screen__status-dot--inactive'
                 : staffMember.dentro_horario === false
                   ? 'jefa-screen__status-dot--outside'
                   : 'jefa-screen__status-dot--active'
+
+              const extensionHoy = staffMember.extension_vigente
+              const dias = staffMember.dias_laborales_detalle || [0, 1, 2, 3, 4]
+
               return (
                 <tr key={staffMember.id}>
-                <td className="jefa-screen__shift-person">
-                  <span className="jefa-screen__shift-name">{staffMember.nombre}</span>
-                  <span className="jefa-screen__shift-mat">
-                    Matrícula: {staffMember.matricula || 'No informada'}
-                  </span>
-                </td>
-                <td>
-                  <span className="jefa-screen__shift-role">{staffMember.rol}</span>
-                </td>
-                <td className="jefa-screen__shift-turno">{staffMember.turno}</td>
-                <td>
-                  <span
-                    className={`jefa-screen__status-dot ${statusClass}`}
-                    role="img"
-                    aria-label={statusLabel}
-                    title={statusLabel}
-                  >
-                  </span>
-                </td>
-                <td className="jefa-screen__shift-actions">
-                  {staffMember.rol !== 'Jefa' && staffMember.activo && onToggleShift && (
-                    <button
-                      className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
-                      title="Autorizar horario excepcional por hoy"
-                      aria-label={`Habilitar horario excepcional para ${staffMember.nombre}`}
-                      onClick={() => onToggleShift(staffMember.id)}
-                    >
-                      <Clock3 className="jefa-screen__btn-action-icon" />
-                      <span>Habilitar</span>
-                    </button>
-                  )}
-                  {staffMember.cant_intentos >= 3 && onUnlockStaff && (
-                    <button
-                      className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
-                      title="Desbloquear cuenta por intentos fallidos"
-                      aria-label={`Desbloquear a ${staffMember.nombre}`}
-                      onClick={() => onUnlockStaff(staffMember.id)}
-                    >
-                      <Unlock className="jefa-screen__btn-action-icon" />
-                      <span>Desbloquear</span>
-                    </button>
-                  )}
-                  {!staffMember.activo && onReactivateStaff && (
-                    <button
-                      className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
-                      title="Reactivar usuario"
-                      aria-label={`Reactivar a ${staffMember.nombre}`}
-                      onClick={() => onReactivateStaff(staffMember.id)}
-                    >
-                      <RotateCcw className="jefa-screen__btn-action-icon" />
-                      <span>Reactivar</span>
-                    </button>
-                  )}
-                  {(currentUserRole === 'Admin' ||
-                    (currentUserRole === 'Jefa' &&
-                      staffMember.rol !== 'Admin' &&
-                      staffMember.rol !== 'Jefa')) && (
-                    <>
-                      {onEditStaff && (
-                        <button
-                          className="jefa-screen__btn-edit-staff"
-                          title="Editar datos y horario"
-                          aria-label={`Editar datos de ${staffMember.nombre}`}
-                          onClick={() => onEditStaff(staffMember)}
-                        >
-                          <Pencil className="jefa-screen__btn-delete-icon" />
-                        </button>
-                      )}
-                      {staffMember.activo && onDeleteStaff && (
-                        <button
-                          className="jefa-screen__btn-delete-staff"
-                          title="Eliminar personal"
-                          aria-label={`Eliminar a ${staffMember.nombre}`}
-                          onClick={() =>
-                            onDeleteStaff(staffMember.id, staffMember.nombre, staffMember.rol)
-                          }
-                        >
-                          <Trash2 className="jefa-screen__btn-delete-icon" />
-                        </button>
-                      )}
-                    </>
-                  )}
-                </td>
+                  {/* Columna 1: Personal */}
+                  <td className="jefa-screen__shift-person">
+                    <span className="jefa-screen__shift-name">{staffMember.nombre}</span>
+                    <span className="jefa-screen__shift-mat">
+                      Matrícula: {staffMember.matricula || 'No informada'}
+                    </span>
+                  </td>
+
+                  {/* Columna 2: Rol */}
+                  <td>
+                    <span className="jefa-screen__shift-role">{staffMember.rol}</span>
+                  </td>
+
+                  {/* Columna 3: Días Habilitados */}
+                  <td className="jefa-screen__shift-dias-col">
+                    <span className="jefa-screen__shift-dias-text">
+                      {formatDiasLaborales(dias)}
+                    </span>
+                    <div className="jefa-screen__shift-dias-chips" aria-hidden="true">
+                      {DIAS_SEMANA_LETRAS.map((letra, idx) => {
+                        const activo = dias.includes(idx)
+                        return (
+                          <span
+                            key={idx}
+                            className={`jefa-screen__dia-chip ${activo ? 'jefa-screen__dia-chip--active' : ''}`}
+                            title={formatDiasLaborales([idx])}
+                          >
+                            {letra}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  </td>
+
+                  {/* Columna 4: Turno Habitual */}
+                  <td>
+                    <span className="jefa-screen__shift-turno">{staffMember.turno}</span>
+                  </td>
+
+                  {/* Columna 5: Extensión Horaria Hoy */}
+                  <td>
+                    {extensionHoy ? (
+                      <div className="jefa-screen__extension-badge" title={extensionHoy.motivo}>
+                        <Clock3 className="jefa-screen__extension-badge-icon" />
+                        <span className="jefa-screen__extension-badge-hours">
+                          {extensionHoy.hora_inicio} - {extensionHoy.hora_fin}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="jefa-screen__extension-none">Sin extensión</span>
+                    )}
+                  </td>
+
+                  {/* Columna 6: Estado */}
+                  <td>
+                    <span
+                      className={`jefa-screen__status-dot ${statusClass}`}
+                      role="img"
+                      aria-label={statusLabel}
+                      title={statusLabel}
+                    />
+                  </td>
+
+                  {/* Columna 7: Acciones */}
+                  <td className="jefa-screen__shift-actions">
+                    {staffMember.rol !== 'Jefa' && staffMember.activo && (onAuthorizeOvertime || onToggleShift) && (
+                      <button
+                        className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
+                        title="Autorizar horario excepcional"
+                        aria-label={`Autorizar horario excepcional para ${staffMember.nombre}`}
+                        onClick={() =>
+                          onAuthorizeOvertime
+                            ? onAuthorizeOvertime(staffMember)
+                            : onToggleShift(staffMember.id)
+                        }
+                      >
+                        <Clock3 className="jefa-screen__btn-action-icon" />
+                        <span>Horario excepcional</span>
+                      </button>
+                    )}
+                    {staffMember.cant_intentos >= 3 && onUnlockStaff && (
+                      <button
+                        className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
+                        title="Desbloquear cuenta por intentos fallidos"
+                        aria-label={`Desbloquear a ${staffMember.nombre}`}
+                        onClick={() => onUnlockStaff(staffMember.id)}
+                      >
+                        <Unlock className="jefa-screen__btn-action-icon" />
+                        <span>Desbloquear</span>
+                      </button>
+                    )}
+                    {!staffMember.activo && onReactivateStaff && (
+                      <button
+                        className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
+                        title="Reactivar usuario"
+                        aria-label={`Reactivar a ${staffMember.nombre}`}
+                        onClick={() => onReactivateStaff(staffMember.id)}
+                      >
+                        <RotateCcw className="jefa-screen__btn-action-icon" />
+                        <span>Reactivar</span>
+                      </button>
+                    )}
+                    {(currentUserRole === 'Admin' ||
+                      (currentUserRole === 'Jefa' &&
+                        staffMember.rol !== 'Admin' &&
+                        staffMember.rol !== 'Jefa')) && (
+                      <>
+                        {onEditStaff && (
+                          <button
+                            className="jefa-screen__btn-edit-staff"
+                            title="Editar datos y horario"
+                            aria-label={`Editar datos de ${staffMember.nombre}`}
+                            onClick={() => onEditStaff(staffMember)}
+                          >
+                            <Pencil className="jefa-screen__btn-delete-icon" />
+                          </button>
+                        )}
+                        {staffMember.activo && onDeleteStaff && (
+                          <button
+                            className="jefa-screen__btn-delete-staff"
+                            title="Eliminar personal"
+                            aria-label={`Eliminar a ${staffMember.nombre}`}
+                            onClick={() =>
+                              onDeleteStaff(staffMember.id, staffMember.nombre, staffMember.rol)
+                            }
+                          >
+                            <Trash2 className="jefa-screen__btn-delete-icon" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </td>
                 </tr>
               )
             })}
             {visibleStaff.length === 0 && (
               <tr>
-                <td className="jefa-screen__empty-row" colSpan={5}>No hay personal registrado.</td>
+                <td className="jefa-screen__empty-row" colSpan={7}>No hay personal registrado.</td>
               </tr>
             )}
           </tbody>
