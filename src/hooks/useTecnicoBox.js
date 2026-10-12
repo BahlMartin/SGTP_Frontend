@@ -31,6 +31,9 @@ export function useTecnicoBox() {
     estado: 'Disponible'
   }
 
+  const patientInBox = activeInBoxes[currentBoxKey]
+  const matriculaTecnico = userData?.matricula || 'TEC-3391'
+
   // Posicionar al técnico en su box inicial al ingresar
   useEffect(() => {
     if (userData?.rol === 'Box' && currentBoxNumber) {
