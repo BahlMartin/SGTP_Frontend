@@ -95,6 +95,7 @@ export default function ActiveStaffCard({
             const workload = isAdmissionStaff
               ? (workloadByStaff.ticketsIssuedByStaff?.[staffMember.id] ?? workloadByStaff.ticketsIssuedByStaff?.[String(staffMember.id)] ?? 0)
               : (workloadByStaff.patientsAttendedByBoxStaff?.[staffMember.id] ?? workloadByStaff.patientsAttendedByBoxStaff?.[String(staffMember.id)] ?? 0)
+            const workloadLabel = isAdmissionStaff ? 'tickets emitidos' : 'pacientes atendidos'
             const isClickable = attendsPatients
 
             return (
