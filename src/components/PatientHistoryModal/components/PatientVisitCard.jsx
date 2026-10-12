@@ -3,11 +3,19 @@ import { Clock, Receipt, Loader2 } from 'lucide-react'
 import { formatDateDDMMAAAA, formatTimeHHMM } from '../../../utils/formatters'
 import './PatientVisitCard.css'
 
-export default function PatientVisitCard({ visit, onViewTicket, isFetching = false }) {
+export default function PatientVisitCard({
+  visit,
+  onViewTicket,
+  isFetching = false,
+  mode = 'patient',
+  staffRole = 'admision'
+}) {
   if (!visit) return null
 
   const visitId = visit.id_ticket || visit.id
-  const fecha = visit.fecha_hora_atencion || visit.fecha_hora_admision
+  const fecha = (mode === 'staff' && staffRole === 'box' && visit.fecha_hora_atencion_box)
+    ? visit.fecha_hora_atencion_box
+    : (visit.fecha_hora_atencion || visit.fecha_hora_admision)
 
   const getStudyNames = (studies = []) => studies
     .map((study) => {
@@ -44,6 +52,20 @@ export default function PatientVisitCard({ visit, onViewTicket, isFetching = fal
 
   const stateClass = (visit.estado || 'default').toLowerCase().replace(/\s+/g, '-')
 
+  // Datos para modo personal
+  const paciente = visit.paciente_detalle || visit.paciente
+  const pacienteNombre = paciente
+    ? `${paciente.apellidos || ''}, ${paciente.nombre || ''}`.replace(/^,\s*|,\s*$/g, '') || `DNI ${paciente.dni}`
+    : 'Paciente no asignado'
+  const pacienteDni = paciente?.dni ? `DNI: ${paciente.dni}` : ''
+  const obraSocial = paciente?.obra_social ? ` · ${paciente.obra_social}` : ''
+  const pacienteSub = `${pacienteDni}${obraSocial}`.trim()
+
+  const contraparteCaption = staffRole === 'admision' ? 'Técnico / Box:' : 'Operador Admisión:'
+  const contraparteVal = staffRole === 'admision'
+    ? (boxProDisplay !== 'No registrado' ? boxProDisplay : 'En espera / Sin box')
+    : admisionDisplay
+
   return (
     <li className="patient-history-modal__visit-item">
       <div className="patient-history-modal__visit-card">
@@ -71,17 +93,34 @@ export default function PatientVisitCard({ visit, onViewTicket, isFetching = fal
         </div>
 
         <div className="patient-history-modal__visit-card-body">
-          <div className="patient-history-modal__pro-grid">
-            <div className="patient-history-modal__pro-col">
-              <span className="patient-history-modal__pro-caption">Admisión:</span>
-              <span className="patient-history-modal__pro-val">{admisionDisplay}</span>
-            </div>
+          {mode === 'staff' ? (
+            <div className="patient-history-modal__pro-grid">
+              <div className="patient-history-modal__pro-col">
+                <span className="patient-history-modal__pro-caption">Paciente asistido:</span>
+                <span className="patient-history-modal__pro-val">{pacienteNombre}</span>
+                {pacienteSub && (
+                  <span className="patient-history-modal__pro-subval">{pacienteSub}</span>
+                )}
+              </div>
 
-            <div className="patient-history-modal__pro-col">
-              <span className="patient-history-modal__pro-caption">Técnico / Box:</span>
-              <span className="patient-history-modal__pro-val">{boxProDisplay}</span>
+              <div className="patient-history-modal__pro-col">
+                <span className="patient-history-modal__pro-caption">{contraparteCaption}</span>
+                <span className="patient-history-modal__pro-val">{contraparteVal}</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="patient-history-modal__pro-grid">
+              <div className="patient-history-modal__pro-col">
+                <span className="patient-history-modal__pro-caption">Admisión:</span>
+                <span className="patient-history-modal__pro-val">{admisionDisplay}</span>
+              </div>
+
+              <div className="patient-history-modal__pro-col">
+                <span className="patient-history-modal__pro-caption">Técnico / Box:</span>
+                <span className="patient-history-modal__pro-val">{boxProDisplay}</span>
+              </div>
+            </div>
+          )}
 
           <div className="patient-history-modal__studies-row">
             <span className="patient-history-modal__studies-caption">Estudios:</span>

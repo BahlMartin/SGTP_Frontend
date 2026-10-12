@@ -96,22 +96,20 @@ export default function ActiveStaffCard({
               ? (workloadByStaff.ticketsIssuedByStaff?.[staffMember.id] ?? workloadByStaff.ticketsIssuedByStaff?.[String(staffMember.id)] ?? 0)
               : (workloadByStaff.patientsAttendedByBoxStaff?.[staffMember.id] ?? workloadByStaff.patientsAttendedByBoxStaff?.[String(staffMember.id)] ?? 0)
             const workloadLabel = isAdmissionStaff ? 'tickets emitidos' : 'pacientes atendidos'
-            const isClickable = attendsPatients
-
             return (
               <li
                 key={staffMember.id}
-                className={`jefa-screen__staff-item ${isClickable ? 'jefa-screen__staff-item--clickable' : ''}`}
-                onClick={() => isClickable && onSelectStaff?.(staffMember)}
-                role={isClickable ? 'button' : undefined}
-                tabIndex={isClickable ? 0 : undefined}
+                className="jefa-screen__staff-item jefa-screen__staff-item--clickable"
+                onClick={() => onSelectStaff?.(staffMember)}
+                role="button"
+                tabIndex={0}
                 onKeyDown={(e) => {
-                  if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
+                  if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     onSelectStaff?.(staffMember)
                   }
                 }}
-                title={isClickable ? `Ver detalle de tickets de ${staffMember.nombre}` : undefined}
+                title={`Ver detalle de tickets de ${staffMember.nombre}`}
               >
                 <div className="jefa-screen__staff-info">
                   <span

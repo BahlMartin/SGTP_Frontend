@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Users, ShieldCheck } from 'lucide-react'
+import { Users, ShieldCheck, RefreshCw } from 'lucide-react'
 import JefaLayout from './components/JefaLayout'
 import JefaHeader from './components/JefaHeader'
 import LabMatrixCard from './components/LabMatrixCard'
@@ -10,9 +10,10 @@ import AddStaffModal from './components/AddStaffModal'
 import EditStaffModal from './components/EditStaffModal'
 import AuthorizeOvertimeModal from './components/AuthorizeOvertimeModal'
 import JefaOnlineBoxesCard from './components/JefaOnlineBoxesCard/JefaOnlineBoxesCard'
-import StaffTicketsModal from './components/StaffTicketsModal/StaffTicketsModal'
+import PatientHistoryModal from '../../components/PatientHistoryModal/PatientHistoryModal'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useAuth } from '../../context/AuthContext'
+import { useBox } from '../../context/BoxContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
 import { useFeedbackNotice } from '../../hooks/useFeedbackNotice'
 import {
@@ -25,6 +26,7 @@ export default function JefaScreen() {
   const { userData } = useAuth()
   const {
     staffList,
+    loadStaff,
     toggleShift,
     authorizeShiftException,
     revokeShiftException,
@@ -35,6 +37,7 @@ export default function JefaScreen() {
     lockStaff,
     reactivateStaff
   } = useStaffManagement()
+  const { refreshBoxes, boxesLoading } = useBox()
 
   const { notice: statusNotice, showNotice } = useFeedbackNotice(4000)
   const [activeCenterTab, setActiveCenterTab] = useState('shifts') // 'shifts' | 'security'
@@ -56,6 +59,57 @@ export default function JefaScreen() {
   const [studiesSearch, setStudiesSearch] = useState('')
   const [labStudies, setLabStudies] = useState([])
   const [loadingStudies, setLoadingStudies] = useState(false)
+  const [isRefreshingAll, setIsRefreshingAll] = useState(false)
+  const [lastRefreshedAt, setLastRefreshedAt] = useState(() => new Date())
+
+  const isGlobalRefreshing = isRefreshingAll || loadingStaffWorkload || loadingStudies || boxesLoading
+
+  const handleRefreshAll = async () => {
+    setIsRefreshingAll(true)
+    try {
+      await Promise.all([
+        fetchRendimientoPersonalApi(staffDate)
+          .then((data) => {
+            setWorkloadByStaff({
+              ticketsIssuedByStaff: data.tickets_por_personal || {},
+              patientsAttendedByBoxStaff: data.atenciones_por_personal || {}
+            })
+          })
+          .catch((error) => {
+            console.error('Error al actualizar carga de personal:', error)
+          }),
+        loadStaff().catch((error) => {
+          console.error('Error al actualizar personal:', error)
+        }),
+        refreshBoxes().catch((error) => {
+          console.error('Error al actualizar boxes:', error)
+        }),
+        fetchResumenEstudiosApi({
+          fechaStr: studiesDate,
+          search: studiesSearch,
+          top: studiesSearch.trim() ? null : 5
+        })
+          .then((data) => {
+            setLabStudies(data.estudios || [])
+          })
+          .catch((error) => {
+            console.error('Error al actualizar estudios:', error)
+          })
+      ])
+      setLastRefreshedAt(new Date())
+      showNotice('Personal, boxes y estudios actualizados.')
+    } catch (err) {
+      console.error('Error en refresco general:', err)
+    } finally {
+      setIsRefreshingAll(false)
+    }
+  }
+
+  const formattedRefreshTime = lastRefreshedAt.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
 
   // Carga reactiva de rendimiento de personal al cambiar la fecha seleccionada
   useEffect(() => {
@@ -160,6 +214,28 @@ export default function JefaScreen() {
         headerContent={<JefaHeader statusMessage={statusNotice} />}
         leftContent={
           <>
+            <div className="jefa-screen__overview-toolbar">
+              <div className="jefa-screen__overview-toolbar-left">
+                <span className="jefa-screen__overview-title">Monitoreo operativo</span>
+                <span className="jefa-screen__overview-subtitle">Personal, boxes y laboratorio</span>
+              </div>
+              <button
+                type="button"
+                className="jefa-screen__overview-refresh-btn"
+                onClick={handleRefreshAll}
+                disabled={isGlobalRefreshing}
+                title={`Última actualización: ${formattedRefreshTime}`}
+              >
+                <RefreshCw
+                  size={13}
+                  className={isGlobalRefreshing ? 'jefa-screen__overview-refresh-icon--spinning' : ''}
+                  aria-hidden="true"
+                />
+                <span>Actualizar</span>
+                <span className="jefa-screen__overview-refresh-time">{formattedRefreshTime}</span>
+              </button>
+            </div>
+
             <ActiveStaffCard
               staffList={staffList}
               selectedDate={staffDate}
@@ -260,7 +336,7 @@ export default function JefaScreen() {
       )}
 
       {selectedStaffForTickets && (
-        <StaffTicketsModal
+        <PatientHistoryModal
           staffMember={selectedStaffForTickets}
           selectedDate={staffDate}
           onClose={() => setSelectedStaffForTickets(null)}

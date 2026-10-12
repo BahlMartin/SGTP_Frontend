@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { X } from 'lucide-react'
-import { fetchTicketByIdApi } from '../../services/ticketService'
+import { X, Users, Filter } from 'lucide-react'
+import { fetchTicketByIdApi, fetchTicketsByStaffApi } from '../../services/ticketService'
 import TicketModal from '../TicketModal/TicketModal'
 import PatientProfileHeader from './components/PatientProfileHeader'
 import PatientVisitsList from './components/PatientVisitsList'
@@ -12,13 +12,27 @@ export default function PatientHistoryModal({
   isLoading = false,
   error = '',
   onSelectPatient,
-  onClose
+  onClose,
+  // Props para modo personal (Pantalla de Jefa)
+  staffMember,
+  selectedDate = ''
 }) {
+  const isStaffMode = Boolean(staffMember)
   const [selectedTicketDetail, setSelectedTicketDetail] = useState(null)
   const [isFetchingTicketId, setIsFetchingTicketId] = useState(null)
   const [ticketFetchError, setTicketFetchError] = useState('')
   const ticketCacheRef = useRef({})
 
+  // Estado propio del modo personal
+  const [filterMode, setFilterMode] = useState(selectedDate ? 'date' : 'all')
+  const [staffTickets, setStaffTickets] = useState([])
+  const [staffTipo, setStaffTipo] = useState('admision')
+  const [staffLoading, setStaffLoading] = useState(isStaffMode)
+  const [staffError, setStaffError] = useState('')
+
+  const staffId = staffMember?.id_personal ?? staffMember?.id
+
+  // Cierre con Escape
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -34,7 +48,37 @@ export default function PatientHistoryModal({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedTicketDetail, onClose])
 
-  if (!patient) return null
+  // Carga reactiva de tickets cuando se consulta a un integrante del personal
+  useEffect(() => {
+    if (!isStaffMode || !staffId) return
+
+    let isMounted = true
+    setStaffLoading(true)
+    setStaffError('')
+
+    const dateParam = filterMode === 'date' ? selectedDate : null
+
+    fetchTicketsByStaffApi(staffId, dateParam)
+      .then((data) => {
+        if (!isMounted) return
+        setStaffTickets(data.tickets || [])
+        setStaffTipo(data.tipo || (staffMember?.rol === 'Admision' ? 'admision' : 'box'))
+      })
+      .catch((err) => {
+        if (!isMounted) return
+        console.error('Error al cargar tickets del personal:', err)
+        setStaffError(err.message || 'No se pudieron consultar los tickets del profesional.')
+      })
+      .finally(() => {
+        if (isMounted) setStaffLoading(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [isStaffMode, staffId, filterMode, selectedDate, staffMember?.rol])
+
+  if (!patient && !staffMember) return null
 
   const patientData = history?.paciente || patient
   const visits = Array.isArray(history) ? history : history?.atenciones || []
@@ -65,6 +109,24 @@ export default function PatientHistoryModal({
     }
   }
 
+  // Helpers de visualización del personal
+  const getInitials = (name = '') => {
+    const parts = name.trim().split(/\s+/)
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+    return (parts[0]?.[0] || 'ST').toUpperCase()
+  }
+
+  const staffName = staffMember?.nombre_completo || staffMember?.nombre || 'Personal'
+  const isAdmission = staffTipo === 'admision'
+  const staffRoleDisplay = staffMember?.rol || (isAdmission ? 'Admisión' : 'Técnico de Box')
+  const staffMatricula = staffMember?.matricula ? `Mat. ${staffMember.matricula}` : 'Sin matrícula'
+
+  const titleText = isStaffMode
+    ? (isAdmission
+        ? 'Tickets Emitidos por Operador de Admisión'
+        : 'Tickets Atendidos y Extraídos por Técnico')
+    : 'Historial Clínico del Paciente'
+
   return (
     <>
       <div
@@ -81,30 +143,111 @@ export default function PatientHistoryModal({
             type="button"
             className="patient-history-modal__close"
             onClick={onClose}
-            aria-label="Cerrar historial"
+            aria-label="Cerrar modal"
           >
             <X size={20} />
           </button>
 
           <h2 id="patient-history-title" className="patient-history-modal__title">
-            Historial Clínico del Paciente
+            {titleText}
           </h2>
 
-          {/* Ficha demográfica del paciente */}
-          <PatientProfileHeader patientData={patientData} totalVisits={visits.length} />
+          {/* Ficha demográfica: Paciente o Personal */}
+          {isStaffMode ? (
+            <>
+              <div className="patient-history-modal__staff-profile">
+                <div className="patient-history-modal__staff-profile-left">
+                  <div className="patient-history-modal__staff-avatar">
+                    {getInitials(staffName)}
+                  </div>
+                  <div className="patient-history-modal__staff-details">
+                    <div className="patient-history-modal__staff-name-wrap">
+                      <span className="patient-history-modal__staff-name">{staffName}</span>
+                      <span
+                        className={`patient-history-modal__role-badge ${
+                          isAdmission
+                            ? 'patient-history-modal__role-badge--admision'
+                            : 'patient-history-modal__role-badge--box'
+                        }`}
+                      >
+                        {staffRoleDisplay}
+                      </span>
+                    </div>
+                    <div className="patient-history-modal__staff-meta">
+                      <span>{staffMatricula}</span>
+                      {staffMember.email && <span>· {staffMember.email}</span>}
+                    </div>
+                  </div>
+                </div>
 
-          {/* Lista modular de atenciones históricas */}
+                <div className="patient-history-modal__staff-kpi">
+                  <span className="patient-history-modal__kpi-number">{staffTickets.length}</span>
+                  <span className="patient-history-modal__kpi-label">
+                    {isAdmission ? 'Tickets Emitidos' : 'Pacientes Atendidos'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Barra de Filtro de Fecha (Personal) */}
+              <div className="patient-history-modal__filter-bar">
+                <div className="patient-history-modal__filter-title">
+                  <Filter size={15} />
+                  <span>
+                    {filterMode === 'date' && selectedDate
+                      ? `Jornada seleccionada (${selectedDate})`
+                      : 'Todo el historial'}
+                  </span>
+                </div>
+
+                {selectedDate && (
+                  <div className="patient-history-modal__filter-buttons">
+                    <button
+                      type="button"
+                      className={`patient-history-modal__filter-btn ${
+                        filterMode === 'date' ? 'patient-history-modal__filter-btn--active' : ''
+                      }`}
+                      onClick={() => setFilterMode('date')}
+                    >
+                      Día seleccionado
+                    </button>
+                    <button
+                      type="button"
+                      className={`patient-history-modal__filter-btn ${
+                        filterMode === 'all' ? 'patient-history-modal__filter-btn--active' : ''
+                      }`}
+                      onClick={() => setFilterMode('all')}
+                    >
+                      Historial completo
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <PatientProfileHeader patientData={patientData} totalVisits={visits.length} />
+          )}
+
+          {/* Lista modular de atenciones históricas o tickets por personal */}
           <PatientVisitsList
-            visits={visits}
-            isLoading={isLoading}
-            error={error}
+            visits={isStaffMode ? staffTickets : visits}
+            isLoading={isStaffMode ? staffLoading : isLoading}
+            error={isStaffMode ? staffError : error}
             ticketFetchError={ticketFetchError}
             isFetchingTicketId={isFetchingTicketId}
             onViewTicket={handleViewTicket}
+            mode={isStaffMode ? 'staff' : 'patient'}
+            staffRole={staffTipo}
+            emptyMessage={
+              isStaffMode
+                ? `No se registran tickets ${isAdmission ? 'emitidos' : 'atendidos'} por este profesional${
+                    filterMode === 'date' && selectedDate ? ` en la jornada del ${selectedDate}.` : '.'
+                  }`
+                : undefined
+            }
           />
 
           <div className="patient-history-modal__actions">
-            {onSelectPatient && (
+            {!isStaffMode && onSelectPatient && (
               <button
                 type="button"
                 className="patient-history-modal__select"
@@ -124,7 +267,7 @@ export default function PatientHistoryModal({
       {selectedTicketDetail && (
         <TicketModal
           ticket={selectedTicketDetail}
-          title="Comprobante Asistencial - Historial"
+          title={isStaffMode ? `Comprobante Asistencial - ${staffName}` : 'Comprobante Asistencial - Historial'}
           onClose={() => setSelectedTicketDetail(null)}
         />
       )}

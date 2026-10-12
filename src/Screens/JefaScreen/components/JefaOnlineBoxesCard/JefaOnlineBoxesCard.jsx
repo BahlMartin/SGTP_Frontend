@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import {
   Tv,
-  RefreshCw,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -9,7 +8,9 @@ import {
   User,
   UserX,
   Power,
-  Activity
+  Activity,
+  Filter,
+  ChevronDown
 } from 'lucide-react'
 import { useBox } from '../../../../context/BoxContext'
 import './JefaOnlineBoxesCard.css'
@@ -28,6 +29,7 @@ export default function JefaOnlineBoxesCard({
 
   const [isUpdatingBox, setIsUpdatingBox] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(() => new Date())
+  const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'disponible' | 'en atencion' | 'fuera de servicio'
 
   // Auto-refresco periódico cada 12 segundos (sondeo en tiempo real)
   useEffect(() => {
@@ -41,6 +43,14 @@ export default function JefaOnlineBoxesCard({
   const handleManualRefresh = async () => {
     await refreshBoxes()
     setLastUpdated(new Date())
+  }
+
+  const normalizeStatus = (estadoValue) => {
+    return String(estadoValue || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
   }
 
   // Ordenar boxes de forma ascendente por número
@@ -57,14 +67,29 @@ export default function JefaOnlineBoxesCard({
     let fuera = 0
 
     for (const b of orderedBoxes) {
-      const statusNorm = String(b.estado || '').toLowerCase()
+      const statusNorm = normalizeStatus(b.estado)
       if (statusNorm === 'disponible') disponibles++
       else if (statusNorm === 'en atencion') atencion++
       else fuera++
     }
 
-    return { disponibles, atencion, fuera }
+    return { disponibles, atencion, fuera, total: orderedBoxes.length }
   }, [orderedBoxes])
+
+
+  // Filtrar boxes según la píldora seleccionada
+  const filteredBoxes = useMemo(() => {
+    if (statusFilter === 'all') return orderedBoxes
+    return orderedBoxes.filter((b) => {
+      const statusNorm = normalizeStatus(b.estado)
+      if (statusFilter === 'disponible') return statusNorm === 'disponible'
+      if (statusFilter === 'en atencion') return statusNorm === 'en atencion'
+      if (statusFilter === 'fuera de servicio') {
+        return statusNorm !== 'disponible' && statusNorm !== 'en atencion'
+      }
+      return true
+    })
+  }, [orderedBoxes, statusFilter])
 
   // Conmutar estado de box entre 'Disponible' y 'Fuera de servicio'
   const handleToggleBoxStatus = async (box) => {
@@ -102,15 +127,10 @@ export default function JefaOnlineBoxesCard({
     return `${first}${last}` || 'TX'
   }
 
-  const formattedTime = lastUpdated.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
 
   return (
     <div className="jefa-boxes-card">
-      {/* Cabecera y Contadores */}
+      {/* Cabecera */}
       <div className="jefa-boxes-card__header">
         <div className="jefa-boxes-card__header-left">
           <div className="jefa-boxes-card__title-row">
@@ -121,39 +141,25 @@ export default function JefaOnlineBoxesCard({
             Monitoreo en línea y control operativo de boxes
           </p>
         </div>
-
-        <div className="jefa-boxes-card__header-actions">
-          <button
-            type="button"
-            className="jefa-boxes-card__refresh-btn"
-            onClick={handleManualRefresh}
-            disabled={boxesLoading}
-            title={`Última actualización: ${formattedTime}`}
-          >
-            <RefreshCw
-              size={12}
-              className={boxesLoading ? 'jefa-boxes-card__refresh-icon--spinning' : ''}
-              aria-hidden="true"
-            />
-            <span>{formattedTime}</span>
-          </button>
-        </div>
       </div>
 
-      {/* Píldoras resumen KPI */}
-      <div className="jefa-boxes-card__kpis">
-        <span className="jefa-boxes-card__kpi-badge jefa-boxes-card__kpi-badge--disponible">
-          <span className="jefa-boxes-card__kpi-dot" />
-          {counts.disponibles} disponibles
-        </span>
-        <span className="jefa-boxes-card__kpi-badge jefa-boxes-card__kpi-badge--atencion">
-          <span className="jefa-boxes-card__kpi-dot" />
-          {counts.atencion} en atención
-        </span>
-        <span className="jefa-boxes-card__kpi-badge jefa-boxes-card__kpi-badge--fuera">
-          <span className="jefa-boxes-card__kpi-dot" />
-          {counts.fuera} fuera de servicio
-        </span>
+      {/* Controles: Filtro desplegable y Actualización */}
+      <div className="jefa-boxes-card__toolbar">
+        <div className="jefa-boxes-card__select-wrapper">
+          <Filter size={13} className="jefa-boxes-card__select-icon" aria-hidden="true" />
+          <select
+            className="jefa-boxes-card__select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="Filtrar boxes por estado"
+          >
+            <option value="all">Todos los boxes ({counts.total})</option>
+            <option value="disponible">Disponibles ({counts.disponibles})</option>
+            <option value="en atencion">En atención ({counts.atencion})</option>
+            <option value="fuera de servicio">Fuera de servicio ({counts.fuera})</option>
+          </select>
+          <ChevronDown size={13} className="jefa-boxes-card__select-arrow" aria-hidden="true" />
+        </div>
       </div>
 
       {/* Error Banner */}
@@ -180,9 +186,28 @@ export default function JefaOnlineBoxesCard({
         <div className="jefa-boxes-card__empty">
           <p>No se encontraron boxes registrados en el sistema.</p>
         </div>
+      ) : filteredBoxes.length === 0 ? (
+        <div className="jefa-boxes-card__empty">
+          <p>
+            No hay boxes{' '}
+            {statusFilter === 'disponible'
+              ? 'disponibles'
+              : statusFilter === 'en atencion'
+                ? 'en atención'
+                : 'fuera de servicio'}
+            .{' '}
+            <button
+              type="button"
+              className="jefa-boxes-card__clear-filter-btn"
+              onClick={() => setStatusFilter('all')}
+            >
+              Ver todos ({counts.total})
+            </button>
+          </p>
+        </div>
       ) : (
         <ul className="jefa-boxes-card__list">
-          {orderedBoxes.map((box) => {
+          {filteredBoxes.map((box) => {
             const boxNumero = Number(box.numero)
             const estadoActual = box.estado || (box.activo === false ? 'Fuera de servicio' : 'Disponible')
             const isDisponible = estadoActual === 'Disponible'
