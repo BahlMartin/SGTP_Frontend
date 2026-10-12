@@ -69,7 +69,10 @@ export async function createStaffUserApi(currentUserRole, newUserPayload) {
     matricula: newUserPayload.matricula.trim(),
     rol: newUserPayload.rol || 'Box',
     inicio_turno: `${newUserPayload.inicio_turno || '07:00'}:00`,
-    fin_turno: `${newUserPayload.fin_turno || '15:00'}:00`
+    fin_turno: `${newUserPayload.fin_turno || '15:00'}:00`,
+    dias_laborales: Array.isArray(newUserPayload.dias_laborales)
+      ? newUserPayload.dias_laborales
+      : [0, 1, 2, 3, 4]
   }
 
   const response = await apiClient.post('/users/', payload)
