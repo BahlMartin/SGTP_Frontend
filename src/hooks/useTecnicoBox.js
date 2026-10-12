@@ -12,7 +12,8 @@ export function useTecnicoBox() {
     boxesError,
     currentBoxNumber,
     setCurrentBoxNumber,
-    changeBoxStatus
+    changeBoxStatus,
+    tomarBox
   } = useBox()
   const { waitingQueue, activeInBoxes, callNextPatient, finishAttention } = useTriageQueue()
   const { userData } = useAuth()
@@ -30,8 +31,24 @@ export function useTecnicoBox() {
     estado: 'Disponible'
   }
 
-  const patientInBox = activeInBoxes[currentBoxKey]
-  const matriculaTecnico = userData?.matricula || 'TEC-3391'
+  // Posicionar al técnico en su box inicial al ingresar
+  useEffect(() => {
+    if (userData?.rol === 'Box' && currentBoxNumber) {
+      tomarBox(currentBoxNumber).catch((err) => {
+        console.error('Error al posicionar box inicial:', err)
+      })
+    }
+  }, [userData?.rol])
+
+  const handleSelectBox = async (newBoxNumber) => {
+    setCurrentBoxNumber(newBoxNumber)
+    try {
+      await tomarBox(newBoxNumber)
+      showNotification(`Posicionado en Box ${newBoxNumber}`)
+    } catch (error) {
+      console.error('Error al tomar box:', error)
+    }
+  }
 
   const handleStatusChange = async (newStatus) => {
     try {
@@ -90,6 +107,7 @@ export function useTecnicoBox() {
     boxesError,
     currentBoxNumber,
     setCurrentBoxNumber,
+    handleSelectBox,
     currentBoxKey,
     activeBoxData,
     patientInBox,

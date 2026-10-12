@@ -142,6 +142,15 @@ export async function deleteBoxApi(boxId) {
 }
 
 /**
+ * Asocia al técnico actual al box físico seleccionado en tiempo real.
+ */
+export async function tomarBoxApi(boxIdentifier) {
+  const boxId = await resolveBoxId(boxIdentifier)
+  const response = await apiClient.post(`/boxes/${boxId}/tomar-box/`)
+  return normalizeBox(response)
+}
+
+/**
  * Llama al siguiente paciente disponible según el algoritmo atómico multibox del backend.
  */
 export async function llamarSiguientePacienteApi(boxIdentifier) {

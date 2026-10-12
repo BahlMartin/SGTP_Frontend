@@ -16,6 +16,7 @@ export default function TecnicoBoxScreen() {
     boxesError,
     currentBoxNumber,
     setCurrentBoxNumber,
+    handleSelectBox,
     currentBoxKey,
     activeBoxData,
     patientInBox,
@@ -53,7 +54,7 @@ export default function TecnicoBoxScreen() {
             <BoxControlCard
               boxesList={boxes}
               currentBoxNumber={currentBoxNumber}
-              onSelectBox={(boxNumber) => setCurrentBoxNumber(boxNumber)}
+              onSelectBox={handleSelectBox}
               currentStatus={activeBoxData.estado}
               onStatusChange={handleStatusChange}
               disabled={isProcessing}
