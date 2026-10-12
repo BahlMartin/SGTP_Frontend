@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react'
+import { Users, ShieldCheck } from 'lucide-react'
 import JefaLayout from './components/JefaLayout'
 import JefaHeader from './components/JefaHeader'
 import LabMatrixCard from './components/LabMatrixCard'
 import ActiveStaffCard from './components/ActiveStaffCard'
 import StaffShiftsCard from './components/StaffShiftsCard'
+import StaffSecurityCard from './components/StaffSecurityCard/StaffSecurityCard'
 import AddStaffModal from './components/AddStaffModal'
 import EditStaffModal from './components/EditStaffModal'
 import AuthorizeOvertimeModal from './components/AuthorizeOvertimeModal'
@@ -29,10 +31,12 @@ export default function JefaScreen() {
     createStaff,
     updateStaff,
     unlockStaff,
+    lockStaff,
     reactivateStaff
   } = useStaffManagement()
 
   const { notice: statusNotice, showNotice } = useFeedbackNotice(4000)
+  const [activeCenterTab, setActiveCenterTab] = useState('shifts') // 'shifts' | 'security'
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
   const [editingStaff, setEditingStaff] = useState(null)
   const [staffForOvertime, setStaffForOvertime] = useState(null)
@@ -140,6 +144,10 @@ export default function JefaScreen() {
     unlockStaff(staffMemberId, showNotice)
   }
 
+  const handleLockStaff = (staffMemberId) => {
+    lockStaff(staffMemberId, showNotice)
+  }
+
   const handleReactivateStaff = (staffMemberId) => {
     reactivateStaff(staffMemberId, showNotice)
   }
@@ -170,17 +178,52 @@ export default function JefaScreen() {
           </>
         }
         centerContent={
-          <StaffShiftsCard
-            staffList={staffList}
-            currentUserRole={userData?.rol}
-            onOpenAddStaff={() => setShowAddStaffModal(true)}
-            onAuthorizeOvertime={setStaffForOvertime}
-            onToggleShift={handleToggleShift}
-            onDeleteStaff={handleDeleteStaff}
-            onEditStaff={setEditingStaff}
-            onUnlockStaff={handleUnlockStaff}
-            onReactivateStaff={handleReactivateStaff}
-          />
+          <div className="jefa-screen__center-content-wrapper">
+            <div className="jefa-screen__view-tabs" role="tablist" aria-label="Secciones de gestión de personal">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeCenterTab === 'shifts'}
+                className={`jefa-screen__view-tab ${activeCenterTab === 'shifts' ? 'jefa-screen__view-tab--active' : ''}`}
+                onClick={() => setActiveCenterTab('shifts')}
+              >
+                <Users className="jefa-screen__view-tab-icon" />
+                <span>Personal y Asignación de Turnos</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeCenterTab === 'security'}
+                className={`jefa-screen__view-tab ${activeCenterTab === 'security' ? 'jefa-screen__view-tab--active' : ''}`}
+                onClick={() => setActiveCenterTab('security')}
+              >
+                <ShieldCheck className="jefa-screen__view-tab-icon" />
+                <span>Seguridad y Bloqueo de Cuentas</span>
+              </button>
+            </div>
+
+            {activeCenterTab === 'shifts' ? (
+              <StaffShiftsCard
+                staffList={staffList}
+                currentUserRole={userData?.rol}
+                onOpenAddStaff={() => setShowAddStaffModal(true)}
+                onAuthorizeOvertime={setStaffForOvertime}
+                onToggleShift={handleToggleShift}
+                onDeleteStaff={handleDeleteStaff}
+                onEditStaff={setEditingStaff}
+                onUnlockStaff={handleUnlockStaff}
+                onReactivateStaff={handleReactivateStaff}
+              />
+            ) : (
+              <StaffSecurityCard
+                staffList={staffList}
+                currentUserRole={userData?.rol}
+                currentUserId={userData?.id_personal || userData?.id}
+                onUnlockStaff={handleUnlockStaff}
+                onLockStaff={handleLockStaff}
+              />
+            )}
+          </div>
         }
         searchContent={<PatientSearch />}
       />

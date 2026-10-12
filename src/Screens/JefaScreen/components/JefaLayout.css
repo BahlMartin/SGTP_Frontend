@@ -59,6 +59,57 @@
   gap: 20px;
 }
 
+.jefa-screen__center-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.jefa-screen__view-tabs {
+  display: inline-flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  width: fit-content;
+  gap: 4px;
+}
+
+.jefa-screen__view-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.jefa-screen__view-tab:hover {
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.jefa-screen__view-tab--active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.jefa-screen__view-tab-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.jefa-screen__view-tab--active .jefa-screen__view-tab-icon {
+  color: #0d9488;
+}
+
 .jefa-screen__search-panel {
   margin: 0 0 24px;
   width: 100%;

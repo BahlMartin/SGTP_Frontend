@@ -10,7 +10,7 @@ import {
   revokeHabilitacionHorariaApi,
   createPlanificacionHorasExtrasApi
 } from '../services/userService'
-import { unlockUserApi } from '../services/authService'
+import { unlockUserApi, lockUserApi } from '../services/authService'
 import { isWithinShiftGrace } from '../utils/shiftTime.utils'
 
 export function useStaffManagement() {
@@ -151,6 +151,18 @@ export function useStaffManagement() {
     }
   }
 
+  const lockStaff = async (staffMemberId, onSuccess) => {
+    try {
+      await lockUserApi(staffMemberId)
+      await loadStaff()
+      if (onSuccess) {
+        onSuccess('Cuenta de personal bloqueada exitosamente.')
+      }
+    } catch (error) {
+      alert(error.message || 'Error al bloquear al miembro del personal.')
+    }
+  }
+
   const reactivateStaff = async (staffMemberId, onSuccess) => {
     try {
       await reactivateStaffUserApi(staffMemberId)
@@ -201,6 +213,7 @@ export function useStaffManagement() {
     createStaff,
     updateStaff,
     unlockStaff,
+    lockStaff,
     reactivateStaff
   }
 }
