@@ -147,3 +147,22 @@ export async function toggleShiftExceptionApi(userId, habilitado) {
     return await updateStaffUserApi(userId, { activo: false })
   }
 }
+
+// ==============================================================================
+// GESTIÓN DE PLANIFICACIONES MENSUALES DE HORAS EXTRAS
+// ==============================================================================
+
+export async function fetchPlanificacionesHorasExtrasApi(personalId = null, anio = null, mes = null) {
+  const params = new URLSearchParams()
+  if (personalId) params.append('personal', personalId)
+  if (anio) params.append('anio', anio)
+  if (mes) params.append('mes', mes)
+  const queryString = params.toString() ? `?${params.toString()}` : ''
+  const response = await apiClient.get(`/users/planificaciones-horas-extras/${queryString}`)
+  return Array.isArray(response) ? response : response.results || []
+}
+
+export async function createPlanificacionHorasExtrasApi(dataPlanificacion) {
+  return await apiClient.post('/users/planificaciones-horas-extras/', dataPlanificacion)
+}
+

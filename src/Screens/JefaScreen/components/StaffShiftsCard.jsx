@@ -130,7 +130,7 @@ export default function StaffShiftsCard({
                   <td className="jefa-screen__shift-actions">
                     {staffMember.rol !== 'Jefa' && staffMember.activo && (onAuthorizeOvertime || onToggleShift) && (
                       <button
-                        className="jefa-screen__btn-toggle-shift jefa-screen__btn-toggle-shift--enable"
+                        className="jefa-screen__btn-action-icon-only jefa-screen__btn-action-icon-only--enable"
                         title="Autorizar horario excepcional"
                         aria-label={`Autorizar horario excepcional para ${staffMember.nombre}`}
                         onClick={() =>
@@ -140,7 +140,6 @@ export default function StaffShiftsCard({
                         }
                       >
                         <Clock3 className="jefa-screen__btn-action-icon" />
-                        <span>Horario excepcional</span>
                       </button>
                     )}
                     {staffMember.cant_intentos >= 3 && onUnlockStaff && (

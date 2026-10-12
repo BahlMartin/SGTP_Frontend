@@ -176,6 +176,33 @@
   border: 1px solid #f6c5c1;
 }
 
+.jefa-screen__btn-action-icon-only {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #b9dce8;
+  background: #f0f8fc;
+  color: #1687c9;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.jefa-screen__btn-action-icon-only:hover {
+  background: #1687c9;
+  color: #ffffff;
+  border-color: #1687c9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(22, 135, 201, 0.25);
+}
+
+.jefa-screen__btn-action-icon-only:active {
+  transform: translateY(0);
+}
+
 .jefa-screen__btn-delete-staff {
   display: inline-flex;
   align-items: center;

@@ -7,7 +7,8 @@ import {
   deleteStaffUserApi,
   reactivateStaffUserApi,
   createHabilitacionHorariaApi,
-  revokeHabilitacionHorariaApi
+  revokeHabilitacionHorariaApi,
+  createPlanificacionHorasExtrasApi
 } from '../services/userService'
 import { unlockUserApi } from '../services/authService'
 import { isWithinShiftGrace } from '../utils/shiftTime.utils'
@@ -163,10 +164,20 @@ export function useStaffManagement() {
   }
 
   const authorizeShiftException = async (payload, onSuccess) => {
-    await createHabilitacionHorariaApi(payload)
-    await loadStaff()
-    if (onSuccess) {
-      onSuccess('Horario excepcional autorizado correctamente.')
+    if (payload.fechas_seleccionadas) {
+      await createPlanificacionHorasExtrasApi(payload)
+      await loadStaff()
+      if (onSuccess) {
+        onSuccess(
+          `Planificación mensual autorizada (${payload.fechas_seleccionadas.length} días) exitosamente.`
+        )
+      }
+    } else {
+      await createHabilitacionHorariaApi(payload)
+      await loadStaff()
+      if (onSuccess) {
+        onSuccess('Horario excepcional autorizado correctamente.')
+      }
     }
   }
 

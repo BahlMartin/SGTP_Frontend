@@ -1,7 +1,8 @@
-import React from 'react'
-import { AlertCircle, Clock3, X, Trash2 } from 'lucide-react'
-import ShiftTimeInput from './ShiftTimeInput'
-import { useOvertimeAuthorization, MOTIVOS_FRECUENTES } from '../hooks/useOvertimeAuthorization'
+import React, { useState } from 'react'
+import { CalendarDays, Clock3, X, Zap } from 'lucide-react'
+import MonthlyPlanningTab from './MonthlyPlanningTab/MonthlyPlanningTab'
+import SingleExceptionTab from './SingleExceptionTab/SingleExceptionTab'
+import { formatDiasLaborales } from '../../../utils/shiftValidation.utils'
 import './AuthorizeOvertimeModal.css'
 
 export default function AuthorizeOvertimeModal({
@@ -11,30 +12,12 @@ export default function AuthorizeOvertimeModal({
   onSubmit,
   onRevoke
 }) {
-  const {
-    fecha,
-    setFecha,
-    turnoInicio,
-    turnoFin,
-    tipoExtension,
-    horaInicio,
-    setHoraInicio,
-    horaFin,
-    setHoraFin,
-    motivo,
-    setMotivo,
-    motivoPersonalizado,
-    setMotivoPersonalizado,
-    errorMsg,
-    isSaving,
-    habilitacionesPrevias,
-    handleSelectTipo,
-    handlePresetDuracion,
-    handleSubmit,
-    handleRevocarItem
-  } = useOvertimeAuthorization(staffMember, { onSubmit, onRevoke, onClose })
+  const [activeTab, setActiveTab] = useState('monthly') // 'monthly' | 'single'
 
   if (!isOpen || !staffMember) return null
+
+  const diasLaboralesTexto = formatDiasLaborales(staffMember?.dias_laborales_detalle)
+  const turnoRegularTexto = `${String(staffMember?.inicio_turno || '08:00').slice(0, 5)} - ${String(staffMember?.fin_turno || '16:00').slice(0, 5)}`
 
   return (
     <div className="jefa-screen__modal-overlay">
@@ -53,14 +36,15 @@ export default function AuthorizeOvertimeModal({
           <X className="jefa-screen__modal-close-icon" />
         </button>
 
+        {/* Encabezado */}
         <div className="overtime-modal__header">
           <Clock3 className="overtime-modal__header-icon" />
           <div>
             <h3 id="overtime-modal-title" className="jefa-screen__modal-title">
-              Autorizar Horario Excepcional / Horas Extras
+              Planificación y Autorización de Horas Extras
             </h3>
             <p className="jefa-screen__modal-desc">
-              Habilitación extraordinaria para cobertura asistencial fuera del horario habitual.
+              Asignación extraordinaria y cómputo de turnos adicionales fuera del horario habitual.
             </p>
           </div>
         </div>
@@ -74,143 +58,51 @@ export default function AuthorizeOvertimeModal({
           <div className="overtime-modal__staff-sub">
             <span>Matrícula: {staffMember.matricula || 'No informada'}</span>
             <span className="overtime-modal__staff-shift">
-              Turno regular: <strong>{turnoInicio} - {turnoFin}</strong>
+              Turno habitual: <strong>{turnoRegularTexto}</strong> ({diasLaboralesTexto})
             </span>
           </div>
         </div>
 
-        {errorMsg && (
-          <div className="jefa-screen__modal-error" role="alert">
-            <AlertCircle className="jefa-screen__modal-error-icon" />
-            <span>{errorMsg}</span>
-          </div>
+        {/* Selector de modo por pestañas */}
+        <div className="overtime-modal__mode-tabs">
+          <button
+            type="button"
+            className={`overtime-modal__tab-btn ${
+              activeTab === 'monthly' ? 'overtime-modal__tab-btn--active' : ''
+            }`}
+            onClick={() => setActiveTab('monthly')}
+          >
+            <CalendarDays className="overtime-modal__tab-icon" />
+            Planificación Mensual (Calendario)
+          </button>
+          <button
+            type="button"
+            className={`overtime-modal__tab-btn ${
+              activeTab === 'single' ? 'overtime-modal__tab-btn--active' : ''
+            }`}
+            onClick={() => setActiveTab('single')}
+          >
+            <Zap className="overtime-modal__tab-icon" />
+            Excepción de 1 Día
+          </button>
+        </div>
+
+        {/* Renderizado condicional del subcomponente según pestaña */}
+        {activeTab === 'monthly' ? (
+          <MonthlyPlanningTab
+            staffMember={staffMember}
+            diasLaboralesTexto={diasLaboralesTexto}
+            onSubmit={onSubmit}
+            onClose={onClose}
+          />
+        ) : (
+          <SingleExceptionTab
+            staffMember={staffMember}
+            onSubmit={onSubmit}
+            onRevoke={onRevoke}
+            onClose={onClose}
+          />
         )}
-
-        <form onSubmit={handleSubmit} className="jefa-screen__staff-form">
-          <div className="jefa-screen__modal-field">
-            <label htmlFor="overtime-fecha">Fecha de Extensión:</label>
-            <input
-              id="overtime-fecha"
-              type="date"
-              required
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-            />
-          </div>
-
-          {/* Selector de Tipo de Extensión */}
-          <div className="overtime-modal__type-selector">
-            <label className="overtime-modal__type-label">Tipo de Extensión:</label>
-            <div className="overtime-modal__type-pills">
-              <button
-                type="button"
-                className={`overtime-pill ${tipoExtension === 'post' ? 'overtime-pill--active' : ''}`}
-                onClick={() => handleSelectTipo('post')}
-              >
-                Post-Turno (desde {turnoFin})
-              </button>
-              <button
-                type="button"
-                className={`overtime-pill ${tipoExtension === 'pre' ? 'overtime-pill--active' : ''}`}
-                onClick={() => handleSelectTipo('pre')}
-              >
-                Pre-Turno (hasta {turnoInicio})
-              </button>
-              <button
-                type="button"
-                className={`overtime-pill ${tipoExtension === 'libre' ? 'overtime-pill--active' : ''}`}
-                onClick={() => handleSelectTipo('libre')}
-              >
-                Guardia / Franco
-              </button>
-            </div>
-          </div>
-
-          <div className="jefa-screen__modal-field--shift">
-            <ShiftTimeInput
-              id="overtime-inicio"
-              label="Hora de Inicio:"
-              value={horaInicio}
-              onChange={setHoraInicio}
-            />
-            <ShiftTimeInput
-              id="overtime-fin"
-              label="Hora de Fin:"
-              value={horaFin}
-              onChange={setHoraFin}
-            />
-          </div>
-
-          {/* Accesos rápidos de duración */}
-          <div className="overtime-modal__quick-durations">
-            <span>Duración rápida:</span>
-            <button type="button" onClick={() => handlePresetDuracion(60)}>+1 Hora</button>
-            <button type="button" onClick={() => handlePresetDuracion(120)}>+2 Horas</button>
-            <button type="button" onClick={() => handlePresetDuracion(240)}>+4 Horas</button>
-          </div>
-
-          <div className="jefa-screen__modal-field">
-            <label htmlFor="overtime-motivo">Motivo de la Extensión:</label>
-            <select
-              id="overtime-motivo"
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              className="jefa-screen__modal-select"
-            >
-              {MOTIVOS_FRECUENTES.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-              <option value="OTRO">Otro motivo personalizado...</option>
-            </select>
-          </div>
-
-          {motivo === 'OTRO' && (
-            <div className="jefa-screen__modal-field">
-              <input
-                type="text"
-                maxLength={255}
-                required
-                placeholder="Especifique el motivo de la habilitación..."
-                value={motivoPersonalizado}
-                onChange={(e) => setMotivoPersonalizado(e.target.value)}
-              />
-            </div>
-          )}
-
-          {/* Lista de Habilitaciones Activas para esta fecha */}
-          {habilitacionesPrevias.length > 0 && (
-            <div className="overtime-modal__previas">
-              <h4 className="overtime-modal__previas-title">Habilitaciones registradas para el {fecha}:</h4>
-              <ul className="overtime-modal__previas-list">
-                {habilitacionesPrevias.map((hab) => (
-                  <li key={hab.id} className="overtime-modal__previas-item">
-                    <div>
-                      <strong>{String(hab.hora_inicio).slice(0, 5)} a {String(hab.hora_fin).slice(0, 5)}</strong> — {hab.motivo}
-                    </div>
-                    <button
-                      type="button"
-                      className="overtime-modal__btn-revoke"
-                      title="Revocar esta extensión"
-                      onClick={() => handleRevocarItem(hab.id)}
-                    >
-                      <Trash2 size={13} />
-                      <span>Revocar</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="jefa-screen__modal-actions">
-            <button type="button" className="jefa-screen__btn-cancel" onClick={onClose} disabled={isSaving}>
-              Cancelar
-            </button>
-            <button type="submit" className="jefa-screen__btn-save" disabled={isSaving}>
-              {isSaving ? 'Guardando...' : 'Autorizar Horas Extras'}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   )

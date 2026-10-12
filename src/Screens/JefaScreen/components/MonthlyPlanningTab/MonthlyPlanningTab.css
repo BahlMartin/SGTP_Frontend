@@ -1,0 +1,174 @@
+/* Month Navigation */
+.overtime-modal__month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f4f8fb;
+  border: 1px solid #cce1ec;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 12px;
+}
+
+.overtime-modal__month-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid #cce1ec;
+  background: #ffffff;
+  color: #1687c9;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.overtime-modal__month-nav-btn:hover {
+  background: #1687c9;
+  color: #ffffff;
+}
+
+.overtime-modal__nav-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.overtime-modal__month-nav-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #183b4a;
+}
+
+.overtime-modal__month-icon {
+  width: 16px;
+  height: 16px;
+  color: #1687c9;
+}
+
+.overtime-modal__duration-indicator {
+  font-size: 0.78rem;
+  color: #557283;
+  margin-top: -6px;
+  margin-bottom: 10px;
+}
+
+.overtime-modal__duration-indicator strong {
+  color: #1687c9;
+}
+
+/* Presets */
+.overtime-modal__presets {
+  margin-bottom: 12px;
+}
+
+.overtime-modal__presets-label {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #557283;
+  margin-bottom: 6px;
+}
+
+.overtime-modal__preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.overtime-pill {
+  background: #ffffff;
+  border: 1px solid #d9e5ea;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #557283;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.overtime-pill:hover {
+  background: #f4f8fb;
+  border-color: #1687c9;
+  color: #1687c9;
+}
+
+.overtime-pill--active {
+  background: #e6f4fb;
+  border-color: #1687c9;
+  color: #0e679b;
+  font-weight: 700;
+}
+
+.overtime-pill--clear {
+  background: #fff5f5;
+  border-color: #f6c5c1;
+  color: #b42323;
+}
+
+.overtime-pill--clear:hover {
+  background: #ffe8e8;
+  border-color: #b42323;
+  color: #8c1616;
+}
+
+/* Calendar Container */
+.overtime-modal__calendar-container {
+  margin-bottom: 12px;
+}
+
+/* Live Summary Card */
+.overtime-modal__summary-card {
+  background: linear-gradient(135deg, #f0f8fc 0%, #e6f4fb 100%);
+  border: 1px solid #b9dce8;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  margin-bottom: 14px;
+}
+
+.overtime-modal__summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.overtime-modal__summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.overtime-modal__summary-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #557283;
+}
+
+.overtime-modal__summary-val {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #183b4a;
+}
+
+.overtime-modal__summary-item--total .overtime-modal__summary-label {
+  color: #0e679b;
+}
+
+.overtime-modal__summary-item--total .overtime-modal__summary-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1687c9;
+}
+
+.overtime-modal__btn-submit-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
