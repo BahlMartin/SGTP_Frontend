@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useBox } from '../context/BoxContext'
 import { useTriageQueue } from '../context/TriageQueueContext'
 import { useAuth } from '../context/AuthContext'
