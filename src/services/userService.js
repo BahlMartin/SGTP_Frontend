@@ -100,11 +100,19 @@ export async function reactivateStaffUserApi(userId) {
 // GESTIÓN DE HABILITACIONES HORARIAS (HORAS EXTRAS Y EXCEPCIONES)
 // ==============================================================================
 
-export async function fetchHabilitacionesHorariasApi(incluirInactivas = true, personalId = null, fecha = null) {
+export async function fetchHabilitacionesHorariasApi(
+  incluirInactivas = true,
+  personalId = null,
+  fecha = null,
+  anio = null,
+  mes = null
+) {
   const params = new URLSearchParams()
   if (incluirInactivas) params.append('incluir_inactivas', 'true')
   if (personalId) params.append('personal', personalId)
   if (fecha) params.append('fecha', fecha)
+  if (anio) params.append('anio', anio)
+  if (mes) params.append('mes', mes)
   const queryString = params.toString() ? `?${params.toString()}` : ''
   const response = await apiClient.get(`/users/habilitaciones-horarias/${queryString}`)
   return Array.isArray(response) ? response : response.results || []
@@ -165,4 +173,9 @@ export async function fetchPlanificacionesHorasExtrasApi(personalId = null, anio
 export async function createPlanificacionHorasExtrasApi(dataPlanificacion) {
   return await apiClient.post('/users/planificaciones-horas-extras/', dataPlanificacion)
 }
+
+export async function deletePlanificacionHorasExtrasApi(planificacionId) {
+  return await apiClient.delete(`/users/planificaciones-horas-extras/${planificacionId}/`)
+}
+
 

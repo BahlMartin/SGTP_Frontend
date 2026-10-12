@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { CalendarDays, Clock3, X, Zap } from 'lucide-react'
+import { CalendarDays, Clock3, X, Zap, ClipboardList } from 'lucide-react'
 import MonthlyPlanningTab from './MonthlyPlanningTab/MonthlyPlanningTab'
 import SingleExceptionTab from './SingleExceptionTab/SingleExceptionTab'
+import ActiveMonthOvertimesTab from './ActiveMonthOvertimesTab/ActiveMonthOvertimesTab'
 import { formatDiasLaborales } from '../../../utils/shiftValidation.utils'
 import './AuthorizeOvertimeModal.css'
 
@@ -12,7 +13,7 @@ export default function AuthorizeOvertimeModal({
   onSubmit,
   onRevoke
 }) {
-  const [activeTab, setActiveTab] = useState('monthly') // 'monthly' | 'single'
+  const [activeTab, setActiveTab] = useState('monthly') // 'monthly' | 'single' | 'active'
 
   if (!isOpen || !staffMember) return null
 
@@ -63,7 +64,7 @@ export default function AuthorizeOvertimeModal({
           </div>
         </div>
 
-        {/* Selector de modo por pestañas */}
+        {/* Selector de modo por 3 pestañas */}
         <div className="overtime-modal__mode-tabs">
           <button
             type="button"
@@ -85,22 +86,43 @@ export default function AuthorizeOvertimeModal({
             <Zap className="overtime-modal__tab-icon" />
             Excepción de 1 Día
           </button>
+          <button
+            type="button"
+            className={`overtime-modal__tab-btn ${
+              activeTab === 'active' ? 'overtime-modal__tab-btn--active' : ''
+            }`}
+            onClick={() => setActiveTab('active')}
+          >
+            <ClipboardList className="overtime-modal__tab-icon" />
+            Horas Extras del Mes
+          </button>
         </div>
 
-        {/* Renderizado condicional del subcomponente según pestaña */}
-        {activeTab === 'monthly' ? (
+        {/* Renderizado condicional según pestaña seleccionada */}
+        {activeTab === 'monthly' && (
           <MonthlyPlanningTab
             staffMember={staffMember}
             diasLaboralesTexto={diasLaboralesTexto}
             onSubmit={onSubmit}
             onClose={onClose}
           />
-        ) : (
+        )}
+
+        {activeTab === 'single' && (
           <SingleExceptionTab
             staffMember={staffMember}
             onSubmit={onSubmit}
             onRevoke={onRevoke}
             onClose={onClose}
+          />
+        )}
+
+        {activeTab === 'active' && (
+          <ActiveMonthOvertimesTab
+            staffMember={staffMember}
+            onClose={onClose}
+            onRevoke={onRevoke}
+            onGoToPlanning={() => setActiveTab('monthly')}
           />
         )}
       </div>

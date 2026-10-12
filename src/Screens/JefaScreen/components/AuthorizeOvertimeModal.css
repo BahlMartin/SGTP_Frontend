@@ -103,3 +103,72 @@
   width: 14px;
   height: 14px;
 }
+
+/* ============================================================================== */
+/* BOTONES Y ACCIONES: Cancelar a la izquierda (rojo), Guardar a la derecha (verde) */
+/* ============================================================================== */
+.jefa-screen__modal-card--overtime .jefa-screen__modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+  gap: 12px;
+}
+
+/* Botón Cancelar (Rojo / Descarte) */
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-cancel {
+  background: #fff0ef;
+  color: #b42323;
+  border: 1px solid #f6c5c1;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: var(--radius-md, 6px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.82rem;
+}
+
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-cancel:hover:not(:disabled) {
+  background: #ffe1de;
+  border-color: #e59791;
+  color: #961717;
+  transform: translateY(-1px);
+}
+
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Botón Guardar / Confirmar (Verde asistencial clínico) */
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #177245;
+  color: #ffffff;
+  border: 1px solid #135f39;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: var(--radius-md, 6px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.84rem;
+  box-shadow: 0 2px 4px rgba(23, 114, 69, 0.2);
+}
+
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-submit:hover:not(:disabled) {
+  background: #115734;
+  border-color: #0c3e25;
+  box-shadow: 0 3px 6px rgba(23, 114, 69, 0.3);
+  transform: translateY(-1px);
+}
+
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+

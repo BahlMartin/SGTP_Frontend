@@ -1,0 +1,273 @@
+.active-overtimes-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.active-overtimes-tab__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.active-overtimes-tab__month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f4f8fb;
+  border: 1px solid #cce1ec;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+}
+
+.active-overtimes-tab__month-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid #cce1ec;
+  background: #ffffff;
+  color: #1687c9;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.active-overtimes-tab__month-nav-btn:hover {
+  background: #1687c9;
+  color: #ffffff;
+}
+
+.active-overtimes-tab__nav-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.active-overtimes-tab__month-nav-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #183b4a;
+}
+
+.active-overtimes-tab__month-icon {
+  width: 16px;
+  height: 16px;
+  color: #1687c9;
+}
+
+/* Resumen rápido */
+.active-overtimes-tab__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0f8fc;
+  border: 1px solid #b9dce8;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+.active-overtimes-tab__summary-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #183b4a;
+}
+
+.active-overtimes-tab__summary-item strong {
+  color: #177245;
+  font-size: 0.92rem;
+}
+
+/* Lista de días */
+.active-overtimes-tab__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.active-overtimes-tab__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #d9e5ea;
+  border-radius: 6px;
+  padding: 10px 12px;
+  transition: all 0.15s ease;
+}
+
+.active-overtimes-tab__card:hover {
+  border-color: #b9dce8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.active-overtimes-tab__card--inactive {
+  background: #fafafa;
+  border-color: #ebebeb;
+  opacity: 0.75;
+}
+
+.active-overtimes-tab__card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.active-overtimes-tab__card-date-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.active-overtimes-tab__card-date {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #183b4a;
+}
+
+.active-overtimes-tab__badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.active-overtimes-tab__badge--active {
+  background: #edf8f1;
+  color: #177245;
+  border: 1px solid #b9e8cd;
+}
+
+.active-overtimes-tab__badge--inactive {
+  background: #fff0ef;
+  color: #b42323;
+  border: 1px solid #f6c5c1;
+}
+
+.active-overtimes-tab__card-hours {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #557283;
+}
+
+.active-overtimes-tab__card-hours strong {
+  color: #0e679b;
+}
+
+.active-overtimes-tab__card-reason {
+  font-size: 0.74rem;
+  color: #647a85;
+  font-style: italic;
+}
+
+.active-overtimes-tab__card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.active-overtimes-tab__btn-revoke {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff0ef;
+  color: #b42323;
+  border: 1px solid #f6c5c1;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.active-overtimes-tab__btn-revoke:hover {
+  background: #ffe1de;
+  border-color: #e59791;
+  color: #961717;
+}
+
+.active-overtimes-tab__btn-reactivate {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #edf8f1;
+  color: #177245;
+  border: 1px solid #b9e8cd;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.active-overtimes-tab__btn-reactivate:hover {
+  background: #dcf2e4;
+  border-color: #0d8a4d;
+}
+
+.active-overtimes-tab__action-icon {
+  width: 13px;
+  height: 13px;
+}
+
+/* Estado vacío */
+.active-overtimes-tab__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 30px 16px;
+  background: #fbfdfe;
+  border: 1px dashed #cce1ec;
+  border-radius: 8px;
+  color: #647a85;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.active-overtimes-tab__empty-icon {
+  width: 32px;
+  height: 32px;
+  color: #8fa5b0;
+}
+
+.active-overtimes-tab__btn-go-planning {
+  margin-top: 6px;
+  background: #e6f4fb;
+  color: #0e679b;
+  border: 1px solid #b9dce8;
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.active-overtimes-tab__btn-go-planning:hover {
+  background: #d8edf8;
+  border-color: #0e679b;
+}
+
+.active-overtimes-tab__loading {
+  text-align: center;
+  padding: 24px;
+  font-size: 0.85rem;
+  color: #647a85;
+}
