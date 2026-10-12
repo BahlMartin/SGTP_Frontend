@@ -1,17 +1,10 @@
 .active-overtimes-tab {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
-.active-overtimes-tab__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
+/* Mes Navigation */
 .active-overtimes-tab__month-nav {
   display: flex;
   align-items: center;
@@ -20,7 +13,6 @@
   border: 1px solid #cce1ec;
   border-radius: 6px;
   padding: 6px 10px;
-  margin-bottom: 4px;
 }
 
 .active-overtimes-tab__month-nav-btn {
@@ -66,7 +58,7 @@
 .active-overtimes-tab__summary {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-around;
   background: #f0f8fc;
   border: 1px solid #b9dce8;
   border-radius: 6px;
@@ -83,61 +75,311 @@
 
 .active-overtimes-tab__summary-item strong {
   color: #177245;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
+  font-weight: 800;
 }
 
-/* Lista de días */
-.active-overtimes-tab__list {
+/* ============================================================================== */
+/* GRILLA DEL CALENDARIO DE INSPECCIÓN */
+/* ============================================================================== */
+.active-overtimes-calendar {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 320px;
-  overflow-y: auto;
-  padding-right: 4px;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cce1ec;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-.active-overtimes-tab__card {
+.active-overtimes-calendar__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #557283;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e1eff5;
+}
+
+.active-overtimes-calendar__weekday-head {
+  padding: 2px 0;
+}
+
+.active-overtimes-calendar__weekday-head--weekend {
+  color: #b5493b;
+}
+
+.active-overtimes-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.active-overtimes-calendar__cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 46px;
+  border-radius: 6px;
+  border: 1px solid #dbe6ec;
+  background: #fbfdfe;
+  color: #2c4959;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  padding: 3px 2px;
+  user-select: none;
+}
+
+.active-overtimes-calendar__cell--empty {
+  border: none;
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
+.active-overtimes-calendar__cell:hover:not(.active-overtimes-calendar__cell--empty) {
+  border-color: #1687c9;
+  background: #f0f8fc;
+  transform: translateY(-1px);
+}
+
+.active-overtimes-calendar__cell--weekend {
+  background: #fbf6f5;
+  border-color: #ebdcd9;
+}
+
+/* Celda con horas extras activas (verde asistencial) */
+.active-overtimes-calendar__cell--active {
+  background: #edf8f1;
+  border: 1.5px solid #177245;
+  color: #0f5b35;
+  box-shadow: 0 1px 3px rgba(23, 114, 69, 0.15);
+}
+
+.active-overtimes-calendar__cell--active:hover {
+  background: #dcf2e4;
+  border-color: #0d8a4d;
+}
+
+/* Celda con horas extras revocadas (rojo suave) */
+.active-overtimes-calendar__cell--revoked {
+  background: #fff5f5;
+  border: 1.5px dashed #f6c5c1;
+  color: #b42323;
+}
+
+/* Celda seleccionada / inspeccionada actualmente */
+.active-overtimes-calendar__cell--selected {
+  outline: 2px solid #1687c9;
+  outline-offset: 1px;
+  border-color: #1687c9 !important;
+  box-shadow: 0 0 0 3px rgba(22, 135, 201, 0.25) !important;
+}
+
+.active-overtimes-calendar__day-number {
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.active-overtimes-calendar__day-pill {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: #177245;
+  padding: 1px 4px;
+  border-radius: 8px;
+  line-height: 1.2;
+}
+
+.active-overtimes-calendar__day-revoked-pill {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #b42323;
+  background: #ffe1de;
+  padding: 1px 4px;
+  border-radius: 8px;
+  line-height: 1.2;
+}
+
+.active-overtimes-calendar__day-indicator {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #8fa5b0;
+  line-height: 1;
+}
+
+/* Leyenda */
+.active-overtimes-calendar__legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed #e1eff5;
+  font-size: 0.7rem;
+  color: #5d7585;
+}
+
+.active-overtimes-calendar__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.active-overtimes-calendar__legend-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 16px;
+  border-radius: 3px;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.active-overtimes-calendar__legend-badge--active {
+  background: #177245;
+  color: #ffffff;
+}
+
+.active-overtimes-calendar__legend-badge--revoked {
+  background: #fff0ef;
+  color: #b42323;
+  border: 1px solid #f6c5c1;
+}
+
+.active-overtimes-calendar__legend-badge--regular {
+  background: #edf2f5;
+  color: #557283;
+  border: 1px solid #dbe6ec;
+}
+
+.active-overtimes-calendar__legend-badge--off {
+  background: #fbf6f5;
+  color: #b5493b;
+  border: 1px solid #ebdcd9;
+}
+
+/* ============================================================================== */
+/* PANEL DE DETALLE INFERIOR (overtime-modal__previas) */
+/* ============================================================================== */
+.active-overtimes-detail-panel {
+  margin-top: 4px;
+}
+
+.active-overtimes-detail-panel__prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f4f8fb;
+  border: 1px dashed #cce1ec;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  color: #557283;
+}
+
+.active-overtimes-detail-panel__prompt-icon {
+  width: 16px;
+  height: 16px;
+  color: #1687c9;
+  flex-shrink: 0;
+}
+
+.active-overtimes-detail-panel__empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fdfdfd;
+  border: 1px dashed #d9e5ea;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.78rem;
+  color: #647a85;
+}
+
+.active-overtimes-detail-panel__empty-icon {
+  width: 22px;
+  height: 22px;
+  color: #8fa5b0;
+  flex-shrink: 0;
+}
+
+.active-overtimes-detail-panel__card {
+  background: #fbfdfe;
+  border: 1px solid #cce1ec;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.active-overtimes-detail-panel__card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #edf2f5;
+}
+
+.active-overtimes-detail-panel__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
   background: #ffffff;
-  border: 1px solid #d9e5ea;
-  border-radius: 6px;
-  padding: 10px 12px;
-  transition: all 0.15s ease;
+  border: 1px solid #edf2f5;
+  border-radius: 5px;
+  margin-bottom: 6px;
+  gap: 10px;
 }
 
-.active-overtimes-tab__card:hover {
-  border-color: #b9dce8;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-}
-
-.active-overtimes-tab__card--inactive {
-  background: #fafafa;
-  border-color: #ebebeb;
-  opacity: 0.75;
-}
-
-.active-overtimes-tab__card-info {
+.active-overtimes-detail-panel__item-info {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
+  flex: 1;
 }
 
-.active-overtimes-tab__card-date-row {
+.active-overtimes-detail-panel__item-header {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.active-overtimes-tab__card-date {
-  font-size: 0.86rem;
+.active-overtimes-detail-panel__item-time {
+  font-size: 0.84rem;
   font-weight: 700;
   color: #183b4a;
 }
 
+.active-overtimes-detail-panel__item-reason {
+  font-size: 0.74rem;
+  color: #557283;
+}
+
+.active-overtimes-detail-panel__item-approver {
+  font-size: 0.7rem;
+  color: #8fa5b0;
+}
+
+.active-overtimes-detail-panel__item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Badges */
 .active-overtimes-tab__badge {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 4px;
@@ -155,30 +397,6 @@
   border: 1px solid #f6c5c1;
 }
 
-.active-overtimes-tab__card-hours {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  color: #557283;
-}
-
-.active-overtimes-tab__card-hours strong {
-  color: #0e679b;
-}
-
-.active-overtimes-tab__card-reason {
-  font-size: 0.74rem;
-  color: #647a85;
-  font-style: italic;
-}
-
-.active-overtimes-tab__card-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .active-overtimes-tab__btn-revoke {
   display: inline-flex;
   align-items: center;
@@ -186,9 +404,9 @@
   background: #fff0ef;
   color: #b42323;
   border: 1px solid #f6c5c1;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 0.74rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -196,7 +414,6 @@
 
 .active-overtimes-tab__btn-revoke:hover {
   background: #ffe1de;
-  border-color: #e59791;
   color: #961717;
 }
 
@@ -207,9 +424,9 @@
   background: #edf8f1;
   color: #177245;
   border: 1px solid #b9e8cd;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 0.74rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -225,36 +442,13 @@
   height: 13px;
 }
 
-/* Estado vacío */
-.active-overtimes-tab__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 30px 16px;
-  background: #fbfdfe;
-  border: 1px dashed #cce1ec;
-  border-radius: 8px;
-  color: #647a85;
-  text-align: center;
-  font-size: 0.85rem;
-}
-
-.active-overtimes-tab__empty-icon {
-  width: 32px;
-  height: 32px;
-  color: #8fa5b0;
-}
-
 .active-overtimes-tab__btn-go-planning {
-  margin-top: 6px;
   background: #e6f4fb;
   color: #0e679b;
   border: 1px solid #b9dce8;
-  padding: 6px 14px;
-  border-radius: 5px;
-  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -262,12 +456,4 @@
 
 .active-overtimes-tab__btn-go-planning:hover {
   background: #d8edf8;
-  border-color: #0e679b;
-}
-
-.active-overtimes-tab__loading {
-  text-align: center;
-  padding: 24px;
-  font-size: 0.85rem;
-  color: #647a85;
 }
