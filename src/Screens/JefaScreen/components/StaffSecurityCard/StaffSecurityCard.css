@@ -80,56 +80,6 @@
   height: 14px;
 }
 
-/* Buscador de Personal */
-.jefa-screen__security-search-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.jefa-screen__security-search-icon {
-  position: absolute;
-  left: 12px;
-  width: 16px;
-  height: 16px;
-  color: #94a3b8;
-  pointer-events: none;
-}
-
-.jefa-screen__security-search-input {
-  width: 100%;
-  padding: 8px 36px 8px 36px;
-  font-size: 0.82rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #1e293b;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.jefa-screen__security-search-input:focus {
-  background: #ffffff;
-  border-color: #0d9488;
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
-}
-
-.jefa-screen__security-search-clear {
-  position: absolute;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 1.1rem;
-  color: #94a3b8;
-  cursor: pointer;
-  line-height: 1;
-  padding: 2px 6px;
-}
-
-.jefa-screen__security-search-clear:hover {
-  color: #475569;
-}
-
 /* Tabla de Seguridad */
 .jefa-screen__security-table-wrap {
   overflow-x: auto;

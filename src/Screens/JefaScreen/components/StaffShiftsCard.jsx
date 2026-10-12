@@ -1,5 +1,7 @@
 import React from 'react'
 import { UserPlus, Plus, Trash2, Pencil, Unlock, RotateCcw, Clock3 } from 'lucide-react'
+import StaffSearchInput from './StaffSearchInput/StaffSearchInput'
+import { useStaffSearchFilter } from '../hooks/useStaffSearchFilter'
 import { formatDiasLaborales, DIAS_SEMANA_LETRAS } from '../../../utils/shiftValidation.utils'
 import './StaffShiftsCard.css'
 
@@ -14,7 +16,13 @@ export default function StaffShiftsCard({
   onUnlockStaff,
   onReactivateStaff
 }) {
-  const visibleStaff = staffList.filter((staffMember) => staffMember.rol !== 'Admin')
+  const {
+    searchTerm,
+    setSearchTerm,
+    clearSearch,
+    filteredStaff,
+    isSearching
+  } = useStaffSearchFilter(staffList)
 
   return (
     <div className="jefa-screen__shifts-card">
@@ -27,6 +35,15 @@ export default function StaffShiftsCard({
           <Plus className="jefa-screen__btn-add-icon" />
           Nuevo Personal
         </button>
+      </div>
+
+      <div className="jefa-screen__shifts-search-wrap">
+        <StaffSearchInput
+          value={searchTerm}
+          onChange={setSearchTerm}
+          onClear={clearSearch}
+          placeholder="Buscar personal por nombre, matrícula o rol..."
+        />
       </div>
 
       <div className="jefa-screen__shifts-table-wrap">
@@ -43,7 +60,7 @@ export default function StaffShiftsCard({
             </tr>
           </thead>
           <tbody>
-            {visibleStaff.map((staffMember) => {
+            {filteredStaff.map((staffMember) => {
               const statusLabel = !staffMember.activo
                 ? (staffMember.cant_intentos >= 3 ? 'Cuenta bloqueada' : 'Cuenta inactiva')
                 : staffMember.dentro_horario === false
@@ -197,9 +214,24 @@ export default function StaffShiftsCard({
                 </tr>
               )
             })}
-            {visibleStaff.length === 0 && (
+            {filteredStaff.length === 0 && (
               <tr>
-                <td className="jefa-screen__empty-row" colSpan={7}>No hay personal registrado.</td>
+                <td className="jefa-screen__empty-row" colSpan={7}>
+                  {isSearching ? (
+                    <span>
+                      No se encontró personal que coincida con "{searchTerm}".{' '}
+                      <button
+                        type="button"
+                        className="jefa-screen__empty-clear-btn"
+                        onClick={clearSearch}
+                      >
+                        Limpiar búsqueda
+                      </button>
+                    </span>
+                  ) : (
+                    'No hay personal registrado.'
+                  )}
+                </td>
               </tr>
             )}
           </tbody>

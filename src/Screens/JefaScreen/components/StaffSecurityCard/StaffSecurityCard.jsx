@@ -1,5 +1,7 @@
-import React, { useState, useMemo } from 'react'
-import { ShieldCheck, ShieldAlert, Lock, Unlock, Search, AlertCircle, CheckCircle2 } from 'lucide-react'
+import React from 'react'
+import { ShieldCheck, ShieldAlert, Lock, Unlock, AlertCircle, CheckCircle2 } from 'lucide-react'
+import StaffSearchInput from '../StaffSearchInput/StaffSearchInput'
+import { useStaffSearchFilter } from '../../hooks/useStaffSearchFilter'
 import './StaffSecurityCard.css'
 
 export default function StaffSecurityCard({
@@ -9,27 +11,17 @@ export default function StaffSecurityCard({
   onUnlockStaff,
   onLockStaff
 }) {
-  const [searchTerm, setSearchTerm] = useState('')
+  const {
+    searchTerm,
+    setSearchTerm,
+    clearSearch,
+    filteredStaff,
+    totalCount: totalCuentas
+  } = useStaffSearchFilter(staffList)
 
-  // Filtrar fuera cuentas Admin para la vista de Jefa
-  const visibleStaff = useMemo(() => {
-    return staffList.filter((staffMember) => staffMember.rol !== 'Admin')
-  }, [staffList])
-
-  // Filtrado reactivo por nombre, matrícula o rol
-  const filteredStaff = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase()
-    if (!term) return visibleStaff
-    return visibleStaff.filter((member) => {
-      const matchName = String(member.nombre || '').toLowerCase().includes(term)
-      const matchMatricula = String(member.matricula || '').toLowerCase().includes(term)
-      const matchRol = String(member.rol || '').toLowerCase().includes(term)
-      return matchName || matchMatricula || matchRol
-    })
-  }, [visibleStaff, searchTerm])
-
-  const totalCuentas = visibleStaff.length
-  const cuentasBloqueadas = visibleStaff.filter((s) => !s.activo || (s.cant_intentos || 0) >= 3).length
+  const cuentasBloqueadas = staffList
+    .filter((s) => s?.rol !== 'Admin')
+    .filter((s) => !s.activo || (s.cant_intentos || 0) >= 3).length
   const cuentasActivas = totalCuentas - cuentasBloqueadas
 
   const handleToggleLock = (staffMember) => {
@@ -74,25 +66,12 @@ export default function StaffSecurityCard({
         </div>
       </div>
 
-      <div className="jefa-screen__security-search-wrap">
-        <Search className="jefa-screen__security-search-icon" />
-        <input
-          type="text"
-          className="jefa-screen__security-search-input"
-          placeholder="Buscar personal por nombre, matrícula o rol..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        {searchTerm && (
-          <button
-            className="jefa-screen__security-search-clear"
-            onClick={() => setSearchTerm('')}
-            title="Limpiar búsqueda"
-          >
-            ×
-          </button>
-        )}
-      </div>
+      <StaffSearchInput
+        value={searchTerm}
+        onChange={setSearchTerm}
+        onClear={clearSearch}
+        placeholder="Buscar personal por nombre, matrícula o rol..."
+      />
 
       <div className="jefa-screen__security-table-wrap">
         <table className="jefa-screen__security-table">

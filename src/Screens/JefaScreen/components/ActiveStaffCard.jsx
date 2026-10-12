@@ -1,5 +1,7 @@
 import React from 'react'
 import { Calendar } from 'lucide-react'
+import StaffSearchInput from './StaffSearchInput/StaffSearchInput'
+import { useStaffSearchFilter } from '../hooks/useStaffSearchFilter'
 import { getTodayLocalDateString } from '../../../utils/formatters'
 import './ActiveStaffCard.css'
 
@@ -16,6 +18,14 @@ export default function ActiveStaffCard({
   const activeStaffCount = visibleStaff.filter((staffMember) =>
     staffMember.disponible ?? staffMember.activo
   ).length
+
+  const {
+    searchTerm,
+    setSearchTerm,
+    clearSearch,
+    filteredStaff,
+    isSearching
+  } = useStaffSearchFilter(staffList)
 
   return (
     <div className="jefa-screen__staff-card">
@@ -51,6 +61,16 @@ export default function ActiveStaffCard({
         </div>
       </div>
 
+      <div className="jefa-screen__staff-search-wrap">
+        <StaffSearchInput
+          value={searchTerm}
+          onChange={setSearchTerm}
+          onClear={clearSearch}
+          placeholder="Buscar personal..."
+          size="compact"
+        />
+      </div>
+
       {isLoading ? (
         <div className="jefa-screen__staff-loading">
           <span className="jefa-screen__mini-spinner" />
@@ -58,7 +78,7 @@ export default function ActiveStaffCard({
         </div>
       ) : (
         <ul className="jefa-screen__staff-list">
-          {visibleStaff.map((staffMember) => {
+          {filteredStaff.map((staffMember) => {
             const statusLabel = !staffMember.activo
               ? (staffMember.cant_intentos >= 3 ? 'Cuenta bloqueada' : 'Cuenta inactiva')
               : staffMember.dentro_horario === false
@@ -105,8 +125,23 @@ export default function ActiveStaffCard({
         </ul>
       )}
 
-      {visibleStaff.length === 0 && !isLoading && (
-        <p className="jefa-screen__staff-empty">No hay personal registrado.</p>
+      {filteredStaff.length === 0 && !isLoading && (
+        <p className="jefa-screen__staff-empty">
+          {isSearching ? (
+            <span>
+              Sin coincidencias para "{searchTerm}".{' '}
+              <button
+                type="button"
+                className="jefa-screen__staff-clear-search-btn"
+                onClick={clearSearch}
+              >
+                Limpiar
+              </button>
+            </span>
+          ) : (
+            'No hay personal registrado.'
+          )}
+        </p>
       )}
     </div>
   )

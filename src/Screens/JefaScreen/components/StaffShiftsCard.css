@@ -316,3 +316,23 @@
   font-style: italic;
   white-space: nowrap;
 }
+
+.jefa-screen__shifts-search-wrap {
+  margin-bottom: 14px;
+}
+
+.jefa-screen__empty-clear-btn {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  color: #1687c9;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+}
+
+.jefa-screen__empty-clear-btn:hover {
+  color: #0e5b88;
+}
