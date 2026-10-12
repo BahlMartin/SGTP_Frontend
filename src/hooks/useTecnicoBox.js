@@ -43,6 +43,7 @@ export function useTecnicoBox() {
     }
   }, [userData?.rol])
 
+
   const handleSelectBox = async (newBoxNumber) => {
     setCurrentBoxNumber(newBoxNumber)
     try {
