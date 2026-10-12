@@ -10,6 +10,7 @@ import AddStaffModal from './components/AddStaffModal'
 import EditStaffModal from './components/EditStaffModal'
 import AuthorizeOvertimeModal from './components/AuthorizeOvertimeModal'
 import JefaOnlineBoxesCard from './components/JefaOnlineBoxesCard/JefaOnlineBoxesCard'
+import StaffTicketsModal from './components/StaffTicketsModal/StaffTicketsModal'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useAuth } from '../../context/AuthContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
@@ -40,6 +41,7 @@ export default function JefaScreen() {
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
   const [editingStaff, setEditingStaff] = useState(null)
   const [staffForOvertime, setStaffForOvertime] = useState(null)
+  const [selectedStaffForTickets, setSelectedStaffForTickets] = useState(null)
 
   // Estado para rendimiento de personal por fecha
   const [staffDate, setStaffDate] = useState(() => getTodayLocalDateString())
@@ -164,8 +166,12 @@ export default function JefaScreen() {
               onDateChange={setStaffDate}
               workloadByStaff={workloadByStaff}
               isLoading={loadingStaffWorkload}
+              onSelectStaff={setSelectedStaffForTickets}
             />
-            <JefaOnlineBoxesCard onNotice={showNotice} />
+            <JefaOnlineBoxesCard
+              onNotice={showNotice}
+              onSelectStaff={setSelectedStaffForTickets}
+            />
             <LabMatrixCard
               labStudies={labStudies}
               selectedDate={studiesDate}
@@ -250,6 +256,14 @@ export default function JefaScreen() {
           onClose={() => setStaffForOvertime(null)}
           onSubmit={handleAuthorizeOvertime}
           onRevoke={handleRevokeOvertime}
+        />
+      )}
+
+      {selectedStaffForTickets && (
+        <StaffTicketsModal
+          staffMember={selectedStaffForTickets}
+          selectedDate={staffDate}
+          onClose={() => setSelectedStaffForTickets(null)}
         />
       )}
     </>

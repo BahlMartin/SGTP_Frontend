@@ -237,3 +237,13 @@ export async function fetchResumenEstudiosApi({ fechaStr, search = '', top = nul
   return await apiClient.get(`/tickets/resumen-estudios/${queryString}`)
 }
 
+/**
+ * Consulta los tickets asistenciales emitidos o atendidos por un integrante del personal.
+ * - Para Admisión: tickets emitidos ordenados del último al menor.
+ * - Para Box: tickets recibidos y extraídos por el técnico ordenados del último al menor.
+ */
+export async function fetchTicketsByStaffApi(idPersonal, fechaStr = null) {
+  const query = fechaStr ? `?fecha=${fechaStr}` : ''
+  return await apiClient.get(`/tickets/personal/${idPersonal}/${query}`)
+}
+

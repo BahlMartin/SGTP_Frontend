@@ -10,7 +10,8 @@ export default function ActiveStaffCard({
   selectedDate = '',
   onDateChange = () => {},
   workloadByStaff = { ticketsIssuedByStaff: {}, patientsAttendedByBoxStaff: {} },
-  isLoading = false
+  isLoading = false,
+  onSelectStaff = () => {}
 }) {
   const todayStr = getTodayLocalDateString()
   const isToday = !selectedDate || selectedDate === todayStr
@@ -94,10 +95,23 @@ export default function ActiveStaffCard({
             const workload = isAdmissionStaff
               ? (workloadByStaff.ticketsIssuedByStaff?.[staffMember.id] ?? workloadByStaff.ticketsIssuedByStaff?.[String(staffMember.id)] ?? 0)
               : (workloadByStaff.patientsAttendedByBoxStaff?.[staffMember.id] ?? workloadByStaff.patientsAttendedByBoxStaff?.[String(staffMember.id)] ?? 0)
-            const workloadLabel = isAdmissionStaff ? 'tickets emitidos' : 'pacientes atendidos'
+            const isClickable = attendsPatients
 
-          return (
-            <li key={staffMember.id} className="jefa-screen__staff-item">
+            return (
+              <li
+                key={staffMember.id}
+                className={`jefa-screen__staff-item ${isClickable ? 'jefa-screen__staff-item--clickable' : ''}`}
+                onClick={() => isClickable && onSelectStaff?.(staffMember)}
+                role={isClickable ? 'button' : undefined}
+                tabIndex={isClickable ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault()
+                    onSelectStaff?.(staffMember)
+                  }
+                }}
+                title={isClickable ? `Ver detalle de tickets de ${staffMember.nombre}` : undefined}
+              >
                 <div className="jefa-screen__staff-info">
                   <span
                     className={`jefa-screen__staff-dot ${statusClass}`}

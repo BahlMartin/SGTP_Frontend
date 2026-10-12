@@ -14,7 +14,10 @@ import {
 import { useBox } from '../../../../context/BoxContext'
 import './JefaOnlineBoxesCard.css'
 
-export default function JefaOnlineBoxesCard({ onNotice = () => {} }) {
+export default function JefaOnlineBoxesCard({
+  onNotice = () => {},
+  onSelectStaff = () => {}
+}) {
   const {
     boxes = [],
     boxesLoading = false,
@@ -222,7 +225,19 @@ export default function JefaOnlineBoxesCard({ onNotice = () => {} }) {
 
                 {/* Personal asignado en el Box */}
                 <div className="jefa-boxes-card__staff-row">
-                  <div className="jefa-boxes-card__staff-info">
+                  <div
+                    className={`jefa-boxes-card__staff-info ${staff ? 'jefa-boxes-card__staff-info--clickable' : ''}`}
+                    onClick={() => staff && onSelectStaff?.(staff)}
+                    role={staff ? 'button' : undefined}
+                    tabIndex={staff ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (staff && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault()
+                        onSelectStaff?.(staff)
+                      }
+                    }}
+                    title={staff ? `Ver tickets y atenciones de ${staff.nombre_completo || staff.nombre}` : undefined}
+                  >
                     {staff ? (
                       <>
                         <div className="jefa-boxes-card__staff-avatar" title={staff.rol || 'Técnico'}>

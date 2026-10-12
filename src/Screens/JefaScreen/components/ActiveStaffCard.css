@@ -125,6 +125,24 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
+.jefa-screen__staff-item--clickable {
+  cursor: pointer;
+  padding: 8px 8px;
+  border-radius: var(--radius-md, 8px);
+  transition: all 0.2s ease;
+}
+
+.jefa-screen__staff-item--clickable:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-bottom-color: transparent;
+  transform: translateX(2px);
+}
+
+.jefa-screen__staff-item--clickable:focus-visible {
+  outline: 2px solid var(--medical-primary, #3b82f6);
+  outline-offset: 1px;
+}
+
 .jefa-screen__staff-info {
   display: flex;
   align-items: center;

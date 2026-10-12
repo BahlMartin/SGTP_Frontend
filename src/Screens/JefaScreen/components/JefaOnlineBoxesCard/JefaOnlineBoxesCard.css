@@ -286,6 +286,22 @@
   flex: 1;
 }
 
+.jefa-boxes-card__staff-info--clickable {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm, 6px);
+  transition: all 0.2s ease;
+}
+
+.jefa-boxes-card__staff-info--clickable:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.jefa-boxes-card__staff-info--clickable:focus-visible {
+  outline: 2px solid var(--medical-primary, #0284c7);
+  outline-offset: 1px;
+}
+
 .jefa-boxes-card__staff-avatar {
   width: 26px;
   height: 26px;
