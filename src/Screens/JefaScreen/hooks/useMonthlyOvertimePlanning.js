@@ -21,6 +21,7 @@ export function useMonthlyOvertimePlanning(staffMember, { onSubmit, onClose }) {
   const [anio, setAnio] = useState(hoy.getFullYear())
   const [mes, setMes] = useState(hoy.getMonth() + 1) // 1 a 12
 
+  const turnoInicio = String(staffMember?.inicio_turno || '08:00').slice(0, 5)
   const turnoFin = String(staffMember?.fin_turno || '16:00').slice(0, 5)
   const diasLaborales = useMemo(
     () => staffMember?.dias_laborales_detalle || [0, 1, 2, 3, 4],
@@ -197,6 +198,8 @@ export function useMonthlyOvertimePlanning(staffMember, { onSubmit, onClose }) {
     cambiarMes,
     tipoExtension,
     setTipoExtension,
+    turnoInicio,
+    turnoFin,
     horaInicio,
     setHoraInicio,
     horaFin,
