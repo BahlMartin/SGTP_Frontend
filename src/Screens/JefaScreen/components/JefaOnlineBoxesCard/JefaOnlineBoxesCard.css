@@ -1,0 +1,438 @@
+.jefa-boxes-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+/* Header & Counters */
+.jefa-boxes-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.jefa-boxes-card__header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.jefa-boxes-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jefa-boxes-card__title-icon {
+  color: var(--medical-primary, #0284c7);
+  flex-shrink: 0;
+}
+
+.jefa-boxes-card__title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.jefa-boxes-card__subtitle {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.jefa-boxes-card__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jefa-boxes-card__refresh-btn {
+  background: var(--bg-surface, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  color: var(--text-muted);
+  border-radius: var(--radius-md, 6px);
+  padding: 5px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.jefa-boxes-card__refresh-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  border-color: var(--medical-primary);
+}
+
+.jefa-boxes-card__refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jefa-boxes-card__refresh-icon--spinning {
+  animation: jefa-boxes-spin 1s linear infinite;
+}
+
+@keyframes jefa-boxes-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Resumen métrico en píldoras */
+.jefa-boxes-card__kpis {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.jefa-boxes-card__kpi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.jefa-boxes-card__kpi-badge--disponible {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.jefa-boxes-card__kpi-badge--atencion {
+  background: rgba(2, 132, 199, 0.12);
+  color: var(--medical-primary, #0284c7);
+  border-color: rgba(2, 132, 199, 0.3);
+}
+
+.jefa-boxes-card__kpi-badge--fuera {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.jefa-boxes-card__kpi-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.jefa-boxes-card__kpi-badge--disponible .jefa-boxes-card__kpi-dot {
+  background: #16a34a;
+}
+
+.jefa-boxes-card__kpi-badge--atencion .jefa-boxes-card__kpi-dot {
+  background: var(--medical-primary, #0284c7);
+}
+
+.jefa-boxes-card__kpi-badge--fuera .jefa-boxes-card__kpi-dot {
+  background: #ef4444;
+}
+
+/* Lista de Boxes */
+.jefa-boxes-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 480px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.jefa-boxes-card__list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.jefa-boxes-card__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.jefa-boxes-card__list::-webkit-scrollbar-thumb {
+  background: var(--border-card);
+  border-radius: 4px;
+}
+
+/* Item de Box individual */
+.jefa-boxes-card__item {
+  background: var(--bg-surface, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-card);
+  border-left-width: 4px;
+  border-radius: var(--radius-md, 8px);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.jefa-boxes-card__item:hover {
+  background: var(--surface-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.jefa-boxes-card__item--disponible {
+  border-left-color: #16a34a;
+}
+
+.jefa-boxes-card__item--atencion {
+  border-left-color: var(--medical-primary, #0284c7);
+}
+
+.jefa-boxes-card__item--fuera {
+  border-left-color: #ef4444;
+  opacity: 0.88;
+}
+
+/* Fila superior del Box */
+.jefa-boxes-card__box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.jefa-boxes-card__box-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jefa-boxes-card__box-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.jefa-boxes-card__tag-accesible {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(147, 51, 234, 0.12);
+  color: #9333ea;
+  border: 1px solid rgba(147, 51, 234, 0.28);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+/* Píldoras de Estado */
+.jefa-boxes-card__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: capitalize;
+  letter-spacing: 0.2px;
+}
+
+.jefa-boxes-card__pill--disponible {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.jefa-boxes-card__pill--atencion {
+  background: var(--medical-primary, #0284c7);
+  color: #ffffff;
+}
+
+.jefa-boxes-card__pill--fuera {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* Ficha del Personal en el Box */
+.jefa-boxes-card__staff-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.jefa-boxes-card__staff-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.jefa-boxes-card__staff-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(2, 132, 199, 0.16);
+  color: var(--medical-primary, #0284c7);
+  border: 1px solid rgba(2, 132, 199, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.jefa-boxes-card__staff-avatar--vacant {
+  background: var(--bg-surface, rgba(255, 255, 255, 0.05));
+  color: var(--text-muted);
+  border-color: var(--border-card);
+}
+
+.jefa-boxes-card__staff-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.jefa-boxes-card__staff-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jefa-boxes-card__staff-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.jefa-boxes-card__staff-vacant {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Fila de Paciente en Consulta (si está en atención) */
+.jefa-boxes-card__patient-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(2, 132, 199, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.2);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  color: var(--text-primary);
+}
+
+.jefa-boxes-card__patient-icon {
+  color: var(--medical-primary, #0284c7);
+  flex-shrink: 0;
+}
+
+.jefa-boxes-card__patient-totem {
+  font-weight: 700;
+  color: var(--medical-primary, #0284c7);
+}
+
+/* Botón de acción para la Jefa */
+.jefa-boxes-card__action-btn {
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 6px);
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.jefa-boxes-card__action-btn--toggle-fuera {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+.jefa-boxes-card__action-btn--toggle-fuera:hover:not(:disabled) {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.jefa-boxes-card__action-btn--toggle-disponible {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  border-color: rgba(34, 197, 94, 0.28);
+}
+
+.jefa-boxes-card__action-btn--toggle-disponible:hover:not(:disabled) {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.jefa-boxes-card__action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Estados de carga y vacío */
+.jefa-boxes-card__loading,
+.jefa-boxes-card__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 12px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.jefa-boxes-card__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-card);
+  border-top-color: var(--medical-primary, #0284c7);
+  border-radius: 50%;
+  animation: jefa-boxes-spin 0.8s linear infinite;
+}
+
+.jefa-boxes-card__error-banner {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.76rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}

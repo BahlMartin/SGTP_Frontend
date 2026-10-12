@@ -45,7 +45,9 @@ function normalizeBox(rawBox) {
     nombre: `Box ${rawBox.numero}`,
     estado: normalizeBoxStatus(rawBox.estado, isActive),
     activo: isActive,
-    discapacidad: Boolean(rawBox.discapacidad)
+    discapacidad: Boolean(rawBox.discapacidad),
+    personal_actual: rawBox.personal_actual_detalle || rawBox.personal_actual || null,
+    paciente_actual: rawBox.paciente_actual_detalle || rawBox.paciente_actual || null
   }
 }
 

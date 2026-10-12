@@ -7,6 +7,7 @@ import StaffShiftsCard from './components/StaffShiftsCard'
 import AddStaffModal from './components/AddStaffModal'
 import EditStaffModal from './components/EditStaffModal'
 import AuthorizeOvertimeModal from './components/AuthorizeOvertimeModal'
+import JefaOnlineBoxesCard from './components/JefaOnlineBoxesCard/JefaOnlineBoxesCard'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useAuth } from '../../context/AuthContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
@@ -156,6 +157,7 @@ export default function JefaScreen() {
               workloadByStaff={workloadByStaff}
               isLoading={loadingStaffWorkload}
             />
+            <JefaOnlineBoxesCard onNotice={showNotice} />
             <LabMatrixCard
               labStudies={labStudies}
               selectedDate={studiesDate}
