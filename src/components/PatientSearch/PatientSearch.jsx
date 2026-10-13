@@ -122,6 +122,25 @@ export default function PatientSearch({ onSelectPatient }) {
         history={patientHistory}
         isLoading={isLoadingHistory}
         error={historyError}
+        onPatientUpdated={(updated) => {
+          setSelectedPatient((prev) => ({ ...(prev || {}), ...updated }))
+          if (patientHistory) {
+            setPatientHistory((prev) => ({
+              ...prev,
+              paciente: {
+                ...(prev?.paciente || {}),
+                ...updated
+              }
+            }))
+          }
+          setResults((prev) =>
+            prev.map((item) =>
+              (item.id_paciente === updated.id_paciente || item.id === updated.id_paciente)
+                ? { ...item, ...updated }
+                : item
+            )
+          )
+        }}
         onSelectPatient={onSelectPatient ? () => {
           onSelectPatient(selectedPatient)
           setSelectedPatient(null)

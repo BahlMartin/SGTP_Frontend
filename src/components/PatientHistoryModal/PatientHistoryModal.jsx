@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { X, Users, Filter } from 'lucide-react'
+import { X, Users, Filter, Check } from 'lucide-react'
 import { fetchTicketByIdApi, fetchTicketsByStaffApi } from '../../services/ticketService'
+import { updatePatientApi } from '../../services/patientService'
+import { useAuth } from '../../context/AuthContext'
 import TicketModal from '../TicketModal/TicketModal'
+import EditPatientModal from '../EditPatientModal/EditPatientModal'
 import PatientProfileHeader from './components/PatientProfileHeader'
 import PatientVisitsList from './components/PatientVisitsList'
 import './PatientHistoryModal.css'
@@ -13,15 +16,25 @@ export default function PatientHistoryModal({
   error = '',
   onSelectPatient,
   onClose,
+  onPatientUpdated,
+  canEdit = null,
   // Props para modo personal (Pantalla de Jefa)
   staffMember,
   selectedDate = ''
 }) {
+  const { userData } = useAuth()
   const isStaffMode = Boolean(staffMember)
   const [selectedTicketDetail, setSelectedTicketDetail] = useState(null)
   const [isFetchingTicketId, setIsFetchingTicketId] = useState(null)
   const [ticketFetchError, setTicketFetchError] = useState('')
   const ticketCacheRef = useRef({})
+
+  // Estado de edición de paciente
+  const [isEditingPatient, setIsEditingPatient] = useState(false)
+  const [localPatient, setLocalPatient] = useState(null)
+  const [patientUpdateSuccess, setPatientUpdateSuccess] = useState('')
+
+  const userCanEdit = canEdit !== null ? canEdit : (userData?.rol === 'Jefa' || userData?.rol === 'Admision')
 
   // Estado propio del modo personal
   const [filterMode, setFilterMode] = useState(selectedDate ? 'date' : 'all')
@@ -78,9 +91,20 @@ export default function PatientHistoryModal({
     }
   }, [isStaffMode, staffId, filterMode, selectedDate, staffMember?.rol])
 
+  // Sincronización del paciente actual
+  useEffect(() => {
+    if (history?.paciente) {
+      setLocalPatient(history.paciente)
+    } else if (patient) {
+      setLocalPatient(patient)
+    } else {
+      setLocalPatient(null)
+    }
+  }, [patient, history])
+
   if (!patient && !staffMember) return null
 
-  const patientData = history?.paciente || patient
+  const patientData = localPatient || history?.paciente || patient
   const visits = Array.isArray(history) ? history : history?.atenciones || []
 
   const handleViewTicket = async (ticketId) => {
@@ -107,6 +131,26 @@ export default function PatientHistoryModal({
     } finally {
       setIsFetchingTicketId(null)
     }
+  }
+
+  const handleUpdatePatientSubmit = async (patientId, payload) => {
+    const updated = await updatePatientApi(patientId, payload)
+    const normalized = {
+      ...(patientData || {}),
+      ...(updated || {}),
+      nombre: updated?.nombre || payload.nombre,
+      apellidos: updated?.apellidos || payload.apellidos,
+      dni: updated?.dni || payload.dni,
+      obra_social: updated?.obra_social || payload.obra_social,
+      num_obra_social: updated?.num_obra_social ?? payload.num_obra_social
+    }
+    setLocalPatient(normalized)
+    setIsEditingPatient(false)
+    setPatientUpdateSuccess('Datos del paciente actualizados correctamente.')
+    setTimeout(() => {
+      setPatientUpdateSuccess('')
+    }, 4000)
+    onPatientUpdated?.(normalized)
   }
 
   // Helpers de visualización del personal
@@ -224,7 +268,20 @@ export default function PatientHistoryModal({
               </div>
             </>
           ) : (
-            <PatientProfileHeader patientData={patientData} totalVisits={visits.length} />
+            <>
+              {patientUpdateSuccess && (
+                <div className="patient-history-modal__success-alert" role="status">
+                  <Check size={16} />
+                  <span>{patientUpdateSuccess}</span>
+                </div>
+              )}
+              <PatientProfileHeader
+                patientData={patientData}
+                totalVisits={visits.length}
+                canEdit={userCanEdit}
+                onEdit={() => setIsEditingPatient(true)}
+              />
+            </>
           )}
 
           {/* Lista modular de atenciones históricas o tickets por personal */}
@@ -262,6 +319,16 @@ export default function PatientHistoryModal({
           </div>
         </section>
       </div>
+
+      {/* Modal de edición de paciente */}
+      {isEditingPatient && (
+        <EditPatientModal
+          isOpen={isEditingPatient}
+          patient={patientData}
+          onClose={() => setIsEditingPatient(false)}
+          onSubmit={handleUpdatePatientSubmit}
+        />
+      )}
 
       {/* Comprobante modal reutilizable */}
       {selectedTicketDetail && (

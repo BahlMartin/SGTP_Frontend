@@ -1,7 +1,13 @@
 import React from 'react'
+import { Pencil } from 'lucide-react'
 import './PatientProfileHeader.css'
 
-export default function PatientProfileHeader({ patientData, totalVisits = 0 }) {
+export default function PatientProfileHeader({
+  patientData,
+  totalVisits = 0,
+  canEdit = false,
+  onEdit
+}) {
   if (!patientData) return null
 
   const getInitials = (nombre = '', apellidos = '') => {
@@ -36,9 +42,22 @@ export default function PatientProfileHeader({ patientData, totalVisits = 0 }) {
         </div>
       </div>
 
-      <div className="patient-history-modal__patient-kpi">
-        <span className="patient-history-modal__patient-kpi-num">{totalVisits}</span>
-        <span className="patient-history-modal__patient-kpi-lbl">Total Atenciones</span>
+      <div className="patient-history-modal__patient-actions-group">
+        {canEdit && onEdit && (
+          <button
+            type="button"
+            className="patient-history-modal__patient-edit-btn"
+            onClick={onEdit}
+            title="Editar datos del paciente"
+            aria-label="Editar datos del paciente"
+          >
+            <Pencil size={17} />
+          </button>
+        )}
+        <div className="patient-history-modal__patient-kpi">
+          <span className="patient-history-modal__patient-kpi-num">{totalVisits}</span>
+          <span className="patient-history-modal__patient-kpi-lbl">Total Atenciones</span>
+        </div>
       </div>
     </div>
   )

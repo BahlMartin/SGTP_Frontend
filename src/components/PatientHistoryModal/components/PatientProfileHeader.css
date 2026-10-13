@@ -72,6 +72,12 @@
   flex-wrap: wrap;
 }
 
+.patient-history-modal__patient-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .patient-history-modal__patient-kpi {
   display: flex;
   flex-direction: column;
@@ -97,14 +103,48 @@
   letter-spacing: 0.03em;
 }
 
+.patient-history-modal__patient-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: #fefce8;
+  color: #ca8a04;
+  border: 1px solid #fde047;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(202, 138, 4, 0.15);
+  flex-shrink: 0;
+}
+
+.patient-history-modal__patient-edit-btn:hover {
+  background: #fef08a;
+  color: #a16207;
+  border-color: #eab308;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(202, 138, 4, 0.25);
+}
+
+.patient-history-modal__patient-edit-btn:active {
+  transform: translateY(0);
+}
+
 @media (max-width: 640px) {
   .patient-history-modal__patient {
     flex-direction: column;
     align-items: flex-start;
   }
 
+  .patient-history-modal__patient-actions-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .patient-history-modal__patient-kpi {
     align-items: flex-start;
-    width: 100%;
   }
 }
+
