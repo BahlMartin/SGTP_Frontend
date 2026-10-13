@@ -34,7 +34,10 @@ export default function PatientHistoryModal({
   const [localPatient, setLocalPatient] = useState(null)
   const [patientUpdateSuccess, setPatientUpdateSuccess] = useState('')
 
-  const userCanEdit = canEdit !== null ? canEdit : (userData?.rol === 'Jefa' || userData?.rol === 'Admision')
+  const normalizedRole = String(userData?.rol || '').trim().toLowerCase()
+  const userCanEdit = canEdit !== null
+    ? canEdit
+    : (normalizedRole === 'jefa' || normalizedRole === 'admin')
 
   // Estado propio del modo personal
   const [filterMode, setFilterMode] = useState(selectedDate ? 'date' : 'all')
@@ -167,8 +170,8 @@ export default function PatientHistoryModal({
 
   const titleText = isStaffMode
     ? (isAdmission
-        ? 'Tickets Emitidos por Operador de Admisión'
-        : 'Tickets Atendidos y Extraídos por Técnico')
+      ? 'Tickets Emitidos por Operador de Admisión'
+      : 'Tickets Atendidos y Extraídos por Técnico')
     : 'Historial Clínico del Paciente'
 
   return (
@@ -208,11 +211,10 @@ export default function PatientHistoryModal({
                     <div className="patient-history-modal__staff-name-wrap">
                       <span className="patient-history-modal__staff-name">{staffName}</span>
                       <span
-                        className={`patient-history-modal__role-badge ${
-                          isAdmission
+                        className={`patient-history-modal__role-badge ${isAdmission
                             ? 'patient-history-modal__role-badge--admision'
                             : 'patient-history-modal__role-badge--box'
-                        }`}
+                          }`}
                       >
                         {staffRoleDisplay}
                       </span>
@@ -247,18 +249,16 @@ export default function PatientHistoryModal({
                   <div className="patient-history-modal__filter-buttons">
                     <button
                       type="button"
-                      className={`patient-history-modal__filter-btn ${
-                        filterMode === 'date' ? 'patient-history-modal__filter-btn--active' : ''
-                      }`}
+                      className={`patient-history-modal__filter-btn ${filterMode === 'date' ? 'patient-history-modal__filter-btn--active' : ''
+                        }`}
                       onClick={() => setFilterMode('date')}
                     >
                       Día seleccionado
                     </button>
                     <button
                       type="button"
-                      className={`patient-history-modal__filter-btn ${
-                        filterMode === 'all' ? 'patient-history-modal__filter-btn--active' : ''
-                      }`}
+                      className={`patient-history-modal__filter-btn ${filterMode === 'all' ? 'patient-history-modal__filter-btn--active' : ''
+                        }`}
                       onClick={() => setFilterMode('all')}
                     >
                       Historial completo
@@ -296,9 +296,8 @@ export default function PatientHistoryModal({
             staffRole={staffTipo}
             emptyMessage={
               isStaffMode
-                ? `No se registran tickets ${isAdmission ? 'emitidos' : 'atendidos'} por este profesional${
-                    filterMode === 'date' && selectedDate ? ` en la jornada del ${selectedDate}.` : '.'
-                  }`
+                ? `No se registran tickets ${isAdmission ? 'emitidos' : 'atendidos'} por este profesional${filterMode === 'date' && selectedDate ? ` en la jornada del ${selectedDate}.` : '.'
+                }`
                 : undefined
             }
           />
