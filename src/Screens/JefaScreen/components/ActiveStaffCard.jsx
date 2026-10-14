@@ -90,8 +90,10 @@ export default function ActiveStaffCard({
               : staffMember.dentro_horario === false
                 ? 'jefa-screen__staff-dot--outside'
                 : 'jefa-screen__staff-dot--active'
-            const attendsPatients = !['Jefa', 'Secretaria'].includes(staffMember.rol)
-            const isAdmissionStaff = staffMember.rol === 'Admision'
+            const roleNorm = String(staffMember.rol || '').trim().toLowerCase()
+            const isClickable = !['jefa', 'secretaria'].includes(roleNorm)
+            const attendsPatients = isClickable
+            const isAdmissionStaff = roleNorm === 'admision'
             const workload = isAdmissionStaff
               ? (workloadByStaff.ticketsIssuedByStaff?.[staffMember.id] ?? workloadByStaff.ticketsIssuedByStaff?.[String(staffMember.id)] ?? 0)
               : (workloadByStaff.patientsAttendedByBoxStaff?.[staffMember.id] ?? workloadByStaff.patientsAttendedByBoxStaff?.[String(staffMember.id)] ?? 0)
@@ -99,17 +101,21 @@ export default function ActiveStaffCard({
             return (
               <li
                 key={staffMember.id}
-                className="jefa-screen__staff-item jefa-screen__staff-item--clickable"
-                onClick={() => onSelectStaff?.(staffMember)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    onSelectStaff?.(staffMember)
-                  }
-                }}
-                title={`Ver detalle de tickets de ${staffMember.nombre}`}
+                className={`jefa-screen__staff-item ${isClickable ? 'jefa-screen__staff-item--clickable' : 'jefa-screen__staff-item--non-clickable'}`}
+                onClick={isClickable ? () => onSelectStaff?.(staffMember) : undefined}
+                role={isClickable ? 'button' : undefined}
+                tabIndex={isClickable ? 0 : undefined}
+                onKeyDown={
+                  isClickable
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          onSelectStaff?.(staffMember)
+                        }
+                      }
+                    : undefined
+                }
+                title={isClickable ? `Ver detalle de tickets de ${staffMember.nombre}` : undefined}
               >
                 <div className="jefa-screen__staff-info">
                   <span

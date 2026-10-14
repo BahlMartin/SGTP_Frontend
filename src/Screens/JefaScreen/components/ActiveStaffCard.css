@@ -146,21 +146,26 @@
   padding: 8px 8px;
   border-radius: var(--radius-md, 8px);
   border-bottom: 1px solid var(--border-subtle);
-  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.jefa-screen__staff-item:hover,
+.jefa-screen__staff-item--clickable {
+  cursor: pointer;
+}
+
 .jefa-screen__staff-item--clickable:hover {
   background: rgba(59, 130, 246, 0.08);
   border-bottom-color: transparent;
   transform: translateX(2px);
 }
 
-.jefa-screen__staff-item:focus-visible,
 .jefa-screen__staff-item--clickable:focus-visible {
   outline: 2px solid var(--medical-primary, #3b82f6);
   outline-offset: 1px;
+}
+
+.jefa-screen__staff-item--non-clickable {
+  cursor: default;
 }
 
 .jefa-screen__staff-info {

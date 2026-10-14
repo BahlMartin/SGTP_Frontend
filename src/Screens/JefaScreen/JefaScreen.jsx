@@ -46,6 +46,12 @@ export default function JefaScreen() {
   const [staffForOvertime, setStaffForOvertime] = useState(null)
   const [selectedStaffForTickets, setSelectedStaffForTickets] = useState(null)
 
+  const handleSelectStaffForTickets = (staffMember) => {
+    const roleNorm = String(staffMember?.rol || '').trim().toLowerCase()
+    if (roleNorm === 'jefa' || roleNorm === 'secretaria') return
+    setSelectedStaffForTickets(staffMember)
+  }
+
   // Estado para rendimiento de personal por fecha
   const [staffDate, setStaffDate] = useState(() => getTodayLocalDateString())
   const [workloadByStaff, setWorkloadByStaff] = useState({
@@ -242,12 +248,12 @@ export default function JefaScreen() {
               onDateChange={setStaffDate}
               workloadByStaff={workloadByStaff}
               isLoading={loadingStaffWorkload}
-              onSelectStaff={setSelectedStaffForTickets}
+              onSelectStaff={handleSelectStaffForTickets}
             />
             <ActiveBoxesCard
               canToggleStatus={true}
               onNotice={showNotice}
-              onSelectStaff={setSelectedStaffForTickets}
+              onSelectStaff={handleSelectStaffForTickets}
             />
             <LabMatrixCard
               labStudies={labStudies}
