@@ -54,7 +54,7 @@ function generateUniqueCallNumber(existingTickets) {
  * el historial de últimos ingresos y los modales de asistencia (OCR / Ticket).
  */
 export default function AdmisionScreen() {
-  const { createTicket, tickets } = useTriageQueue()
+  const { createTicket, tickets, refreshTickets, loading } = useTriageQueue()
   const { userData } = useAuth()
 
   const {
@@ -188,17 +188,18 @@ export default function AdmisionScreen() {
             isSubmitting={isSubmitting}
           />
 
-          {/* Columna Derecha: Últimos ingresos y Búsqueda de Paciente */}
+          {/* Columna Derecha: Búsqueda rápida de paciente y Últimos ingresos de hoy */}
           <aside className="admision-screen__side-column">
+            <PatientSearch onSelectPatient={handleLoadPatient} />
+
             <RecentTicketsList
               title="Últimos ingresos de hoy"
               emptyMessage="No hubo ningun ingreso"
               ticketsList={todayTickets}
-              maxItems={6}
               onTicketClick={handleTicketItemClick}
+              onRefresh={refreshTickets}
+              isLoading={loading}
             />
-
-            <PatientSearch onSelectPatient={handleLoadPatient} />
           </aside>
         </div>
       </main>
