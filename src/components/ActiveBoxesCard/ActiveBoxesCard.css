@@ -1,4 +1,4 @@
-.jefa-boxes-card {
+.active-boxes-card {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
@@ -12,7 +12,7 @@
 }
 
 /* Header & Counters */
-.jefa-boxes-card__header {
+.active-boxes-card__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -20,44 +20,51 @@
   flex-wrap: wrap;
 }
 
-.jefa-boxes-card__header-left {
+.active-boxes-card__header-left {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.jefa-boxes-card__title-row {
+.active-boxes-card__title-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.jefa-boxes-card__title-icon {
+.active-boxes-card__title-icon {
   color: var(--medical-primary, #0284c7);
   flex-shrink: 0;
 }
 
-.jefa-boxes-card__title {
+.active-boxes-card__title {
   font-size: 0.96rem;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
 }
 
-.jefa-boxes-card__subtitle {
+.active-boxes-card__subtitle {
   font-size: 0.76rem;
   color: var(--text-muted);
   margin: 0;
 }
 
+.active-boxes-card__header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 /* Barra de Controles: Filtro desplegable */
-.jefa-boxes-card__toolbar {
+.active-boxes-card__toolbar {
   display: flex;
   align-items: center;
   width: 100%;
 }
 
-.jefa-boxes-card__select-wrapper {
+.active-boxes-card__select-wrapper {
   position: relative;
   display: flex;
   align-items: center;
@@ -65,7 +72,7 @@
   min-width: 0;
 }
 
-.jefa-boxes-card__select-icon {
+.active-boxes-card__select-icon {
   position: absolute;
   left: 9px;
   color: var(--medical-primary, #0284c7);
@@ -73,7 +80,7 @@
   flex-shrink: 0;
 }
 
-.jefa-boxes-card__select {
+.active-boxes-card__select {
   width: 100%;
   appearance: none;
   -webkit-appearance: none;
@@ -92,24 +99,24 @@
   white-space: nowrap;
 }
 
-.jefa-boxes-card__select:hover {
+.active-boxes-card__select:hover {
   background: var(--surface-hover);
   border-color: var(--medical-primary, #0284c7);
 }
 
-.jefa-boxes-card__select:focus-visible {
+.active-boxes-card__select:focus-visible {
   border-color: var(--medical-primary, #0284c7);
   box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
 }
 
-.jefa-boxes-card__select option {
+.active-boxes-card__select option {
   background: var(--bg-card, #ffffff);
   color: var(--text-primary, #0f172a);
   font-size: 0.8rem;
   font-weight: 500;
 }
 
-.jefa-boxes-card__select-arrow {
+.active-boxes-card__select-arrow {
   position: absolute;
   right: 8px;
   color: var(--text-muted);
@@ -117,7 +124,7 @@
   flex-shrink: 0;
 }
 
-.jefa-boxes-card__clear-filter-btn {
+.active-boxes-card__clear-filter-btn {
   background: none;
   border: none;
   color: var(--medical-primary, #0284c7);
@@ -130,7 +137,7 @@
 }
 
 /* Lista de Boxes */
-.jefa-boxes-card__list {
+.active-boxes-card__list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -143,21 +150,21 @@
   padding-right: 4px;
 }
 
-.jefa-boxes-card__list::-webkit-scrollbar {
+.active-boxes-card__list::-webkit-scrollbar {
   width: 5px;
 }
 
-.jefa-boxes-card__list::-webkit-scrollbar-track {
+.active-boxes-card__list::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.jefa-boxes-card__list::-webkit-scrollbar-thumb {
+.active-boxes-card__list::-webkit-scrollbar-thumb {
   background: var(--border-card);
   border-radius: 4px;
 }
 
 /* Item de Box individual */
-.jefa-boxes-card__item {
+.active-boxes-card__item {
   background: var(--bg-surface, rgba(255, 255, 255, 0.03));
   border: 1px solid var(--border-card);
   border-left-width: 4px;
@@ -169,45 +176,45 @@
   transition: all 0.2s ease;
 }
 
-.jefa-boxes-card__item:hover {
+.active-boxes-card__item:hover {
   background: var(--surface-hover);
   box-shadow: var(--shadow-sm);
 }
 
-.jefa-boxes-card__item--disponible {
+.active-boxes-card__item--disponible {
   border-left-color: #16a34a;
 }
 
-.jefa-boxes-card__item--atencion {
+.active-boxes-card__item--atencion {
   border-left-color: var(--medical-primary, #0284c7);
 }
 
-.jefa-boxes-card__item--fuera {
+.active-boxes-card__item--fuera {
   border-left-color: #ef4444;
   opacity: 0.88;
 }
 
 /* Fila superior del Box */
-.jefa-boxes-card__box-header {
+.active-boxes-card__box-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
 }
 
-.jefa-boxes-card__box-title-wrap {
+.active-boxes-card__box-title-wrap {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.jefa-boxes-card__box-name {
+.active-boxes-card__box-name {
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
-.jefa-boxes-card__tag-accesible {
+.active-boxes-card__tag-accesible {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -220,8 +227,8 @@
   font-weight: 600;
 }
 
-/* Píldoras de Estado */
-.jefa-boxes-card__pill {
+/* Píldoras de Estado (Verde #22c55e, Azul medical-primary, Rojo #ef4444 con texto blanco) */
+.active-boxes-card__pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -233,23 +240,23 @@
   letter-spacing: 0.2px;
 }
 
-.jefa-boxes-card__pill--disponible {
+.active-boxes-card__pill--disponible {
   background: #22c55e;
   color: #ffffff;
 }
 
-.jefa-boxes-card__pill--atencion {
+.active-boxes-card__pill--atencion {
   background: var(--medical-primary, #0284c7);
   color: #ffffff;
 }
 
-.jefa-boxes-card__pill--fuera {
+.active-boxes-card__pill--fuera {
   background: #ef4444;
   color: #ffffff;
 }
 
 /* Ficha del Personal en el Box */
-.jefa-boxes-card__staff-row {
+.active-boxes-card__staff-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -258,31 +265,32 @@
   border-top: 1px dashed var(--border-subtle, rgba(255, 255, 255, 0.08));
 }
 
-.jefa-boxes-card__staff-info {
+.active-boxes-card__staff-info {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
   flex: 1;
+  cursor: default;
 }
 
-.jefa-boxes-card__staff-info--clickable {
+.active-boxes-card__staff-info--clickable {
   cursor: pointer;
   padding: 4px 6px;
   border-radius: var(--radius-sm, 6px);
   transition: all 0.2s ease;
 }
 
-.jefa-boxes-card__staff-info--clickable:hover {
+.active-boxes-card__staff-info--clickable:hover {
   background: rgba(59, 130, 246, 0.12);
 }
 
-.jefa-boxes-card__staff-info--clickable:focus-visible {
+.active-boxes-card__staff-info--clickable:focus-visible {
   outline: 2px solid var(--medical-primary, #0284c7);
   outline-offset: 1px;
 }
 
-.jefa-boxes-card__staff-avatar {
+.active-boxes-card__staff-avatar {
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -297,19 +305,19 @@
   flex-shrink: 0;
 }
 
-.jefa-boxes-card__staff-avatar--vacant {
+.active-boxes-card__staff-avatar--vacant {
   background: var(--bg-surface, rgba(255, 255, 255, 0.05));
   color: var(--text-muted);
   border-color: var(--border-card);
 }
 
-.jefa-boxes-card__staff-details {
+.active-boxes-card__staff-details {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
-.jefa-boxes-card__staff-name {
+.active-boxes-card__staff-name {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-primary);
@@ -318,12 +326,12 @@
   text-overflow: ellipsis;
 }
 
-.jefa-boxes-card__staff-sub {
+.active-boxes-card__staff-sub {
   font-size: 0.7rem;
   color: var(--text-muted);
 }
 
-.jefa-boxes-card__staff-vacant {
+.active-boxes-card__staff-vacant {
   font-size: 0.75rem;
   color: var(--text-muted);
   font-style: italic;
@@ -333,7 +341,7 @@
 }
 
 /* Fila de Paciente en Consulta (si está en atención) */
-.jefa-boxes-card__patient-row {
+.active-boxes-card__patient-row {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -345,18 +353,25 @@
   color: var(--text-primary);
 }
 
-.jefa-boxes-card__patient-icon {
+.active-boxes-card__patient-icon {
   color: var(--medical-primary, #0284c7);
   flex-shrink: 0;
 }
 
-.jefa-boxes-card__patient-totem {
+.active-boxes-card__patient-totem {
   font-weight: 700;
   color: var(--medical-primary, #0284c7);
 }
 
 /* Botón de acción para la Jefa */
-.jefa-boxes-card__action-btn {
+.active-boxes-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.active-boxes-card__action-btn {
   border: 1px solid transparent;
   border-radius: var(--radius-sm, 6px);
   padding: 4px 10px;
@@ -370,36 +385,36 @@
   flex-shrink: 0;
 }
 
-.jefa-boxes-card__action-btn--toggle-fuera {
+.active-boxes-card__action-btn--toggle-fuera {
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
   border-color: rgba(239, 68, 68, 0.28);
 }
 
-.jefa-boxes-card__action-btn--toggle-fuera:hover:not(:disabled) {
+.active-boxes-card__action-btn--toggle-fuera:hover:not(:disabled) {
   background: #ef4444;
   color: #ffffff;
 }
 
-.jefa-boxes-card__action-btn--toggle-disponible {
+.active-boxes-card__action-btn--toggle-disponible {
   background: rgba(34, 197, 94, 0.1);
   color: #16a34a;
   border-color: rgba(34, 197, 94, 0.28);
 }
 
-.jefa-boxes-card__action-btn--toggle-disponible:hover:not(:disabled) {
+.active-boxes-card__action-btn--toggle-disponible:hover:not(:disabled) {
   background: #16a34a;
   color: #ffffff;
 }
 
-.jefa-boxes-card__action-btn:disabled {
+.active-boxes-card__action-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
 /* Estados de carga y vacío */
-.jefa-boxes-card__loading,
-.jefa-boxes-card__empty {
+.active-boxes-card__loading,
+.active-boxes-card__empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -411,16 +426,25 @@
   text-align: center;
 }
 
-.jefa-boxes-card__spinner {
+.active-boxes-card__spinner {
   width: 18px;
   height: 18px;
   border: 2px solid var(--border-card);
   border-top-color: var(--medical-primary, #0284c7);
   border-radius: 50%;
-  animation: jefa-boxes-spin 0.8s linear infinite;
+  animation: active-boxes-spin 0.8s linear infinite;
 }
 
-.jefa-boxes-card__error-banner {
+@keyframes active-boxes-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.active-boxes-card__error-banner {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: #ef4444;

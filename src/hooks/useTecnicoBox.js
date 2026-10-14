@@ -13,9 +13,17 @@ export function useTecnicoBox() {
     currentBoxNumber,
     setCurrentBoxNumber,
     changeBoxStatus,
-    tomarBox
+    tomarBox,
+    refreshBoxes
   } = useBox()
-  const { waitingQueue, activeInBoxes, callNextPatient, finishAttention, updateBoxStudies } = useTriageQueue()
+  const {
+    waitingQueue,
+    activeInBoxes,
+    callNextPatient,
+    finishAttention,
+    updateBoxStudies,
+    refreshTickets
+  } = useTriageQueue()
   const { userData } = useAuth()
   const { notice: feedbackMsg, showNotice: showNotification, clearNotice } = useFeedbackNotice(4000)
 
@@ -151,6 +159,7 @@ export function useTecnicoBox() {
     boxes,
     boxesLoading,
     boxesError,
+    refreshBoxes,
     currentBoxNumber,
     setCurrentBoxNumber,
     handleSelectBox,
@@ -158,6 +167,7 @@ export function useTecnicoBox() {
     activeBoxData,
     patientInBox,
     waitingQueue,
+    refreshTickets,
     completedStudies,
     feedbackMsg,
     isProcessing,

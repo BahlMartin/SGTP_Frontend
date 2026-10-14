@@ -5,19 +5,20 @@ import {
   Clock,
   AlertTriangle,
   Accessibility,
-  User,
   UserX,
   Power,
   Activity,
   Filter,
   ChevronDown
 } from 'lucide-react'
-import { useBox } from '../../../../context/BoxContext'
-import './JefaOnlineBoxesCard.css'
+import { useBox } from '../../context/BoxContext'
+import './ActiveBoxesCard.css'
 
-export default function JefaOnlineBoxesCard({
+export default function ActiveBoxesCard({
+  canToggleStatus = true,
   onNotice = () => {},
-  onSelectStaff = () => {}
+  onSelectStaff = null,
+  actionSlot = null
 }) {
   const {
     boxes = [],
@@ -28,22 +29,18 @@ export default function JefaOnlineBoxesCard({
   } = useBox()
 
   const [isUpdatingBox, setIsUpdatingBox] = useState(null)
-  const [lastUpdated, setLastUpdated] = useState(() => new Date())
   const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'disponible' | 'en atencion' | 'fuera de servicio'
 
   // Auto-refresco periódico cada 12 segundos (sondeo en tiempo real)
   useEffect(() => {
     const timer = setInterval(() => {
-      refreshBoxes().then(() => setLastUpdated(new Date()))
+      refreshBoxes().catch((err) => {
+        console.error('Error al autorefrescar boxes:', err)
+      })
     }, 12000)
 
     return () => clearInterval(timer)
   }, [refreshBoxes])
-
-  const handleManualRefresh = async () => {
-    await refreshBoxes()
-    setLastUpdated(new Date())
-  }
 
   const normalizeStatus = (estadoValue) => {
     return String(estadoValue || '')
@@ -60,7 +57,7 @@ export default function JefaOnlineBoxesCard({
     )
   }, [boxes])
 
-  // Contadores para el encabezado
+  // Contadores para el filtro
   const counts = useMemo(() => {
     let disponibles = 0
     let atencion = 0
@@ -76,8 +73,7 @@ export default function JefaOnlineBoxesCard({
     return { disponibles, atencion, fuera, total: orderedBoxes.length }
   }, [orderedBoxes])
 
-
-  // Filtrar boxes según la píldora seleccionada
+  // Filtrar boxes según la opción seleccionada
   const filteredBoxes = useMemo(() => {
     if (statusFilter === 'all') return orderedBoxes
     return orderedBoxes.filter((b) => {
@@ -91,8 +87,10 @@ export default function JefaOnlineBoxesCard({
     })
   }, [orderedBoxes, statusFilter])
 
-  // Conmutar estado de box entre 'Disponible' y 'Fuera de servicio'
+  // Conmutar estado de box entre 'Disponible' y 'Fuera de servicio' (solo habilitado si canToggleStatus=true)
   const handleToggleBoxStatus = async (box) => {
+    if (!canToggleStatus) return
+
     const boxNumero = Number(box.numero)
     const currentStatus = box.estado || 'Disponible'
     const newStatus = currentStatus === 'Fuera de servicio' ? 'Disponible' : 'Fuera de servicio'
@@ -101,7 +99,6 @@ export default function JefaOnlineBoxesCard({
     try {
       await changeBoxStatus(boxNumero, newStatus)
       onNotice(`Box ${boxNumero} ahora se encuentra: ${newStatus}`)
-      setLastUpdated(new Date())
     } catch (err) {
       console.error('Error al cambiar estado de box:', err)
       onNotice(err.message || 'Error al actualizar el estado del box.')
@@ -116,9 +113,9 @@ export default function JefaOnlineBoxesCard({
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
 
-    if (normalized === 'disponible') return 'jefa-boxes-card__pill--disponible'
-    if (normalized === 'en atencion') return 'jefa-boxes-card__pill--atencion'
-    return 'jefa-boxes-card__pill--fuera'
+    if (normalized === 'disponible') return 'active-boxes-card__pill--disponible'
+    if (normalized === 'en atencion') return 'active-boxes-card__pill--atencion'
+    return 'active-boxes-card__pill--fuera'
   }
 
   const getInitials = (nombre, apellidos) => {
@@ -127,28 +124,37 @@ export default function JefaOnlineBoxesCard({
     return `${first}${last}` || 'TX'
   }
 
+  const isStaffClickable = Boolean(onSelectStaff)
 
   return (
-    <div className="jefa-boxes-card">
+    <div className="active-boxes-card">
       {/* Cabecera */}
-      <div className="jefa-boxes-card__header">
-        <div className="jefa-boxes-card__header-left">
-          <div className="jefa-boxes-card__title-row">
-            <Tv size={18} className="jefa-boxes-card__title-icon" aria-hidden="true" />
-            <h3 className="jefa-boxes-card__title">Boxes de atención</h3>
+      <div className="active-boxes-card__header">
+        <div className="active-boxes-card__header-left">
+          <div className="active-boxes-card__title-row">
+            <Tv size={18} className="active-boxes-card__title-icon" aria-hidden="true" />
+            <h3 className="active-boxes-card__title">Boxes de atención</h3>
           </div>
-          <p className="jefa-boxes-card__subtitle">
-            Monitoreo en línea y control operativo de boxes
+          <p className="active-boxes-card__subtitle">
+            {canToggleStatus
+              ? 'Monitoreo en línea y control operativo de boxes'
+              : 'Monitoreo en línea del estado operativo de boxes'}
           </p>
         </div>
+
+        {actionSlot && (
+          <div className="active-boxes-card__header-right">
+            {actionSlot}
+          </div>
+        )}
       </div>
 
-      {/* Controles: Filtro desplegable y Actualización */}
-      <div className="jefa-boxes-card__toolbar">
-        <div className="jefa-boxes-card__select-wrapper">
-          <Filter size={13} className="jefa-boxes-card__select-icon" aria-hidden="true" />
+      {/* Controles: Filtro desplegable */}
+      <div className="active-boxes-card__toolbar">
+        <div className="active-boxes-card__select-wrapper">
+          <Filter size={13} className="active-boxes-card__select-icon" aria-hidden="true" />
           <select
-            className="jefa-boxes-card__select"
+            className="active-boxes-card__select"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             aria-label="Filtrar boxes por estado"
@@ -158,18 +164,18 @@ export default function JefaOnlineBoxesCard({
             <option value="en atencion">En atención ({counts.atencion})</option>
             <option value="fuera de servicio">Fuera de servicio ({counts.fuera})</option>
           </select>
-          <ChevronDown size={13} className="jefa-boxes-card__select-arrow" aria-hidden="true" />
+          <ChevronDown size={13} className="active-boxes-card__select-arrow" aria-hidden="true" />
         </div>
       </div>
 
       {/* Error Banner */}
       {boxesError && (
-        <div className="jefa-boxes-card__error-banner" role="alert">
+        <div className="active-boxes-card__error-banner" role="alert">
           <span>{boxesError}</span>
           <button
             type="button"
-            className="jefa-boxes-card__action-btn"
-            onClick={handleManualRefresh}
+            className="active-boxes-card__action-btn"
+            onClick={() => refreshBoxes()}
           >
             Reintentar
           </button>
@@ -178,16 +184,16 @@ export default function JefaOnlineBoxesCard({
 
       {/* Lista de Boxes */}
       {boxesLoading && orderedBoxes.length === 0 ? (
-        <div className="jefa-boxes-card__loading">
-          <div className="jefa-boxes-card__spinner" />
+        <div className="active-boxes-card__loading">
+          <div className="active-boxes-card__spinner" />
           <span>Sincronizando boxes en tiempo real...</span>
         </div>
       ) : orderedBoxes.length === 0 ? (
-        <div className="jefa-boxes-card__empty">
+        <div className="active-boxes-card__empty">
           <p>No se encontraron boxes registrados en el sistema.</p>
         </div>
       ) : filteredBoxes.length === 0 ? (
-        <div className="jefa-boxes-card__empty">
+        <div className="active-boxes-card__empty">
           <p>
             No hay boxes{' '}
             {statusFilter === 'disponible'
@@ -198,7 +204,7 @@ export default function JefaOnlineBoxesCard({
             .{' '}
             <button
               type="button"
-              className="jefa-boxes-card__clear-filter-btn"
+              className="active-boxes-card__clear-filter-btn"
               onClick={() => setStatusFilter('all')}
             >
               Ver todos ({counts.total})
@@ -206,7 +212,7 @@ export default function JefaOnlineBoxesCard({
           </p>
         </div>
       ) : (
-        <ul className="jefa-boxes-card__list">
+        <ul className="active-boxes-card__list">
           {filteredBoxes.map((box) => {
             const boxNumero = Number(box.numero)
             const estadoActual = box.estado || (box.activo === false ? 'Fuera de servicio' : 'Disponible')
@@ -219,28 +225,31 @@ export default function JefaOnlineBoxesCard({
             const paciente = box.paciente_actual
 
             const itemModifierClass = isDisponible
-              ? 'jefa-boxes-card__item--disponible'
+              ? 'active-boxes-card__item--disponible'
               : isEnAtencion
-                ? 'jefa-boxes-card__item--atencion'
-                : 'jefa-boxes-card__item--fuera'
+                ? 'active-boxes-card__item--atencion'
+                : 'active-boxes-card__item--fuera'
 
             return (
-              <li key={box.id ?? boxNumero} className={`jefa-boxes-card__item ${itemModifierClass}`}>
+              <li key={box.id ?? boxNumero} className={`active-boxes-card__item ${itemModifierClass}`}>
                 {/* Cabecera del Box: Nombre + Píldora de estado */}
-                <div className="jefa-boxes-card__box-header">
-                  <div className="jefa-boxes-card__box-title-wrap">
-                    <span className="jefa-boxes-card__box-name">
+                <div className="active-boxes-card__box-header">
+                  <div className="active-boxes-card__box-title-wrap">
+                    <span className="active-boxes-card__box-name">
                       {box.nombre || `Box ${boxNumero}`}
                     </span>
                     {box.discapacidad && (
-                      <span className="jefa-boxes-card__tag-accesible" title="Box adaptado con acceso prioritario para movilidad reducida">
+                      <span
+                        className="active-boxes-card__tag-accesible"
+                        title="Box adaptado con acceso prioritario para movilidad reducida"
+                      >
                         <Accessibility size={11} aria-hidden="true" />
                         Accesible
                       </span>
                     )}
                   </div>
 
-                  <span className={`jefa-boxes-card__pill ${getPillModifier(estadoActual)}`}>
+                  <span className={`active-boxes-card__pill ${getPillModifier(estadoActual)}`}>
                     {isDisponible && <CheckCircle2 size={11} aria-hidden="true" />}
                     {isEnAtencion && <Activity size={11} aria-hidden="true" />}
                     {isFuera && <AlertTriangle size={11} aria-hidden="true" />}
@@ -248,42 +257,50 @@ export default function JefaOnlineBoxesCard({
                   </span>
                 </div>
 
-                {/* Personal asignado en el Box */}
-                <div className="jefa-boxes-card__staff-row">
+                {/* Personal asignado en el Box (Estático sin clics en Box, Clickeable en Jefa) */}
+                <div className="active-boxes-card__staff-row">
                   <div
-                    className={`jefa-boxes-card__staff-info ${staff ? 'jefa-boxes-card__staff-info--clickable' : ''}`}
-                    onClick={() => staff && onSelectStaff?.(staff)}
-                    role={staff ? 'button' : undefined}
-                    tabIndex={staff ? 0 : undefined}
-                    onKeyDown={(e) => {
-                      if (staff && (e.key === 'Enter' || e.key === ' ')) {
-                        e.preventDefault()
-                        onSelectStaff?.(staff)
-                      }
-                    }}
-                    title={staff ? `Ver tickets y atenciones de ${staff.nombre_completo || staff.nombre}` : undefined}
+                    className={`active-boxes-card__staff-info ${isStaffClickable && staff ? 'active-boxes-card__staff-info--clickable' : ''}`}
+                    onClick={isStaffClickable && staff ? () => onSelectStaff(staff) : undefined}
+                    role={isStaffClickable && staff ? 'button' : undefined}
+                    tabIndex={isStaffClickable && staff ? 0 : undefined}
+                    onKeyDown={
+                      isStaffClickable && staff
+                        ? (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              onSelectStaff(staff)
+                            }
+                          }
+                        : undefined
+                    }
+                    title={
+                      isStaffClickable && staff
+                        ? `Ver tickets y atenciones de ${staff.nombre_completo || staff.nombre}`
+                        : undefined
+                    }
                   >
                     {staff ? (
                       <>
-                        <div className="jefa-boxes-card__staff-avatar" title={staff.rol || 'Técnico'}>
+                        <div className="active-boxes-card__staff-avatar" title={staff.rol || 'Técnico'}>
                           {getInitials(staff.nombre, staff.apellidos)}
                         </div>
-                        <div className="jefa-boxes-card__staff-details">
-                          <span className="jefa-boxes-card__staff-name">
+                        <div className="active-boxes-card__staff-details">
+                          <span className="active-boxes-card__staff-name">
                             {staff.nombre_completo || `${staff.nombre} ${staff.apellidos}`}
                           </span>
-                          <span className="jefa-boxes-card__staff-sub">
+                          <span className="active-boxes-card__staff-sub">
                             {staff.rol || 'Personal'}{staff.matricula ? ` · Mat. ${staff.matricula}` : ''}
                           </span>
                         </div>
                       </>
                     ) : (
                       <>
-                        <div className="jefa-boxes-card__staff-avatar jefa-boxes-card__staff-avatar--vacant">
+                        <div className="active-boxes-card__staff-avatar active-boxes-card__staff-avatar--vacant">
                           <UserX size={13} aria-hidden="true" />
                         </div>
-                        <div className="jefa-boxes-card__staff-details">
-                          <span className="jefa-boxes-card__staff-vacant">
+                        <div className="active-boxes-card__staff-details">
+                          <span className="active-boxes-card__staff-vacant">
                             Sin personal en box
                           </span>
                         </div>
@@ -291,44 +308,46 @@ export default function JefaOnlineBoxesCard({
                     )}
                   </div>
 
-                  {/* Botón de control operativo de la Jefa */}
-                  <div className="jefa-boxes-card__actions">
-                    {isFuera ? (
-                      <button
-                        type="button"
-                        className="jefa-boxes-card__action-btn jefa-boxes-card__action-btn--toggle-disponible"
-                        onClick={() => handleToggleBoxStatus(box)}
-                        disabled={isBusy}
-                        title="Habilitar box y dejarlo en estado Disponible"
-                      >
-                        <Power size={11} aria-hidden="true" />
-                        {isBusy ? 'Habilitando...' : 'Habilitar'}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="jefa-boxes-card__action-btn jefa-boxes-card__action-btn--toggle-fuera"
-                        onClick={() => handleToggleBoxStatus(box)}
-                        disabled={isBusy || isEnAtencion}
-                        title={
-                          isEnAtencion
-                            ? 'No se puede inhabilitar mientras hay una consulta asistencial en curso'
-                            : 'Poner fuera de servicio por mantenimiento o receso'
-                        }
-                      >
-                        <AlertTriangle size={11} aria-hidden="true" />
-                        {isBusy ? 'Cerrando...' : 'Fuera de serv.'}
-                      </button>
-                    )}
-                  </div>
+                  {/* Botones de control operativo: SOLO SE RENDERIZAN SI canToggleStatus=true */}
+                  {canToggleStatus && (
+                    <div className="active-boxes-card__actions">
+                      {isFuera ? (
+                        <button
+                          type="button"
+                          className="active-boxes-card__action-btn active-boxes-card__action-btn--toggle-disponible"
+                          onClick={() => handleToggleBoxStatus(box)}
+                          disabled={isBusy}
+                          title="Habilitar box y dejarlo en estado Disponible"
+                        >
+                          <Power size={11} aria-hidden="true" />
+                          {isBusy ? 'Habilitando...' : 'Habilitar'}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="active-boxes-card__action-btn active-boxes-card__action-btn--toggle-fuera"
+                          onClick={() => handleToggleBoxStatus(box)}
+                          disabled={isBusy || isEnAtencion}
+                          title={
+                            isEnAtencion
+                              ? 'No se puede inhabilitar mientras hay una consulta asistencial en curso'
+                              : 'Poner fuera de servicio por mantenimiento o receso'
+                          }
+                        >
+                          <AlertTriangle size={11} aria-hidden="true" />
+                          {isBusy ? 'Cerrando...' : 'Fuera de serv.'}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Paciente en Atención (si aplica) */}
                 {isEnAtencion && paciente && (
-                  <div className="jefa-boxes-card__patient-row">
-                    <Clock size={12} className="jefa-boxes-card__patient-icon" aria-hidden="true" />
+                  <div className="active-boxes-card__patient-row">
+                    <Clock size={12} className="active-boxes-card__patient-icon" aria-hidden="true" />
                     <span>
-                      En atención: <strong className="jefa-boxes-card__patient-totem">Turno {paciente.num_totem}</strong>
+                      En atención: <strong className="active-boxes-card__patient-totem">Turno {paciente.num_totem}</strong>
                       {paciente.paciente_nombre ? ` (${paciente.paciente_nombre})` : ''}
                     </span>
                   </div>

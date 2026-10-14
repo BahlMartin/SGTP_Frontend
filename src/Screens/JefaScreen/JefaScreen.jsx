@@ -9,7 +9,7 @@ import StaffSecurityCard from './components/StaffSecurityCard/StaffSecurityCard'
 import AddStaffModal from './components/AddStaffModal'
 import EditStaffModal from './components/EditStaffModal'
 import AuthorizeOvertimeModal from './components/AuthorizeOvertimeModal'
-import JefaOnlineBoxesCard from './components/JefaOnlineBoxesCard/JefaOnlineBoxesCard'
+import ActiveBoxesCard from '../../components/ActiveBoxesCard/ActiveBoxesCard'
 import PatientHistoryModal from '../../components/PatientHistoryModal/PatientHistoryModal'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useAuth } from '../../context/AuthContext'
@@ -244,7 +244,8 @@ export default function JefaScreen() {
               isLoading={loadingStaffWorkload}
               onSelectStaff={setSelectedStaffForTickets}
             />
-            <JefaOnlineBoxesCard
+            <ActiveBoxesCard
+              canToggleStatus={true}
               onNotice={showNotice}
               onSelectStaff={setSelectedStaffForTickets}
             />
