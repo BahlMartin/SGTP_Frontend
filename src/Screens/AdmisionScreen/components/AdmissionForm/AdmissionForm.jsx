@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { UserPlus, UserCheck, RotateCcw } from 'lucide-react'
 import TriageSelector from '../TriageSelector/TriageSelector'
-import StudiesSelector from '../StudiesSelector/StudiesSelector'
+import StudiesSelector from '../../../../components/StudiesSelector/StudiesSelector'
 import PatientDropdown from '../../../../components/PatientDropdown/PatientDropdown'
 import { searchPatientsApi } from '../../../../services/ticketService'
 import './AdmissionForm.css'
@@ -321,6 +321,7 @@ export default function AdmissionForm({
         <StudiesSelector
           selectedStudies={formData.selectedStudies}
           onToggleStudy={onToggleStudy}
+          showOcrButton={true}
           onOpenOcrModal={onOpenOcrModal}
         />
 

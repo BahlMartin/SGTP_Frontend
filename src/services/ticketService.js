@@ -7,10 +7,22 @@ import { getTriageApiValue, getTriageInfo } from '../constants/triage.constants'
 export function normalizeTicket(t) {
   if (!t) return null
   const paciente = t.paciente_detalle || {}
-  const estudiosList = (t.estudios || []).map((e) => {
+  const rawEstudios = Array.isArray(t.estudios) ? t.estudios : []
+  const estudiosActivosObj = rawEstudios.filter((e) => {
+    if (typeof e === 'string') return true
+    return e?.estado !== 'Cancelado'
+  })
+  const estudiosCanceladosObj = rawEstudios.filter((e) => {
+    if (typeof e === 'string') return false
+    return e?.estado === 'Cancelado'
+  })
+
+  const extractNombre = (e) => {
     if (typeof e === 'string') return e
     return e?.estudio_detalle?.nombre || e?.nombre || 'Práctica Asistencial'
-  })
+  }
+
+  const estudiosList = (estudiosActivosObj.length > 0 ? estudiosActivosObj : rawEstudios).map(extractNombre)
 
   let estadoNormalizado = t.estado
   if (t.estado === 'Pendiente') estadoNormalizado = 'Espera'
@@ -44,7 +56,9 @@ export function normalizeTicket(t) {
     estado: estadoNormalizado,
     estado_backend: t.estado,
     estudios: estudiosList,
-    estudios_raw: t.estudios || []
+    estudios_raw: rawEstudios,
+    estudios_activos: estudiosActivosObj,
+    estudios_cancelados: estudiosCanceladosObj
   }
 }
 

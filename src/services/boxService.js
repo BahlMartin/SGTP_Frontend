@@ -180,6 +180,21 @@ export async function cerrarAtencionBoxApi(boxIdentifier, motivoCierre = 'Finali
 }
 
 /**
+ * Modifica los estudios de la orden médica durante la atención en Box (cancelar y/o agregar).
+ */
+export async function modificarEstudiosBoxApi(boxIdentifier, { cancelarEstudios = [], agregarEstudios = [] }) {
+  const boxId = await resolveBoxId(boxIdentifier)
+  const response = await apiClient.post(`/boxes/${boxId}/modificar-estudios/`, {
+    cancelar_estudios: cancelarEstudios,
+    agregar_estudios: agregarEstudios
+  })
+  return {
+    mensaje: response.mensaje,
+    ticket: response.ticket ? normalizeTicket(response.ticket) : null
+  }
+}
+
+/**
  * Historial inmutable de asignaciones y atenciones en Box.
  */
 export async function fetchAsignacionesBoxApi() {

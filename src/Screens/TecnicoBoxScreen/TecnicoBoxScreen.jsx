@@ -28,6 +28,7 @@ export default function TecnicoBoxScreen() {
     handleStatusChange,
     handleCallNext,
     handleFinishConsultation,
+    handleModifyStudies,
     toggleStudyCheck
   } = useTecnicoBox()
 
@@ -80,6 +81,7 @@ export default function TecnicoBoxScreen() {
               onToggleStudyCheck={toggleStudyCheck}
               onCallNext={handleCallNext}
               onFinishConsultation={handleFinishConsultation}
+              onModifyStudies={handleModifyStudies}
             />
 
             <MultiboxQueueCard

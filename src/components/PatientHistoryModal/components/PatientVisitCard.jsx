@@ -66,6 +66,9 @@ export default function PatientVisitCard({
     ? (boxProDisplay !== 'No registrado' ? boxProDisplay : 'En espera / Sin box')
     : admisionDisplay
 
+  const rawStudies = Array.isArray(visit.estudios_raw) ? visit.estudios_raw : []
+  const hasBoxModifications = rawStudies.some((e) => e?.origen === 'box' || e?.estado === 'Cancelado')
+
   return (
     <li className="patient-history-modal__visit-item">
       <div className="patient-history-modal__visit-card">
@@ -89,6 +92,11 @@ export default function PatientVisitCard({
             <span className="patient-history-modal__badge-box">
               {boxDisplay}
             </span>
+            {hasBoxModifications && (
+              <span className="patient-history-modal__badge-box" style={{ background: '#e0f2fe', color: '#0369a1', borderColor: '#bae6fd' }}>
+                Ajustado en Box
+              </span>
+            )}
           </div>
         </div>
 
