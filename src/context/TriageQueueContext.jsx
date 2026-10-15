@@ -8,7 +8,8 @@ import {
 } from '../services/ticketService'
 import {
   llamarSiguientePacienteApi,
-  cerrarAtencionBoxApi
+  cerrarAtencionBoxApi,
+  modificarEstudiosBoxApi
 } from '../services/boxService'
 
 export const TriageQueueContext = createContext({
@@ -73,8 +74,8 @@ export const TriageQueueContextProvider = ({ children }) => {
   }, [])
 
   const callNextPatient = useCallback(
-    async (boxNumero) => {
-      const result = await llamarSiguientePacienteApi(boxNumero)
+    async (boxNumero, ticketId = null) => {
+      const result = await llamarSiguientePacienteApi(boxNumero, ticketId)
       if (!result.ticket) {
         throw new Error(result.mensaje || 'No hay pacientes en cola de espera para este Box.')
       }
@@ -88,6 +89,18 @@ export const TriageQueueContextProvider = ({ children }) => {
   const finishAttention = useCallback(
     async (boxNumero, motivo = 'Finalizado') => {
       const result = await cerrarAtencionBoxApi(boxNumero, motivo)
+      await refreshTickets()
+      return result
+    },
+    [refreshTickets]
+  )
+
+  const updateBoxStudies = useCallback(
+    async (boxNumero, { cancelarEstudios, agregarEstudios }) => {
+      const result = await modificarEstudiosBoxApi(boxNumero, { cancelarEstudios, agregarEstudios })
+      if (result.ticket) {
+        setTickets((prev) => prev.map((t) => (t.id === result.ticket.id ? result.ticket : t)))
+      }
       await refreshTickets()
       return result
     },
@@ -111,6 +124,7 @@ export const TriageQueueContextProvider = ({ children }) => {
         createTicket,
         callNextPatient,
         finishAttention,
+        updateBoxStudies,
         updateTicketAsJefa,
         refreshTickets
       }}

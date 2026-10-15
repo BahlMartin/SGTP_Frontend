@@ -7,10 +7,22 @@ import { getTriageApiValue, getTriageInfo } from '../constants/triage.constants'
 export function normalizeTicket(t) {
   if (!t) return null
   const paciente = t.paciente_detalle || {}
-  const estudiosList = (t.estudios || []).map((e) => {
+  const rawEstudios = Array.isArray(t.estudios) ? t.estudios : []
+  const estudiosActivosObj = rawEstudios.filter((e) => {
+    if (typeof e === 'string') return true
+    return e?.estado !== 'Cancelado'
+  })
+  const estudiosCanceladosObj = rawEstudios.filter((e) => {
+    if (typeof e === 'string') return false
+    return e?.estado === 'Cancelado'
+  })
+
+  const extractNombre = (e) => {
     if (typeof e === 'string') return e
     return e?.estudio_detalle?.nombre || e?.nombre || 'Práctica Asistencial'
-  })
+  }
+
+  const estudiosList = (estudiosActivosObj.length > 0 ? estudiosActivosObj : rawEstudios).map(extractNombre)
 
   let estadoNormalizado = t.estado
   if (t.estado === 'Pendiente') estadoNormalizado = 'Espera'
@@ -21,8 +33,8 @@ export function normalizeTicket(t) {
     ...t,
     id: t.id_ticket || t.id,
     id_ticket: t.id_ticket || t.id,
-    num_totem: t.num_totem,
-    num_llamado: t.num_totem ? t.num_totem.replace(/[^\d]/g, '') || t.num_totem : (t.num_llamado || '101'),
+    num_totem: t.num_totem || '',
+    num_llamado: t.num_totem || t.num_llamado || 'S/N',
     fecha_hora_admision: t.fecha_hora_admision,
     mat_admision: t.personal_admision_matricula || t.mat_admision || '',
     personal_admision_matricula: t.personal_admision_matricula || t.mat_admision || '',
@@ -44,7 +56,9 @@ export function normalizeTicket(t) {
     estado: estadoNormalizado,
     estado_backend: t.estado,
     estudios: estudiosList,
-    estudios_raw: t.estudios || []
+    estudios_raw: rawEstudios,
+    estudios_activos: estudiosActivosObj,
+    estudios_cancelados: estudiosCanceladosObj
   }
 }
 
@@ -99,7 +113,7 @@ export async function fetchTicketByIdApi(idTicket) {
  */
 export async function createTicketApi(ticketData) {
   const payload = {
-    num_totem: ticketData.num_totem || (ticketData.num_llamado ? `T-${ticketData.num_llamado}` : ''),
+    num_totem: ticketData.num_totem || ticketData.num_llamado || '',
     clasificacion_triage: getTriageApiValue(
       ticketData.clasificacion_triage || 'Extraccion sin turno'
     ),
@@ -114,7 +128,7 @@ export async function createTicketApi(ticketData) {
       dni: Number(String(ticketData.paciente_dni || ticketData.dni).replace(/\D/g, '')),
       nombre: ticketData.paciente_nombre || ticketData.nombre || 'Sin Nombre',
       apellidos: ticketData.paciente_apellido || ticketData.apellido || 'Sin Apellido',
-      obra_social: ticketData.paciente_obra_social || 'No especificada',
+      obra_social: ticketData.paciente_obra_social || ticketData.obra_social || ticketData.obraSocial || 'IOMA',
       num_obra_social: String(
         ticketData.paciente_numero_afiliado || ticketData.numeroAfiliado || ''
       ).replace(/\D/g, '')
@@ -196,6 +210,12 @@ export async function searchPatientsApi(query) {
         (p.obra_social && p.obra_social.toLowerCase().includes(q)) ||
         (p.num_obra_social && p.num_obra_social.toLowerCase().includes(q))
       )
+      .sort((a, b) => {
+        const aStarts = String(a.dni).startsWith(q) ? 1 : 0
+        const bStarts = String(b.dni).startsWith(q) ? 1 : 0
+        if (aStarts !== bStarts) return bStarts - aStarts
+        return String(a.dni).localeCompare(String(b.dni))
+      })
       .map((p) => ({
         dni: String(p.dni),
         nombre: p.nombre,
@@ -229,5 +249,15 @@ export async function fetchResumenEstudiosApi({ fechaStr, search = '', top = nul
 
   const queryString = params.toString() ? `?${params.toString()}` : ''
   return await apiClient.get(`/tickets/resumen-estudios/${queryString}`)
+}
+
+/**
+ * Consulta los tickets asistenciales emitidos o atendidos por un integrante del personal.
+ * - Para Admisión: tickets emitidos ordenados del último al menor.
+ * - Para Box: tickets recibidos y extraídos por el técnico ordenados del último al menor.
+ */
+export async function fetchTicketsByStaffApi(idPersonal, fechaStr = null) {
+  const query = fechaStr ? `?fecha=${fechaStr}` : ''
+  return await apiClient.get(`/tickets/personal/${idPersonal}/${query}`)
 }
 

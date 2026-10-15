@@ -45,7 +45,9 @@ function normalizeBox(rawBox) {
     nombre: `Box ${rawBox.numero}`,
     estado: normalizeBoxStatus(rawBox.estado, isActive),
     activo: isActive,
-    discapacidad: Boolean(rawBox.discapacidad)
+    discapacidad: Boolean(rawBox.discapacidad),
+    personal_actual: rawBox.personal_actual_detalle || rawBox.personal_actual || null,
+    paciente_actual: rawBox.paciente_actual_detalle || rawBox.paciente_actual || null
   }
 }
 
@@ -140,11 +142,22 @@ export async function deleteBoxApi(boxId) {
 }
 
 /**
- * Llama al siguiente paciente disponible según el algoritmo atómico multibox del backend.
+ * Asocia al técnico actual al box físico seleccionado en tiempo real.
  */
-export async function llamarSiguientePacienteApi(boxIdentifier) {
+export async function tomarBoxApi(boxIdentifier) {
   const boxId = await resolveBoxId(boxIdentifier)
-  const response = await apiClient.post(`/boxes/${boxId}/llamar-siguiente/`)
+  const response = await apiClient.post(`/boxes/${boxId}/tomar-box/`)
+  return normalizeBox(response)
+}
+
+/**
+ * Llama al siguiente paciente disponible según el algoritmo atómico multibox del backend,
+ * o a un paciente específico si se proporciona ticketId (llamado directo ignorando triage).
+ */
+export async function llamarSiguientePacienteApi(boxIdentifier, ticketId = null) {
+  const boxId = await resolveBoxId(boxIdentifier)
+  const payload = ticketId ? { ticket_id: ticketId } : {}
+  const response = await apiClient.post(`/boxes/${boxId}/llamar-siguiente/`, payload)
   return {
     mensaje: response.mensaje,
     ticket: response.ticket ? normalizeTicket(response.ticket) : null,
@@ -165,6 +178,21 @@ export async function cerrarAtencionBoxApi(boxIdentifier, motivoCierre = 'Finali
     mensaje: response.mensaje,
     box: response.box ? normalizeBox(response.box) : null,
     asignacion: response.asignacion
+  }
+}
+
+/**
+ * Modifica los estudios de la orden médica durante la atención en Box (cancelar y/o agregar).
+ */
+export async function modificarEstudiosBoxApi(boxIdentifier, { cancelarEstudios = [], agregarEstudios = [] }) {
+  const boxId = await resolveBoxId(boxIdentifier)
+  const response = await apiClient.post(`/boxes/${boxId}/modificar-estudios/`, {
+    cancelar_estudios: cancelarEstudios,
+    agregar_estudios: agregarEstudios
+  })
+  return {
+    mensaje: response.mensaje,
+    ticket: response.ticket ? normalizeTicket(response.ticket) : null
   }
 }
 

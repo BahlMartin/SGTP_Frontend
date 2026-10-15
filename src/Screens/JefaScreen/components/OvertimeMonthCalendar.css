@@ -1,0 +1,154 @@
+.overtime-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #cce1ec;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.overtime-calendar__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #557283;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e1eff5;
+}
+
+.overtime-calendar__weekday-head {
+  padding: 2px 0;
+}
+
+.overtime-calendar__weekday-head--weekend {
+  color: #b5493b;
+}
+
+.overtime-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.overtime-calendar__cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 48px;
+  border-radius: 6px;
+  border: 1px solid #dbe6ec;
+  background: #fbfdfe;
+  color: #2c4959;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  padding: 4px 2px;
+  user-select: none;
+}
+
+.overtime-calendar__cell--empty {
+  border: none;
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
+.overtime-calendar__cell:hover:not(.overtime-calendar__cell--empty) {
+  border-color: #1687c9;
+  background: #f0f8fc;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(22, 135, 201, 0.12);
+}
+
+.overtime-calendar__cell--weekend {
+  background: #fbf6f5;
+  border-color: #ebdcd9;
+}
+
+.overtime-calendar__cell--active {
+  background: #e6f4fb;
+  border: 1.5px solid #1687c9;
+  color: #0b5682;
+  box-shadow: 0 2px 5px rgba(22, 135, 201, 0.2);
+}
+
+.overtime-calendar__cell--active:hover {
+  background: #d8edf8;
+  border-color: #0e679b;
+}
+
+.overtime-calendar__day-number {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.overtime-calendar__day-pill {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: #1687c9;
+  padding: 1px 5px;
+  border-radius: 10px;
+  line-height: 1.2;
+}
+
+.overtime-calendar__day-indicator {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #8fa5b0;
+  line-height: 1;
+}
+
+.overtime-calendar__legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed #e1eff5;
+  font-size: 0.72rem;
+  color: #5d7585;
+}
+
+.overtime-calendar__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.overtime-calendar__legend-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 16px;
+  border-radius: 3px;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.overtime-calendar__legend-badge--active {
+  background: #1687c9;
+  color: #ffffff;
+}
+
+.overtime-calendar__legend-badge--regular {
+  background: #edf2f5;
+  color: #557283;
+  border: 1px solid #dbe6ec;
+}
+
+.overtime-calendar__legend-badge--off {
+  background: #fbf6f5;
+  color: #b5493b;
+  border: 1px solid #ebdcd9;
+}

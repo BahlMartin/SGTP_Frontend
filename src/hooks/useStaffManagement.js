@@ -5,9 +5,13 @@ import {
   updateStaffUserApi,
   toggleShiftExceptionApi,
   deleteStaffUserApi,
-  reactivateStaffUserApi
+  reactivateStaffUserApi,
+  createHabilitacionHorariaApi,
+  revokeHabilitacionHorariaApi,
+  bulkRevokeHabilitacionesApi,
+  createPlanificacionHorasExtrasApi
 } from '../services/userService'
-import { unlockUserApi } from '../services/authService'
+import { unlockUserApi, lockUserApi } from '../services/authService'
 import { isWithinShiftGrace } from '../utils/shiftTime.utils'
 
 export function useStaffManagement() {
@@ -24,15 +28,30 @@ export function useStaffManagement() {
   const staffWithScheduleStatus = useMemo(
     () => staffList.map((staffMember) => {
       const horarioRestringido = ['Admision', 'Box', 'Secretaria'].includes(staffMember.rol)
-      const dentroHorario = !horarioRestringido || isWithinShiftGrace(
+      const diaSemanaHoy = currentTime.getDay() === 0 ? 6 : currentTime.getDay() - 1 // 0=Lun ... 6=Dom
+      const trabajaHoy = !staffMember.dias_laborales_detalle || staffMember.dias_laborales_detalle.includes(diaSemanaHoy)
+
+      const dentroTurnoHabitual = trabajaHoy && isWithinShiftGrace(
         staffMember.inicio_turno,
         staffMember.fin_turno,
         currentTime
       )
+
+      // Verificar si tiene extensión horaria activa en este instante
+      const extensiones = staffMember.habilitaciones_activas_hoy || []
+      const horaActualStr = currentTime.toTimeString().slice(0, 5)
+      const tieneExtensionActiva = extensiones.some(
+        (ext) => horaActualStr >= ext.hora_inicio && horaActualStr <= ext.hora_fin
+      )
+
+      const dentroHorario = !horarioRestringido || dentroTurnoHabitual || tieneExtensionActiva
+
       return {
         ...staffMember,
         dentro_horario: dentroHorario,
-        disponible: staffMember.activo && dentroHorario
+        disponible: staffMember.activo && dentroHorario,
+        tiene_extension_hoy: extensiones.length > 0,
+        extension_vigente: extensiones[0] || null
       }
     }),
     [currentTime, staffList]
@@ -106,19 +125,24 @@ export function useStaffManagement() {
       )
     }
 
-    await createStaffUserApi(currentUserRole, newStaffPayload)
+    const created = await createStaffUserApi(currentUserRole, newStaffPayload)
     await loadStaff()
+    const nombreCompleto = created?.nombre || `${newStaffPayload.nombre} ${newStaffPayload.apellidos || ''}`.trim()
+    const rol = created?.rol || newStaffPayload.rol || 'Asistencial'
     if (onSuccess) {
-      onSuccess('Personal incorporado exitosamente.')
+      onSuccess(`¡Usuario creado exitosamente! Se incorporó a ${nombreCompleto} con rol ${rol}.`)
     }
+    return created
   }
 
   const updateStaff = async (staffMemberId, updatePayload, onSuccess) => {
-    await updateStaffUserApi(staffMemberId, updatePayload)
+    const updated = await updateStaffUserApi(staffMemberId, updatePayload)
     await loadStaff()
+    const nombre = updated?.nombre || updatePayload.nombre || 'personal'
     if (onSuccess) {
-      onSuccess('Datos y horario del personal actualizados correctamente.')
+      onSuccess(`¡Usuario modificado! Se guardaron los cambios de ${nombre} exitosamente.`)
     }
+    return updated
   }
 
   const unlockStaff = async (staffMemberId, onSuccess) => {
@@ -130,6 +154,18 @@ export function useStaffManagement() {
       }
     } catch (error) {
       alert(error.message || 'Error al desbloquear al miembro del personal.')
+    }
+  }
+
+  const lockStaff = async (staffMemberId, onSuccess) => {
+    try {
+      await lockUserApi(staffMemberId)
+      await loadStaff()
+      if (onSuccess) {
+        onSuccess('Cuenta de personal bloqueada exitosamente.')
+      }
+    } catch (error) {
+      alert(error.message || 'Error al bloquear al miembro del personal.')
     }
   }
 
@@ -145,16 +181,60 @@ export function useStaffManagement() {
     }
   }
 
+  const authorizeShiftException = async (payload, onSuccess) => {
+    if (payload.fechas_seleccionadas) {
+      await createPlanificacionHorasExtrasApi(payload)
+      await loadStaff()
+      if (onSuccess) {
+        onSuccess(
+          `Planificación mensual autorizada (${payload.fechas_seleccionadas.length} días) exitosamente.`
+        )
+      }
+    } else {
+      const res = await createHabilitacionHorariaApi(payload)
+      await loadStaff()
+      if (onSuccess) {
+        if (res?.tramos?.length > 1) {
+          onSuccess('Extensión nocturna autorizada en 2 tramos correlativos (ambos días marcados).')
+        } else {
+          onSuccess('Horario excepcional autorizado correctamente.')
+        }
+      }
+    }
+  }
+
+  const revokeShiftException = async (habilitacionId, onSuccess) => {
+    await revokeHabilitacionHorariaApi(habilitacionId)
+    await loadStaff()
+    if (onSuccess) {
+      onSuccess('Horario excepcional revocado correctamente.')
+    }
+  }
+
+  const bulkRevokeShiftExceptions = async (payload, onSuccess) => {
+    const res = await bulkRevokeHabilitacionesApi(payload)
+    await loadStaff()
+    if (onSuccess) {
+      onSuccess(res?.detail || `Se revocaron ${res?.revocadas_count || ''} horas extras exitosamente.`)
+    }
+    return res
+  }
+
   return {
     staffList: staffWithScheduleStatus,
     loadingStaff,
     staffError,
     loadStaff,
     toggleShift,
+    authorizeShiftException,
+    revokeShiftException,
+    bulkRevokeShiftExceptions,
     deleteStaff,
     createStaff,
     updateStaff,
     unlockStaff,
+    lockStaff,
     reactivateStaff
   }
 }
+

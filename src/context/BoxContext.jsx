@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './AuthContext'
-import { fetchBoxesApi, updateBoxStateApi } from '../services/boxService'
+import { fetchBoxesApi, updateBoxStateApi, tomarBoxApi } from '../services/boxService'
 
 export const BoxContext = createContext({
   boxes: [],
@@ -9,6 +9,7 @@ export const BoxContext = createContext({
   currentBoxNumber: 1,
   setCurrentBoxNumber: () => {},
   changeBoxStatus: async () => {},
+  tomarBox: async () => {},
   refreshBoxes: async () => {}
 })
 
@@ -63,6 +64,17 @@ export const BoxContextProvider = ({ children }) => {
     }
   }, [])
 
+  const tomarBox = useCallback(async (boxNumero) => {
+    try {
+      const updatedBox = await tomarBoxApi(boxNumero)
+      await refreshBoxes()
+      return updatedBox
+    } catch (error) {
+      console.error('Error al tomar box:', error)
+      throw error
+    }
+  }, [refreshBoxes])
+
   return (
     <BoxContext.Provider
       value={{
@@ -72,6 +84,7 @@ export const BoxContextProvider = ({ children }) => {
         currentBoxNumber,
         setCurrentBoxNumber,
         changeBoxStatus,
+        tomarBox,
         refreshBoxes
       }}
     >

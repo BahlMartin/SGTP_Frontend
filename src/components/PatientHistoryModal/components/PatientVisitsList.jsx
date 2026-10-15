@@ -9,12 +9,24 @@ export default function PatientVisitsList({
   error = '',
   ticketFetchError = '',
   isFetchingTicketId = null,
-  onViewTicket
+  onViewTicket,
+  mode = 'patient',
+  staffRole = 'admision',
+  listTitle = '',
+  emptyMessage = ''
 }) {
+  const defaultTitle = mode === 'staff'
+    ? (staffRole === 'admision' ? 'Tickets Emitidos en Admisión' : 'Tickets Atendidos en Box')
+    : 'Registro de Atenciones y Consultas de Box'
+
+  const defaultEmpty = emptyMessage || (mode === 'staff'
+    ? 'No se registran tickets emitidos o atendidos por este profesional.'
+    : 'No hay atenciones ni tickets previos registrados para este paciente.')
+
   return (
     <div className="patient-history-modal__visits">
       <div className="patient-history-modal__visits-head">
-        <h3>Registro de Atenciones y Consultas de Box</h3>
+        <h3>{listTitle || defaultTitle}</h3>
         <span className="patient-history-modal__visits-count">
           {visits.length} {visits.length === 1 ? 'registro' : 'registros'}
         </span>
@@ -38,7 +50,7 @@ export default function PatientVisitsList({
       ) : visits.length === 0 ? (
         <div className="patient-history-modal__empty">
           <FileText size={32} className="patient-history-modal__empty-icon" />
-          <p>No hay atenciones ni tickets previos registrados para este paciente.</p>
+          <p>{defaultEmpty}</p>
         </div>
       ) : (
         <ul className="patient-history-modal__visit-list">
@@ -48,6 +60,8 @@ export default function PatientVisitsList({
               <PatientVisitCard
                 key={visitId}
                 visit={visit}
+                mode={mode}
+                staffRole={staffRole}
                 isFetching={isFetchingTicketId === visitId}
                 onViewTicket={onViewTicket}
               />

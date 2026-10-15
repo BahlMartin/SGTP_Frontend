@@ -1,0 +1,349 @@
+/* ==============================================================================
+   TARJETA DE SEGURIDAD Y CONTROL DE ACCESOS DE PERSONAL (JEFA DE LABORATORIO)
+   ============================================================================== */
+
+.jefa-screen__security-card {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-card, #e2e8f0);
+  border-radius: var(--radius-lg, 12px);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.jefa-screen__security-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.jefa-screen__security-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.jefa-screen__security-icon {
+  color: #0d9488;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.jefa-screen__security-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary, #0f172a);
+  margin: 0;
+}
+
+.jefa-screen__security-subtitle {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 2px 0 0 0;
+}
+
+.jefa-screen__security-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jefa-screen__stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.jefa-screen__stat-chip--active {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.jefa-screen__stat-chip--locked {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.jefa-screen__stat-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Tabla de Seguridad */
+.jefa-screen__security-table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 380px;
+  scrollbar-gutter: stable;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.jefa-screen__security-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.jefa-screen__security-table th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #cbd5e1;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.jefa-screen__security-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.82rem;
+  vertical-align: middle;
+}
+
+.jefa-screen__security-row--locked {
+  background-color: #fffafb;
+}
+
+/* Columna Personal */
+.jefa-screen__security-person {
+  min-width: 180px;
+}
+
+.jefa-screen__security-name {
+  font-weight: 700;
+  color: #0f172a;
+  display: block;
+}
+
+.jefa-screen__security-mat {
+  display: block;
+  font-size: 0.74rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Columna Rol */
+.jefa-screen__security-role {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.jefa-screen__security-role--admision {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #dbeafe;
+}
+
+.jefa-screen__security-role--box {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #dcfce7;
+}
+
+.jefa-screen__security-role--secretaria {
+  background: #faf5ff;
+  color: #7e22ce;
+  border: 1px solid #f3e8ff;
+}
+
+.jefa-screen__security-role--jefa {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #ffe4e6;
+}
+
+/* Columna Intentos de Bloqueo */
+.jefa-screen__security-attempts-col {
+  min-width: 170px;
+}
+
+.jefa-screen__security-attempts-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.jefa-screen__attempts-bar {
+  display: flex;
+  gap: 4px;
+}
+
+.jefa-screen__attempt-slot {
+  height: 6px;
+  width: 26px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.jefa-screen__attempt-slot--free {
+  background: #e2e8f0;
+}
+
+.jefa-screen__attempt-slot--used {
+  background: #f59e0b;
+}
+
+.jefa-screen__attempt-slot--danger {
+  background: #ef4444;
+}
+
+.jefa-screen__attempts-text {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.jefa-screen__attempts-text--warning {
+  color: #b45309;
+}
+
+.jefa-screen__attempts-text--danger {
+  color: #dc2626;
+}
+
+/* Columna Estado */
+.jefa-screen__security-status-badge-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jefa-screen__status-dot--active {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.jefa-screen__status-dot--outside {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.jefa-screen__status-dot--inactive {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.jefa-screen__security-status-badge {
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.jefa-screen__security-status--active {
+  color: #166534;
+}
+
+.jefa-screen__security-status--warning {
+  color: #b45309;
+}
+
+.jefa-screen__security-status--locked {
+  color: #991b1b;
+}
+
+/* Columna Acciones */
+.jefa-screen__security-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.jefa-screen__btn-sec-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease-in-out;
+}
+
+.jefa-screen__btn-sec-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Botón Desbloquear */
+.jefa-screen__btn-sec-action--unlock {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.jefa-screen__btn-sec-action--unlock:hover {
+  background: #15803d;
+  color: #ffffff;
+  border-color: #15803d;
+  box-shadow: 0 2px 4px rgba(21, 128, 61, 0.2);
+}
+
+/* Botón Bloquear */
+.jefa-screen__btn-sec-action--lock {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+
+.jefa-screen__btn-sec-action--lock:hover {
+  background: #be123c;
+  color: #ffffff;
+  border-color: #be123c;
+  box-shadow: 0 2px 4px rgba(190, 18, 60, 0.2);
+}
+
+.jefa-screen__security-restricted {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #94a3b8;
+  padding: 4px 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* Fila vacía */
+.jefa-screen__security-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 30px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.jefa-screen__security-empty-icon {
+  width: 18px;
+  height: 18px;
+}

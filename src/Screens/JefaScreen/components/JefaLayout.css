@@ -41,22 +41,171 @@
 }
 
 .jefa-screen__grid {
-  display: grid;
-  grid-template-columns: minmax(280px, 0.75fr) minmax(0, 1.75fr);
+  display: flex;
+  flex-direction: column;
   gap: 24px;
-  align-items: start;
+  width: 100%;
 }
 
 .jefa-screen__left-column {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
+  align-items: stretch;
+  width: 100%;
+}
+
+/* Barra superior de monitoreo y botón de actualización global */
+.jefa-screen__overview-toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 2px 0;
+}
+
+.jefa-screen__overview-toolbar-left {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.jefa-screen__overview-title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.jefa-screen__overview-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.jefa-screen__overview-refresh-btn {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid #b7d6e6;
+  color: var(--medical-primary, #1687c9);
+  border-radius: var(--radius-md, 8px);
+  padding: 6px 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(22, 135, 201, 0.12), 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  user-select: none;
+}
+
+.jefa-screen__overview-refresh-btn:hover {
+  background: #f0f7fb;
+  border-color: var(--medical-primary, #1687c9);
+  color: #106ea4;
+  box-shadow: 0 3px 8px rgba(22, 135, 201, 0.22);
+  transform: translateY(-1px);
+}
+
+.jefa-screen__overview-refresh-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(22, 135, 201, 0.15);
+}
+
+.jefa-screen__overview-refresh-btn:focus-visible {
+  outline: 2px solid var(--medical-primary, #1687c9);
+  outline-offset: 2px;
+}
+
+.jefa-screen__overview-refresh-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.jefa-screen__overview-refresh-time {
+  background: rgba(22, 135, 201, 0.1);
+  color: var(--medical-primary, #1687c9);
+  padding: 1px 7px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.jefa-screen__overview-refresh-icon--spinning {
+  animation: jefaOverviewSpin 1s linear infinite;
+}
+
+@keyframes jefaOverviewSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .jefa-screen__center-column {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
+}
+
+.jefa-screen__center-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.jefa-screen__view-tabs {
+  display: inline-flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  width: fit-content;
+  gap: 4px;
+}
+
+.jefa-screen__view-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.jefa-screen__view-tab:hover {
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.jefa-screen__view-tab--active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.jefa-screen__view-tab-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.jefa-screen__view-tab--active .jefa-screen__view-tab-icon {
+  color: #0d9488;
 }
 
 .jefa-screen__search-panel {
@@ -69,11 +218,26 @@
 }
 
 @media (max-width: 1200px) {
-  .jefa-screen__grid {
-    grid-template-columns: 1fr;
+  .jefa-screen__left-column {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
 
   .jefa-screen__search-panel {
     margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .jefa-screen__main {
+    padding: 20px 16px 40px;
+  }
+
+  .jefa-screen__left-column {
+    grid-template-columns: 1fr;
+  }
+
+  .jefa-screen__left-column > * {
+    height: auto;
+    min-height: 380px;
   }
 }

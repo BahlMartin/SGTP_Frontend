@@ -6,10 +6,20 @@ import { useSecretariaReport } from '../../hooks/useSecretariaReport'
 import SecretariaJornadaBar from './components/SecretariaJornadaBar/SecretariaJornadaBar'
 import SecretariaKpiGrid from './components/SecretariaKpiGrid/SecretariaKpiGrid'
 import TriageDistributionCard from './components/TriageDistributionCard/TriageDistributionCard'
+import SecretariaStudySummaryCard from './components/SecretariaStudySummaryCard/SecretariaStudySummaryCard'
+import StaffSecurityCard from '../JefaScreen/components/StaffSecurityCard/StaffSecurityCard'
+import { useStaffManagement } from '../../hooks/useStaffManagement'
 import './SecretariaScreen.css'
 
 export default function SecretariaScreen() {
   const { userData } = useAuth()
+  const {
+    staffList,
+    loadingStaff,
+    staffError,
+    unlockStaff,
+    lockStaff
+  } = useStaffManagement()
 
   const {
     jornadaDate,
@@ -19,8 +29,17 @@ export default function SecretariaScreen() {
     metrics,
     getPercentage,
     handleExportPdf,
-    handleSendEmail
+    handleSendEmail,
+    showNotice
   } = useSecretariaReport({ userData })
+
+  const handleUnlockStaff = (staffMemberId) => {
+    unlockStaff(staffMemberId, showNotice)
+  }
+
+  const handleLockStaff = (staffMemberId) => {
+    lockStaff(staffMemberId, showNotice)
+  }
 
   return (
     <div className="secretaria-screen">
@@ -56,10 +75,49 @@ export default function SecretariaScreen() {
           criticos={metrics.criticos}
         />
 
+        <div className="secretaria-screen__study-summaries">
+          <SecretariaStudySummaryCard
+            title="Estudios realizados por sección"
+            items={metrics.resumenEstudiosRealizadosPorSeccion}
+            labelKey="nombre_seccion"
+            keyKey="seccion_key"
+            scrollable
+          />
+          <SecretariaStudySummaryCard
+            title="Estudios realizados por muestra"
+            items={metrics.resumenEstudiosRealizadosPorMuestra}
+            labelKey="nombre_muestra"
+            keyKey="muestra_key"
+          />
+        </div>
+
         <TriageDistributionCard
           triageDistribution={metrics.triageDistribution}
           calculatePercentage={getPercentage}
         />
+
+        <section className="secretaria-screen__security-section" aria-labelledby="secretaria-security-title">
+          <h2 id="secretaria-security-title" className="secretaria-screen__section-title">
+            Seguridad y bloqueo de cuentas
+          </h2>
+          {loadingStaff ? (
+            <div className="secretaria-screen__staff-status" role="status">
+              Cargando el listado de personal...
+            </div>
+          ) : staffError ? (
+            <div className="secretaria-screen__staff-status secretaria-screen__staff-status--error" role="alert">
+              No se pudo cargar el listado de personal: {staffError}
+            </div>
+          ) : (
+            <StaffSecurityCard
+              staffList={staffList}
+              currentUserRole={userData?.rol}
+              currentUserId={userData?.id_personal ?? userData?.id}
+              onUnlockStaff={handleUnlockStaff}
+              onLockStaff={handleLockStaff}
+            />
+          )}
+        </section>
       </main>
     </div>
   )

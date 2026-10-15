@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { X, AlertCircle } from 'lucide-react'
+import { X, AlertCircle, Eye, EyeOff } from 'lucide-react'
 import ShiftTimeInput from './ShiftTimeInput'
+import WeekDaysSelector from './WeekDaysSelector'
 import { isValidHalfHourTime } from '../../../utils/shiftTime.utils'
 import './AddStaffModal.css'
 
@@ -14,10 +15,13 @@ export default function AddStaffModal({
   const [newStaffSurname, setNewStaffSurname] = useState('')
   const [newStaffDni, setNewStaffDni] = useState('')
   const [newStaffEmail, setNewStaffEmail] = useState('')
+  const [newStaffPassword, setNewStaffPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [newStaffMatricula, setNewStaffMatricula] = useState('')
   const [newStaffRol, setNewStaffRol] = useState('Box')
   const [newStaffShiftStart, setNewStaffShiftStart] = useState('07:00')
   const [newStaffShiftEnd, setNewStaffShiftEnd] = useState('15:00')
+  const [newStaffWorkDays, setNewStaffWorkDays] = useState([0, 1, 2, 3, 4])
   const [staffError, setStaffError] = useState(null)
 
   if (!isOpen) return null
@@ -27,10 +31,13 @@ export default function AddStaffModal({
     setNewStaffSurname('')
     setNewStaffDni('')
     setNewStaffEmail('')
+    setNewStaffPassword('')
+    setShowPassword(false)
     setNewStaffMatricula('')
     setNewStaffRol('Box')
     setNewStaffShiftStart('07:00')
     setNewStaffShiftEnd('15:00')
+    setNewStaffWorkDays([0, 1, 2, 3, 4])
     setStaffError(null)
   }
 
@@ -53,16 +60,28 @@ export default function AddStaffModal({
       return
     }
 
+    if (!newStaffWorkDays || newStaffWorkDays.length === 0) {
+      setStaffError('Debes seleccionar al menos un día laboral en la semana para el personal.')
+      return
+    }
+
+    if (newStaffPassword.trim() && newStaffPassword.trim().length < 8) {
+      setStaffError('La contraseña debe tener al menos 8 caracteres.')
+      return
+    }
+
     try {
       await onSubmit({
         nombre: newStaffName,
         apellidos: newStaffSurname,
         dni: newStaffDni,
         email: newStaffEmail,
+        password: newStaffPassword.trim() || undefined,
         matricula: newStaffMatricula,
         rol: newStaffRol,
         inicio_turno: newStaffShiftStart,
-        fin_turno: newStaffShiftEnd
+        fin_turno: newStaffShiftEnd,
+        dias_laborales: newStaffWorkDays
       })
       handleClose()
     } catch (error) {
@@ -142,6 +161,32 @@ export default function AddStaffModal({
           </div>
 
           <div className="jefa-screen__modal-field">
+            <label htmlFor="new-staff-password">Contraseña de acceso:</label>
+            <div className="jefa-screen__password-wrapper">
+              <input
+                id="new-staff-password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="ej: SeguridadHospital2026!"
+                value={newStaffPassword}
+                onChange={(event) => setNewStaffPassword(event.target.value)}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="jefa-screen__password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <span className="jefa-screen__field-hint">
+              Opcional. Si se deja vacía, se asignará la contraseña institucional predeterminada.
+            </span>
+          </div>
+
+          <div className="jefa-screen__modal-field">
             <label htmlFor="new-staff-matricula">Matrícula Profesional:</label>
             <input
               id="new-staff-matricula"
@@ -170,6 +215,12 @@ export default function AddStaffModal({
               )}
             </select>
           </div>
+
+          <WeekDaysSelector
+            selectedDays={newStaffWorkDays}
+            onChange={setNewStaffWorkDays}
+            required
+          />
 
           <div className="jefa-screen__modal-field jefa-screen__modal-field--shift">
             <ShiftTimeInput
