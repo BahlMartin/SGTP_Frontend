@@ -131,6 +131,12 @@
   color: #0f172a;
 }
 
+.patient-history-modal__pro-subval {
+  font-size: 0.76rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
 .patient-history-modal__studies-row {
   display: flex;
   flex-wrap: wrap;

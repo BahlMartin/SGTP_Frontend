@@ -29,11 +29,12 @@ export default function TicketReceipt({ ticket }) {
   const boxOperador = formatBoxOperador()
   const boxIdentificador = ticket.box_numero
     ? `Box ${ticket.box_numero}`
-    : (ticket.box_asignado || (ticket.estado === 'Atendido' || ticket.estado === 'Finalizado' ? 'Box asignado' : 'En espera'))
+    : (ticket.box_asignado || (ticket.estado === 'Atendido' || ticket.estado === 'Finalizado' ? 'Box asignado' : ''))
 
   const detailRows = [
     { label: 'Paciente:', value: `${ticket.paciente_nombre} ${ticket.paciente_apellido}` },
     { label: 'DNI:', value: ticket.paciente_dni },
+    { label: 'Obra Social:', value: ticket.paciente_obra_social || ticket.obra_social || 'IOMA' },
     { label: 'N° Afiliado:', value: ticket.paciente_numero_afiliado || 'No informado' },
     { label: 'Triage:', value: <TriageBadge categoryKey={ticket.clasificacion_triage} /> },
     ticket.justificacion_otro && {
@@ -46,17 +47,96 @@ export default function TicketReceipt({ ticket }) {
       value: `${formatDateDDMMAAAA(ticket.fecha_hora_admision)} ${formatTimeHHMM(ticket.fecha_hora_admision)}`
     },
     { label: 'Admisión:', value: formatAdmision() },
-    { label: 'Box de Atención:', value: boxIdentificador },
+    boxIdentificador && { label: 'Box de Atención:', value: boxIdentificador },
     boxOperador && { label: 'Técnico de Box:', value: boxOperador },
     ticket.fecha_hora_atencion_box && {
       label: 'Hora Box:',
       value: `${formatDateDDMMAAAA(ticket.fecha_hora_atencion_box)} ${formatTimeHHMM(ticket.fecha_hora_atencion_box)}`
     },
-    {
-      label: 'Estudios:',
-      value: ticket.estudios?.length > 0 ? ticket.estudios.join(', ') : 'Rutina estándar',
-      small: true
-    }
+    ...(() => {
+      const rawEstudios = Array.isArray(ticket.estudios_raw) ? ticket.estudios_raw : []
+      const tieneModificacionesBox = rawEstudios.some(
+        (e) => e?.origen === 'box' || e?.estado === 'Cancelado'
+      )
+
+      if (!tieneModificacionesBox) {
+        return [
+          {
+            id: 'estudios_gral',
+            label: 'Estudios:',
+            value: ticket.estudios?.length > 0 ? ticket.estudios.join(', ') : 'Rutina estándar',
+            small: true,
+            isStudy: true
+          }
+        ]
+      }
+
+      const admision = rawEstudios
+        .filter((e) => e?.origen === 'admision')
+        .map((e) => e?.estudio_detalle?.nombre || e?.nombre || 'Estudio')
+
+      const cancelados = rawEstudios
+        .filter((e) => e?.estado === 'Cancelado')
+        .map((e) => {
+          const nom = e?.estudio_detalle?.nombre || e?.nombre || 'Estudio'
+          const motivo = e?.motivo_modificacion ? ` (${e.motivo_modificacion})` : ''
+          return `${nom}${motivo}`
+        })
+
+      const agregados = rawEstudios
+        .filter((e) => e?.origen === 'box')
+        .map((e) => e?.estudio_detalle?.nombre || e?.nombre || 'Estudio')
+
+      return [
+        admision.length > 0 && {
+          id: 'estudios_admision',
+          label: (
+            <span>
+              Estudios<br />(Admisión):
+            </span>
+          ),
+          value: admision.join(', '),
+          small: true,
+          isStudy: true
+        },
+        cancelados.length > 0 && {
+          id: 'estudios_cancelados',
+          label: (
+            <span>
+              Cancelados<br />en Box:
+            </span>
+          ),
+          value: cancelados.join(' | '),
+          small: true,
+          isStudy: true,
+          isCancelled: true
+        },
+        agregados.length > 0 && {
+          id: 'estudios_agregados',
+          label: (
+            <span>
+              Agregados<br />en Box:
+            </span>
+          ),
+          value: agregados.join(', '),
+          small: true,
+          isStudy: true,
+          isAdded: true
+        },
+        {
+          id: 'estudios_efectivos',
+          label: (
+            <span>
+              Estudios<br />Efectivos:
+            </span>
+          ),
+          value: ticket.estudios?.length > 0 ? ticket.estudios.join(', ') : 'Ninguno',
+          small: true,
+          isStudy: true,
+          isEffective: true
+        }
+      ].filter(Boolean)
+    })()
   ].filter(Boolean)
 
   return (
@@ -73,10 +153,15 @@ export default function TicketReceipt({ ticket }) {
       </div>
 
       <div className="ticket-modal__details">
-        {detailRows.map((row) => (
-          <div className="ticket-modal__row" key={row.label}>
+        {detailRows.map((row, index) => (
+          <div
+            className={`ticket-modal__row ${row.isStudy ? 'ticket-modal__row--study' : ''} ${row.isEffective ? 'ticket-modal__row--effective' : ''}`}
+            key={row.id || (typeof row.label === 'string' ? row.label : index)}
+          >
             <span className="ticket-modal__row-label">{row.label}</span>
-            <span className={`ticket-modal__row-value ${row.small ? 'ticket-modal__row-value--small' : ''}`}>
+            <span
+              className={`ticket-modal__row-value ${row.small ? 'ticket-modal__row-value--small' : ''} ${row.isCancelled ? 'ticket-modal__row-value--cancelled' : ''} ${row.isAdded ? 'ticket-modal__row-value--added' : ''} ${row.isEffective ? 'ticket-modal__row-value--effective' : ''}`}
+            >
               {row.value}
             </span>
           </div>

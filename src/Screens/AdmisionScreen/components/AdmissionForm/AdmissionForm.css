@@ -9,8 +9,15 @@
 .admission-form-card__header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 24px;
+}
+
+.admission-form-card__header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .admission-form-card__icon {
@@ -44,6 +51,10 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.admission-form__field--full {
+  grid-column: 1 / -1;
 }
 
 .admission-form__field--center {
@@ -85,6 +96,64 @@
   background: #fef2f2;
 }
 
+.admission-form__call-group {
+  display: flex;
+  align-items: center;
+  height: 42px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease-in-out;
+  overflow: hidden;
+}
+
+.admission-form__call-group:focus-within {
+  border-color: var(--border-focus);
+}
+
+.admission-form__call-group--error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.admission-form__prefix-select {
+  height: 100%;
+  border: none;
+  background: #f8fafc;
+  padding: 0 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  border-right: 1px solid #cbd5e1;
+  transition: background-color 0.15s;
+}
+
+.admission-form__prefix-select:hover {
+  background: #f1f5f9;
+}
+
+.admission-form__call-dash {
+  padding: 0 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.admission-form__seq-input {
+  flex: 1;
+  height: 100%;
+  border: none;
+  background: transparent;
+  padding: 0 12px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  outline: none;
+}
+
 .admission-form__error-text {
   font-size: 0.75rem;
   color: #dc2626;
@@ -100,6 +169,35 @@
   font-size: 0.88rem;
   font-weight: 600;
   line-height: 1.45;
+}
+
+.admission-form__reset-btn--header {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
+}
+
+.admission-form__reset-btn--header:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.admission-form__reset-btn--header:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .admission-form__submit-btn {
@@ -125,7 +223,49 @@
   cursor: not-allowed;
 }
 
+.admission-form__field--relative {
+  position: relative;
+}
+
+.admission-form__label-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.admission-form__patient-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #0284c7;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 2px 8px;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 640px) {
+  .admission-form-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
   .admission-form__row {
     grid-template-columns: 1fr;
   }

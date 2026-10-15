@@ -4,7 +4,8 @@ import Navbar from '../../components/Navbar/Navbar'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useTecnicoBox } from '../../hooks/useTecnicoBox'
 import BoxControlCard from './components/BoxControlCard/BoxControlCard'
-import OnlineBoxesCard from './components/OnlineBoxesCard/OnlineBoxesCard'
+import ActiveBoxesCard from '../../components/ActiveBoxesCard/ActiveBoxesCard'
+import RefreshButton from '../../components/RefreshButton/RefreshButton'
 import PatientInAttentionCard from './components/PatientInAttentionCard/PatientInAttentionCard'
 import MultiboxQueueCard from './components/MultiboxQueueCard/MultiboxQueueCard'
 import './TecnicoBoxScreen.css'
@@ -14,8 +15,10 @@ export default function TecnicoBoxScreen() {
     boxes,
     boxesLoading,
     boxesError,
+    refreshBoxes,
     currentBoxNumber,
     setCurrentBoxNumber,
+    handleSelectBox,
     currentBoxKey,
     activeBoxData,
     patientInBox,
@@ -27,6 +30,7 @@ export default function TecnicoBoxScreen() {
     handleStatusChange,
     handleCallNext,
     handleFinishConsultation,
+    handleModifyStudies,
     toggleStudyCheck
   } = useTecnicoBox()
 
@@ -53,7 +57,7 @@ export default function TecnicoBoxScreen() {
             <BoxControlCard
               boxesList={boxes}
               currentBoxNumber={currentBoxNumber}
-              onSelectBox={(boxNumber) => setCurrentBoxNumber(boxNumber)}
+              onSelectBox={handleSelectBox}
               currentStatus={activeBoxData.estado}
               onStatusChange={handleStatusChange}
               disabled={isProcessing}
@@ -61,10 +65,15 @@ export default function TecnicoBoxScreen() {
 
             <PatientSearch />
 
-            <OnlineBoxesCard
-              boxesList={boxes}
-              isLoading={boxesLoading}
-              errorMessage={boxesError}
+            <ActiveBoxesCard
+              canToggleStatus={false}
+              onSelectStaff={null}
+              actionSlot={
+                <RefreshButton
+                  onRefresh={refreshBoxes}
+                  isLoading={boxesLoading}
+                />
+              }
             />
           </div>
 
@@ -79,6 +88,7 @@ export default function TecnicoBoxScreen() {
               onToggleStudyCheck={toggleStudyCheck}
               onCallNext={handleCallNext}
               onFinishConsultation={handleFinishConsultation}
+              onModifyStudies={handleModifyStudies}
             />
 
             <MultiboxQueueCard

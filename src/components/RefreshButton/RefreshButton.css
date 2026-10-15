@@ -1,0 +1,75 @@
+.refresh-btn {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid #b7d6e6;
+  color: var(--medical-primary, #1687c9);
+  border-radius: var(--radius-md, 8px);
+  padding: 5px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(22, 135, 201, 0.12), 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.refresh-btn:hover {
+  background: #f0f7fb;
+  border-color: var(--medical-primary, #1687c9);
+  color: #106ea4;
+  box-shadow: 0 2px 6px rgba(22, 135, 201, 0.2);
+  transform: translateY(-1px);
+}
+
+.refresh-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(22, 135, 201, 0.15);
+}
+
+.refresh-btn:focus-visible {
+  outline: 2px solid var(--medical-primary, #1687c9);
+  outline-offset: 2px;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.refresh-btn__label {
+  display: inline-block;
+}
+
+.refresh-btn__time {
+  background: rgba(22, 135, 201, 0.1);
+  color: var(--medical-primary, #1687c9);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.refresh-btn__icon {
+  flex-shrink: 0;
+}
+
+.refresh-btn__icon--spinning {
+  animation: refreshButtonSpin 1s linear infinite;
+}
+
+@keyframes refreshButtonSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,5 +1,6 @@
 import React from 'react'
 import { TRIAGE_LIST } from '../../../../constants/triage.constants'
+import { INITIAL_ADMISSION_FORM_STATE } from '../../../../constants/admision.constants'
 import './TriageSelector.css'
 
 /**
@@ -7,7 +8,7 @@ import './TriageSelector.css'
  * condicional de justificación técnica si se elige "Otro".
  */
 export default function TriageSelector({
-  selectedTriage = 'Guardia',
+  selectedTriage = INITIAL_ADMISSION_FORM_STATE.selectedTriage,
   justificationText = '',
   justificationError = null,
   onSelectTriage = () => {},

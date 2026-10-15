@@ -8,7 +8,8 @@ import {
 } from '../services/ticketService'
 import {
   llamarSiguientePacienteApi,
-  cerrarAtencionBoxApi
+  cerrarAtencionBoxApi,
+  modificarEstudiosBoxApi
 } from '../services/boxService'
 
 export const TriageQueueContext = createContext({
@@ -94,6 +95,18 @@ export const TriageQueueContextProvider = ({ children }) => {
     [refreshTickets]
   )
 
+  const updateBoxStudies = useCallback(
+    async (boxNumero, { cancelarEstudios, agregarEstudios }) => {
+      const result = await modificarEstudiosBoxApi(boxNumero, { cancelarEstudios, agregarEstudios })
+      if (result.ticket) {
+        setTickets((prev) => prev.map((t) => (t.id === result.ticket.id ? result.ticket : t)))
+      }
+      await refreshTickets()
+      return result
+    },
+    [refreshTickets]
+  )
+
   const updateTicketAsJefa = useCallback(async (ticketId, fields, userRole) => {
     const updated = await updateTicketByJefaApi(ticketId, fields, userRole)
     setTickets((prev) => prev.map((t) => (t.id === ticketId ? updated : t)))
@@ -111,6 +124,7 @@ export const TriageQueueContextProvider = ({ children }) => {
         createTicket,
         callNextPatient,
         finishAttention,
+        updateBoxStudies,
         updateTicketAsJefa,
         refreshTickets
       }}

@@ -22,6 +22,12 @@ function normalizeStaffUser(rawStaffMember) {
     turno: turnoDesc,
     inicio_turno: rawStaffMember.inicio_turno,
     fin_turno: rawStaffMember.fin_turno,
+    dias_laborales_detalle: Array.isArray(rawStaffMember.dias_laborales_detalle)
+      ? rawStaffMember.dias_laborales_detalle
+      : [0, 1, 2, 3, 4],
+    habilitaciones_activas_hoy: Array.isArray(rawStaffMember.habilitaciones_activas_hoy)
+      ? rawStaffMember.habilitaciones_activas_hoy
+      : [],
     activo: rawStaffMember.activo !== false,
     cant_intentos: rawStaffMember.cant_intentos || 0,
     area: rawStaffMember.rol === 'Box' ? 'Área Asistencial' : 'Administración / Triage'
@@ -63,7 +69,10 @@ export async function createStaffUserApi(currentUserRole, newUserPayload) {
     matricula: newUserPayload.matricula.trim(),
     rol: newUserPayload.rol || 'Box',
     inicio_turno: `${newUserPayload.inicio_turno || '07:00'}:00`,
-    fin_turno: `${newUserPayload.fin_turno || '15:00'}:00`
+    fin_turno: `${newUserPayload.fin_turno || '15:00'}:00`,
+    dias_laborales: Array.isArray(newUserPayload.dias_laborales)
+      ? newUserPayload.dias_laborales
+      : [0, 1, 2, 3, 4]
   }
 
   const response = await apiClient.post('/users/', payload)
@@ -94,9 +103,21 @@ export async function reactivateStaffUserApi(userId) {
 // GESTIÓN DE HABILITACIONES HORARIAS (HORAS EXTRAS Y EXCEPCIONES)
 // ==============================================================================
 
-export async function fetchHabilitacionesHorariasApi(incluirInactivas = true) {
-  const queryParam = incluirInactivas ? '?incluir_inactivas=true' : ''
-  const response = await apiClient.get(`/users/habilitaciones-horarias/${queryParam}`)
+export async function fetchHabilitacionesHorariasApi(
+  incluirInactivas = true,
+  personalId = null,
+  fecha = null,
+  anio = null,
+  mes = null
+) {
+  const params = new URLSearchParams()
+  if (incluirInactivas) params.append('incluir_inactivas', 'true')
+  if (personalId) params.append('personal', personalId)
+  if (fecha) params.append('fecha', fecha)
+  if (anio) params.append('anio', anio)
+  if (mes) params.append('mes', mes)
+  const queryString = params.toString() ? `?${params.toString()}` : ''
+  const response = await apiClient.get(`/users/habilitaciones-horarias/${queryString}`)
   return Array.isArray(response) ? response : response.results || []
 }
 
@@ -137,3 +158,27 @@ export async function toggleShiftExceptionApi(userId, habilitado) {
     return await updateStaffUserApi(userId, { activo: false })
   }
 }
+
+// ==============================================================================
+// GESTIÓN DE PLANIFICACIONES MENSUALES DE HORAS EXTRAS
+// ==============================================================================
+
+export async function fetchPlanificacionesHorasExtrasApi(personalId = null, anio = null, mes = null) {
+  const params = new URLSearchParams()
+  if (personalId) params.append('personal', personalId)
+  if (anio) params.append('anio', anio)
+  if (mes) params.append('mes', mes)
+  const queryString = params.toString() ? `?${params.toString()}` : ''
+  const response = await apiClient.get(`/users/planificaciones-horas-extras/${queryString}`)
+  return Array.isArray(response) ? response : response.results || []
+}
+
+export async function createPlanificacionHorasExtrasApi(dataPlanificacion) {
+  return await apiClient.post('/users/planificaciones-horas-extras/', dataPlanificacion)
+}
+
+export async function deletePlanificacionHorasExtrasApi(planificacionId) {
+  return await apiClient.delete(`/users/planificaciones-horas-extras/${planificacionId}/`)
+}
+
+

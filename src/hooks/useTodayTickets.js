@@ -8,9 +8,15 @@ import { getArgentinaDateString, getTodayLocalDateString } from '../utils/format
 export function useTodayTickets(ticketsList = []) {
   return useMemo(() => {
     const todayDateString = getTodayLocalDateString()
-    return ticketsList.filter((ticketItem) => {
-      if (!ticketItem.fecha_hora_admision) return false
-      return getArgentinaDateString(ticketItem.fecha_hora_admision) === todayDateString
-    })
+    return ticketsList
+      .filter((ticketItem) => {
+        if (!ticketItem.fecha_hora_admision) return false
+        return getArgentinaDateString(ticketItem.fecha_hora_admision) === todayDateString
+      })
+      .sort((a, b) => {
+        const timeA = new Date(a.fecha_hora_admision).getTime() || 0
+        const timeB = new Date(b.fecha_hora_admision).getTime() || 0
+        return timeB - timeA
+      })
   }, [ticketsList])
 }

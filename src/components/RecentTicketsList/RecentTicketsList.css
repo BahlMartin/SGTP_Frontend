@@ -4,13 +4,27 @@
   border-radius: var(--radius-lg);
   padding: 20px;
   box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.recent-tickets-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
 }
 
 .recent-tickets-card__title {
   font-size: 1rem;
   font-weight: 800;
   color: var(--text-primary);
-  margin-bottom: 14px;
+  margin: 0;
 }
 
 .recent-tickets-card__empty-notice {
@@ -26,7 +40,27 @@
   flex-direction: column;
   gap: 10px;
   margin: 0;
-  padding: 0;
+  padding: 0 4px 0 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.recent-tickets-card__list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.recent-tickets-card__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.recent-tickets-card__list::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+.recent-tickets-card__list::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
 }
 
 .recent-tickets-card__item {

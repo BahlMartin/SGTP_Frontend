@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Search, X, Calendar } from 'lucide-react'
 import { getTodayLocalDateString } from '../../../utils/formatters'
 import './LabMatrixCard.css'
@@ -10,11 +10,27 @@ export default function LabMatrixCard({
   searchQuery = '',
   onSearchChange = () => {},
   onClearSearch = () => {},
-  isLoading = false
+  isLoading = false,
+  filterMode = 'all',
+  onFilterChange
 }) {
+  const [localFilterMode, setLocalFilterMode] = useState('all')
   const todayStr = getTodayLocalDateString()
   const isToday = !selectedDate || selectedDate === todayStr
   const isSearchActive = Boolean(searchQuery && searchQuery.trim())
+
+  const activeFilter = onFilterChange ? filterMode : localFilterMode
+  const handleFilterChange = (mode) => {
+    if (onFilterChange) {
+      onFilterChange(mode)
+    } else {
+      setLocalFilterMode(mode)
+    }
+  }
+
+  const displayedStudies = activeFilter === 'top5'
+    ? labStudies.slice(0, 5)
+    : labStudies
 
   return (
     <div className="jefa-screen__matrix-card">
@@ -22,7 +38,7 @@ export default function LabMatrixCard({
         <div className="jefa-screen__matrix-header-title-box">
           <h3 className="jefa-screen__section-title">Estudios de laboratorio</h3>
           <span className="jefa-screen__matrix-badge">
-            {isSearchActive ? 'Búsqueda' : 'Top 5'}
+            {isSearchActive ? 'Búsqueda' : activeFilter === 'top5' ? 'Top 5' : 'Todos'}
           </span>
         </div>
         <div className="jefa-screen__matrix-date-box">
@@ -50,26 +66,59 @@ export default function LabMatrixCard({
         </div>
       </div>
 
-      <div className="jefa-screen__matrix-search-bar">
-        <Search size={14} className="jefa-screen__matrix-search-icon" />
-        <input
-          type="text"
-          className="jefa-screen__matrix-search-input"
-          placeholder="Buscar estudio (ej. Ácido Láctico)..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          aria-label="Buscar estudio específico"
-        />
-        {isSearchActive && (
-          <button
-            type="button"
-            className="jefa-screen__matrix-clear-btn"
-            onClick={onClearSearch}
-            title="Limpiar búsqueda y ver Top 5"
-          >
-            <X size={13} />
-          </button>
-        )}
+      <div className="jefa-screen__matrix-toolbar">
+        <div className="jefa-screen__matrix-search-bar">
+          <Search size={14} className="jefa-screen__matrix-search-icon" />
+          <input
+            type="text"
+            className="jefa-screen__matrix-search-input"
+            placeholder="Buscar estudio (ej. Ácido Láctico)..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            aria-label="Buscar estudio específico"
+          />
+          {isSearchActive && (
+            <button
+              type="button"
+              className="jefa-screen__matrix-clear-btn"
+              onClick={onClearSearch}
+              title="Limpiar búsqueda"
+            >
+              <X size={13} />
+            </button>
+          )}
+        </div>
+
+        <div className="jefa-screen__matrix-filter-row">
+          <div className="jefa-screen__matrix-pills" role="tablist" aria-label="Filtro de cantidad de estudios">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeFilter === 'all'}
+              className={`jefa-screen__matrix-pill ${activeFilter === 'all' ? 'jefa-screen__matrix-pill--active' : ''}`}
+              onClick={() => handleFilterChange('all')}
+            >
+              Todos ({labStudies.length})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeFilter === 'top5'}
+              className={`jefa-screen__matrix-pill ${activeFilter === 'top5' ? 'jefa-screen__matrix-pill--active' : ''}`}
+              onClick={() => handleFilterChange('top5')}
+            >
+              Top 5
+            </button>
+          </div>
+
+          <span className="jefa-screen__matrix-count-info">
+            {isSearchActive
+              ? `${displayedStudies.length} ${displayedStudies.length === 1 ? 'coincidencia' : 'coincidencias'}`
+              : activeFilter === 'top5' && labStudies.length > 5
+                ? `Mostrando 5 de ${labStudies.length}`
+                : `${labStudies.length} ${labStudies.length === 1 ? 'estudio' : 'estudios'}`}
+          </span>
+        </div>
       </div>
 
       {isLoading ? (
@@ -79,7 +128,7 @@ export default function LabMatrixCard({
         </div>
       ) : (
         <ul className="jefa-screen__matrix-table">
-          {labStudies.map((study) => (
+          {displayedStudies.map((study) => (
             <li key={study.id || study.nombre} className="jefa-screen__matrix-row">
               <div className="jefa-screen__matrix-cat">
                 <span className="jefa-screen__matrix-cat-name">{study.nombre}</span>
@@ -96,7 +145,7 @@ export default function LabMatrixCard({
         </ul>
       )}
 
-      {labStudies.length === 0 && !isLoading && (
+      {displayedStudies.length === 0 && !isLoading && (
         <div className="jefa-screen__matrix-empty-wrap">
           <p className="jefa-screen__matrix-empty">
             {isSearchActive
@@ -109,7 +158,7 @@ export default function LabMatrixCard({
               className="jefa-screen__matrix-reset-btn"
               onClick={onClearSearch}
             >
-              Restablecer al Top 5
+              Limpiar búsqueda
             </button>
           )}
         </div>
