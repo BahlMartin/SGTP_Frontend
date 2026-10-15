@@ -60,9 +60,10 @@ export default function JefaScreen() {
   })
   const [loadingStaffWorkload, setLoadingStaffWorkload] = useState(false)
 
-  // Estado para estudios de laboratorio (Top 5 y búsqueda con lupa por fecha)
+  // Estado para estudios de laboratorio (búsqueda y filtro Top 5 / Todos por fecha)
   const [studiesDate, setStudiesDate] = useState(() => getTodayLocalDateString())
   const [studiesSearch, setStudiesSearch] = useState('')
+  const [studiesFilter, setStudiesFilter] = useState('all') // 'all' | 'top5'
   const [labStudies, setLabStudies] = useState([])
   const [loadingStudies, setLoadingStudies] = useState(false)
   const [isRefreshingAll, setIsRefreshingAll] = useState(false)
@@ -93,7 +94,7 @@ export default function JefaScreen() {
         fetchResumenEstudiosApi({
           fechaStr: studiesDate,
           search: studiesSearch,
-          top: studiesSearch.trim() ? null : 5
+          top: null
         })
           .then((data) => {
             setLabStudies(data.estudios || [])
@@ -154,7 +155,7 @@ export default function JefaScreen() {
       fetchResumenEstudiosApi({
         fechaStr: studiesDate,
         search: studiesSearch,
-        top: studiesSearch.trim() ? null : 5
+        top: null
       })
         .then((data) => {
           if (!isMounted) return
@@ -263,6 +264,8 @@ export default function JefaScreen() {
               onSearchChange={setStudiesSearch}
               onClearSearch={() => setStudiesSearch('')}
               isLoading={loadingStudies}
+              filterMode={studiesFilter}
+              onFilterChange={setStudiesFilter}
             />
           </>
         }

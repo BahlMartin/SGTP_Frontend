@@ -121,9 +121,11 @@
   gap: 12px;
   flex: 1;
   min-height: 0;
+  max-height: 420px;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 4px;
+  scrollbar-width: thin;
 }
 
 .jefa-screen__staff-list::-webkit-scrollbar {
