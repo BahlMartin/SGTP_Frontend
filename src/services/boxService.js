@@ -151,11 +151,13 @@ export async function tomarBoxApi(boxIdentifier) {
 }
 
 /**
- * Llama al siguiente paciente disponible según el algoritmo atómico multibox del backend.
+ * Llama al siguiente paciente disponible según el algoritmo atómico multibox del backend,
+ * o a un paciente específico si se proporciona ticketId (llamado directo ignorando triage).
  */
-export async function llamarSiguientePacienteApi(boxIdentifier) {
+export async function llamarSiguientePacienteApi(boxIdentifier, ticketId = null) {
   const boxId = await resolveBoxId(boxIdentifier)
-  const response = await apiClient.post(`/boxes/${boxId}/llamar-siguiente/`)
+  const payload = ticketId ? { ticket_id: ticketId } : {}
+  const response = await apiClient.post(`/boxes/${boxId}/llamar-siguiente/`, payload)
   return {
     mensaje: response.mensaje,
     ticket: response.ticket ? normalizeTicket(response.ticket) : null,

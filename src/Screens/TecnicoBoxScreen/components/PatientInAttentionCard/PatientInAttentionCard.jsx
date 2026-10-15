@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import {
   Bell,
   CheckCircle2,
+  CheckCheck,
   Pencil,
   CreditCard,
   ShieldCheck,
@@ -23,6 +24,7 @@ export default function PatientInAttentionCard({
   isProcessing = false,
   completedStudies = {},
   onToggleStudyCheck,
+  onSelectAllStudies,
   onCallNext,
   onFinishConsultation,
   onModifyStudies
@@ -36,6 +38,7 @@ export default function PatientInAttentionCard({
 
   const triageInfo = getTriageInfo(patientInBox?.clasificacion_triage)
   const boxDisplay = currentBoxKey ? String(currentBoxKey).replace(/^box\s*/i, '') : '1'
+  const stubNumber = String(patientInBox?.num_llamado || patientInBox?.num_totem || '')
 
   return (
     <div className="patient-attention-card">
@@ -175,8 +178,17 @@ export default function PatientInAttentionCard({
 
               <div className="patient-ticket__stub-content">
                 <span className="patient-ticket__stub-label">TURNO</span>
-                <span className="patient-ticket__stub-number">
-                  {patientInBox.num_llamado || patientInBox.num_totem}
+                <span
+                  className={`patient-ticket__stub-number ${
+                    stubNumber.length > 7
+                      ? 'patient-ticket__stub-number--mini'
+                      : stubNumber.length > 4
+                      ? 'patient-ticket__stub-number--compact'
+                      : ''
+                  }`}
+                  title={stubNumber}
+                >
+                  {stubNumber}
                 </span>
               </div>
             </div>
@@ -198,18 +210,33 @@ export default function PatientInAttentionCard({
                 </span>
               </div>
 
-              <div className="patient-attention-card__modify-wrapper">
+              <div className="patient-attention-card__studies-actions-group">
                 <button
                   type="button"
-                  className="patient-attention-card__btn-modify-studies"
-                  onClick={() => setIsModalOpen(true)}
-                  disabled={isProcessing}
-                  title="Modificar estudios"
-                  aria-label="Modificar estudios"
+                  className={`patient-attention-card__btn-select-all ${
+                    isAllCompleted ? 'patient-attention-card__btn-select-all--active' : ''
+                  }`}
+                  onClick={() => onSelectAllStudies?.(!isAllCompleted)}
+                  disabled={isProcessing || studiesList.length === 0}
+                  title={isAllCompleted ? 'Desmarcar todas las muestras' : 'Seleccionar todas las muestras como tomadas'}
                 >
-                  <Pencil size={15} />
+                  <CheckCheck size={14} className="patient-attention-card__btn-select-all-icon" />
+                  <span>{isAllCompleted ? 'Desmarcar' : 'Tomar todas'}</span>
                 </button>
-                <span className="patient-attention-card__modify-tooltip">Modificar estudios</span>
+
+                <div className="patient-attention-card__modify-wrapper">
+                  <button
+                    type="button"
+                    className="patient-attention-card__btn-modify-studies"
+                    onClick={() => setIsModalOpen(true)}
+                    disabled={isProcessing}
+                    title="Modificar estudios"
+                    aria-label="Modificar estudios"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <span className="patient-attention-card__modify-tooltip">Modificar estudios</span>
+                </div>
               </div>
             </div>
 

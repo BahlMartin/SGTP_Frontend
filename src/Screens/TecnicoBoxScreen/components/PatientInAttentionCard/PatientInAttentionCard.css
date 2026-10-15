@@ -354,7 +354,9 @@
 .patient-ticket__stub {
   background: #0284c7;
   color: #ffffff;
-  width: 120px;
+  min-width: 120px;
+  width: auto;
+  max-width: 160px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -362,8 +364,9 @@
   position: relative;
   border-left: 2px dashed rgba(255, 255, 255, 0.45);
   flex-shrink: 0;
-  padding: 14px 8px;
+  padding: 12px 10px;
   text-align: center;
+  box-sizing: border-box;
 }
 
 /* Notches troquelados circulares */
@@ -405,16 +408,25 @@
 }
 
 .patient-ticket__stub-number {
-  font-size: 1.95rem;
+  font-size: clamp(1.25rem, 2vw, 1.95rem);
   font-weight: 900;
   color: #ffffff;
   line-height: 1.1;
   margin-top: 2px;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   max-width: 100%;
+  transition: font-size 0.2s ease;
+}
+
+.patient-ticket__stub-number--compact {
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+}
+
+.patient-ticket__stub-number--mini {
+  font-size: 1.18rem;
+  letter-spacing: -0.03em;
 }
 
 /* Div al Costado: Panel de Estudios Clínicos */
@@ -471,6 +483,57 @@
   background: #dcfce7;
   color: #15803d;
   border-color: #86efac;
+}
+
+/* Grupo de Acciones de Estudios (Tomar Todas + Lápiz Modificar) */
+.patient-attention-card__studies-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.patient-attention-card__btn-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  background: #ffffff;
+  color: #0284c7;
+  border: 1.5px solid #bae6fd;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.patient-attention-card__btn-select-all:hover:not(:disabled) {
+  background: #f0f9ff;
+  border-color: #0284c7;
+  color: #0369a1;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.15);
+}
+
+.patient-attention-card__btn-select-all--active {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #86efac;
+}
+
+.patient-attention-card__btn-select-all--active:hover:not(:disabled) {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #15803d;
+}
+
+.patient-attention-card__btn-select-all:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.patient-attention-card__btn-select-all-icon {
+  flex-shrink: 0;
 }
 
 /* Botón de Lápiz para Modificar Estudios con Hover Tooltip */
