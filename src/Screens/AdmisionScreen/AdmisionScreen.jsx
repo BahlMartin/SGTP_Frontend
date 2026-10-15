@@ -32,21 +32,6 @@ function isTicketNumberAlreadyUsed(ticketNumber, existingTickets) {
   })
 }
 
-function generateUniqueCallNumber(existingTickets) {
-  const usedNumbers = new Set(
-    existingTickets.map((ticket) =>
-      getTicketNumberKey(ticket.num_totem || ticket.num_llamado)
-    )
-  )
-  const firstCandidate = Math.floor(Math.random() * 900)
-
-  for (let offset = 0; offset < 900; offset += 1) {
-    const candidate = `T-${String(100 + ((firstCandidate + offset) % 900))}`
-    if (!usedNumbers.has(candidate)) return candidate
-  }
-
-  throw new Error('No quedan números de llamado disponibles para hoy.')
-}
 
 /**
  * Pantalla principal de Admisión (Orquestador).
@@ -102,9 +87,14 @@ export default function AdmisionScreen() {
     const isFormValid = validateAdmissionForm()
     if (!isFormValid) return
 
+    if (!enteredCallNumber) {
+      setAdmissionError('El número de llamado es obligatorio.')
+      return
+    }
+
     setIsSubmitting(true)
     try {
-      const resolvedCallNumber = enteredCallNumber || generateUniqueCallNumber(todayTickets)
+      const resolvedCallNumber = enteredCallNumber
       const payload = {
         paciente_id: formData.pacienteId || null,
         paciente_dni: formData.dni.trim(),

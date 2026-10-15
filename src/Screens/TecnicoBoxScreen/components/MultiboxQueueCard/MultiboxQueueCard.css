@@ -10,7 +10,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -120,6 +120,85 @@
   letter-spacing: 0.01em;
 }
 
+/* Barra de Búsqueda Interactiva */
+.multibox-queue-card__search-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.multibox-queue-card__search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 260px;
+}
+
+.multibox-queue-card__search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted, #94a3b8);
+  pointer-events: none;
+}
+
+.multibox-queue-card__search-input {
+  width: 100%;
+  padding: 8px 34px 8px 36px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.85rem;
+  color: var(--text-primary, #0f172a);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.multibox-queue-card__search-input:focus {
+  background: #ffffff;
+  border-color: var(--medical-primary, #0284c7);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.multibox-queue-card__search-clear-btn {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+.multibox-queue-card__search-clear-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.multibox-queue-card__search-feedback {
+  display: flex;
+  align-items: center;
+}
+
+.multibox-queue-card__search-count {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--medical-primary, #0284c7);
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+/* Tabla de Espera */
 .multibox-queue-card__table-wrapper {
   overflow-x: auto;
 }
@@ -139,10 +218,20 @@
   border-bottom: 1px solid #e2e8f0;
 }
 
+.multibox-queue-card__th--actions {
+  text-align: center;
+  width: 130px;
+}
+
 .multibox-queue-card__td {
   padding: 12px;
   border-bottom: 1px solid #f1f5f9;
   font-size: 0.88rem;
+  vertical-align: middle;
+}
+
+.multibox-queue-card__td--actions {
+  text-align: center;
 }
 
 .multibox-queue-card__row--top-priority {
@@ -150,24 +239,40 @@
 }
 
 .multibox-queue-card__call-pill {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: var(--medical-primary);
+  white-space: nowrap;
 }
 
 .multibox-queue-card__patient-info {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .multibox-queue-card__patient-name {
   font-weight: 700;
   color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.multibox-queue-card__patient-sub {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
 }
 
 .multibox-queue-card__patient-dni {
-  font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+.multibox-queue-card__patient-os {
+  color: #0284c7;
+  font-weight: 600;
 }
 
 .multibox-queue-card__wait-time {
@@ -189,8 +294,95 @@
   color: var(--text-secondary);
 }
 
+/* Botón de Llamado Directo Ignorando Triage */
+.multibox-queue-card__btn-call-direct {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--medical-primary, #0284c7);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(2, 132, 199, 0.2);
+}
+
+.multibox-queue-card__btn-call-direct:hover:not(:disabled) {
+  background: #0369a1;
+  box-shadow: 0 2px 5px rgba(2, 132, 199, 0.3);
+  transform: translateY(-1px);
+}
+
+.multibox-queue-card__btn-call-direct:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.multibox-queue-card__btn-call-direct:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.multibox-queue-card__btn-call-icon {
+  flex-shrink: 0;
+}
+
+/* Estados de Lista Vacía o Sin Resultados */
 .multibox-queue-card__empty {
   padding: 30px;
   text-align: center;
   color: var(--text-muted);
+}
+
+.multibox-queue-card__no-results {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--text-muted, #64748b);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.multibox-queue-card__btn-reset-search {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  color: #0284c7;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.multibox-queue-card__btn-reset-search:hover {
+  background: #f0f9ff;
+  border-color: #0284c7;
+}
+
+@media (max-width: 640px) {
+  .multibox-queue-card {
+    padding: 16px 14px;
+  }
+
+  .multibox-queue-card__search-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .multibox-queue-card__search-box {
+    min-width: 100%;
+  }
 }

@@ -101,6 +101,11 @@ export default function MonthlyPlanningTab({
       <div className="overtime-modal__duration-indicator">
         Duración por jornada extraordinaria:{' '}
         <strong>{horasDiarias} horas/día</strong>
+        {horaInicio && horaFin && horaInicio >= horaFin && (
+          <span style={{ marginLeft: '8px', color: '#1e40af', fontWeight: 600 }}>
+            🌙 Franja nocturna (cruza medianoche a 00:00)
+          </span>
+        )}
       </div>
 
       {/* Patrones Rápidos (Presets) */}

@@ -11,7 +11,8 @@ export default function AuthorizeOvertimeModal({
   isOpen,
   onClose,
   onSubmit,
-  onRevoke
+  onRevoke,
+  onBulkRevoke
 }) {
   const [activeTab, setActiveTab] = useState('monthly') // 'monthly' | 'single' | 'active'
 
@@ -122,6 +123,7 @@ export default function AuthorizeOvertimeModal({
             staffMember={staffMember}
             onClose={onClose}
             onRevoke={onRevoke}
+            onBulkRevoke={onBulkRevoke}
             onGoToPlanning={() => setActiveTab('monthly')}
           />
         )}

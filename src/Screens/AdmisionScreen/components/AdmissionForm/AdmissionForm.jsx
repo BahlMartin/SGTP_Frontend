@@ -158,11 +158,13 @@ export default function AdmissionForm({
 
           <div className="admission-form__field">
             <label htmlFor="admission-call-seq" className="admission-form__label">
-              N° de llamado (sistema externo)
+              N° de llamado (sistema externo) <span className="admission-form__required-dot">*</span>
             </label>
             <div
               className={`admission-form__call-group ${
-                ticketNumberError ? 'admission-form__call-group--error' : ''
+                (ticketNumberError || validationErrors.numeroLlamado)
+                  ? 'admission-form__call-group--error'
+                  : ''
               }`}
             >
               <select
@@ -193,12 +195,13 @@ export default function AdmissionForm({
                   const numericOnly = event.target.value.replace(/\D/g, '')
                   onFieldChange('numeroLlamado', numericOnly)
                 }}
-                aria-invalid={Boolean(ticketNumberError)}
+                aria-required="true"
+                aria-invalid={Boolean(ticketNumberError || validationErrors.numeroLlamado)}
               />
             </div>
-            {ticketNumberError && (
+            {(ticketNumberError || validationErrors.numeroLlamado) && (
               <span className="admission-form__error-text" role="alert">
-                {ticketNumberError}
+                {ticketNumberError || validationErrors.numeroLlamado}
               </span>
             )}
           </div>

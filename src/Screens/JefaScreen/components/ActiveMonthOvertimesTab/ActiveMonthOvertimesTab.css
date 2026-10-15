@@ -457,3 +457,223 @@
 .active-overtimes-tab__btn-go-planning:hover {
   background: #d8edf8;
 }
+
+/* ============================================================================== */
+/* BARRA DE REVOCACIÓN RÁPIDA / MASIVA (TODAS, SEMANA, RANGO) */
+/* ============================================================================== */
+.active-overtimes-bulk-bar {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.active-overtimes-bulk-bar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.active-overtimes-bulk-bar__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.active-overtimes-bulk-bar__loading {
+  font-size: 0.72rem;
+  color: #0284c7;
+  font-weight: 600;
+}
+
+.active-overtimes-bulk-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.active-overtimes-bulk-bar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  transition: all 0.15s ease;
+}
+
+.active-overtimes-bulk-bar__btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.active-overtimes-bulk-bar__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.active-overtimes-bulk-bar__btn--danger {
+  color: #dc2626;
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.active-overtimes-bulk-bar__btn--danger:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+.active-overtimes-bulk-bar__btn--warning {
+  color: #d97706;
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.active-overtimes-bulk-bar__btn--warning:hover:not(:disabled) {
+  background: #fef3c7;
+  border-color: #fbbf24;
+}
+
+.active-overtimes-bulk-bar__btn--active {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-color: #7dd3fc;
+}
+
+/* Panel Desplegable de Rango */
+.active-overtimes-range-panel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 2px;
+}
+
+.active-overtimes-range-panel__field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.active-overtimes-range-panel__field input {
+  padding: 3px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.active-overtimes-range-panel__btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: auto;
+  transition: background 0.15s;
+}
+
+.active-overtimes-range-panel__btn-submit:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.active-overtimes-range-panel__btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal de Confirmación Asistencial */
+.active-overtimes-confirm-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.active-overtimes-confirm-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.active-overtimes-confirm-card__icon {
+  width: 24px;
+  height: 24px;
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+.active-overtimes-confirm-card__header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.active-overtimes-confirm-card__desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.active-overtimes-confirm-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.active-overtimes-confirm-card__btn-cancel {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.active-overtimes-confirm-card__btn-cancel:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.active-overtimes-confirm-card__btn-confirm {
+  background: #ef4444;
+  border: none;
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.active-overtimes-confirm-card__btn-confirm:hover:not(:disabled) {
+  background: #dc2626;
+}

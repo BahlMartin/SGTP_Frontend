@@ -31,7 +31,9 @@ export default function TecnicoBoxScreen() {
     handleCallNext,
     handleFinishConsultation,
     handleModifyStudies,
-    toggleStudyCheck
+    toggleStudyCheck,
+    handleSelectAllStudies,
+    handleCallSpecificPatient
   } = useTecnicoBox()
 
   return (
@@ -86,6 +88,7 @@ export default function TecnicoBoxScreen() {
               isProcessing={isProcessing}
               completedStudies={completedStudies}
               onToggleStudyCheck={toggleStudyCheck}
+              onSelectAllStudies={handleSelectAllStudies}
               onCallNext={handleCallNext}
               onFinishConsultation={handleFinishConsultation}
               onModifyStudies={handleModifyStudies}
@@ -93,6 +96,10 @@ export default function TecnicoBoxScreen() {
 
             <MultiboxQueueCard
               waitingQueue={waitingQueue}
+              onCallSpecificPatient={handleCallSpecificPatient}
+              isProcessing={isProcessing}
+              hasPatientInBox={Boolean(patientInBox)}
+              currentBoxNumber={currentBoxNumber}
             />
           </div>
         </div>

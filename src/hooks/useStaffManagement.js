@@ -8,6 +8,7 @@ import {
   reactivateStaffUserApi,
   createHabilitacionHorariaApi,
   revokeHabilitacionHorariaApi,
+  bulkRevokeHabilitacionesApi,
   createPlanificacionHorasExtrasApi
 } from '../services/userService'
 import { unlockUserApi, lockUserApi } from '../services/authService'
@@ -124,19 +125,24 @@ export function useStaffManagement() {
       )
     }
 
-    await createStaffUserApi(currentUserRole, newStaffPayload)
+    const created = await createStaffUserApi(currentUserRole, newStaffPayload)
     await loadStaff()
+    const nombreCompleto = created?.nombre || `${newStaffPayload.nombre} ${newStaffPayload.apellidos || ''}`.trim()
+    const rol = created?.rol || newStaffPayload.rol || 'Asistencial'
     if (onSuccess) {
-      onSuccess('Personal incorporado exitosamente.')
+      onSuccess(`¡Usuario creado exitosamente! Se incorporó a ${nombreCompleto} con rol ${rol}.`)
     }
+    return created
   }
 
   const updateStaff = async (staffMemberId, updatePayload, onSuccess) => {
-    await updateStaffUserApi(staffMemberId, updatePayload)
+    const updated = await updateStaffUserApi(staffMemberId, updatePayload)
     await loadStaff()
+    const nombre = updated?.nombre || updatePayload.nombre || 'personal'
     if (onSuccess) {
-      onSuccess('Datos y horario del personal actualizados correctamente.')
+      onSuccess(`¡Usuario modificado! Se guardaron los cambios de ${nombre} exitosamente.`)
     }
+    return updated
   }
 
   const unlockStaff = async (staffMemberId, onSuccess) => {
@@ -185,10 +191,14 @@ export function useStaffManagement() {
         )
       }
     } else {
-      await createHabilitacionHorariaApi(payload)
+      const res = await createHabilitacionHorariaApi(payload)
       await loadStaff()
       if (onSuccess) {
-        onSuccess('Horario excepcional autorizado correctamente.')
+        if (res?.tramos?.length > 1) {
+          onSuccess('Extensión nocturna autorizada en 2 tramos correlativos (ambos días marcados).')
+        } else {
+          onSuccess('Horario excepcional autorizado correctamente.')
+        }
       }
     }
   }
@@ -201,6 +211,15 @@ export function useStaffManagement() {
     }
   }
 
+  const bulkRevokeShiftExceptions = async (payload, onSuccess) => {
+    const res = await bulkRevokeHabilitacionesApi(payload)
+    await loadStaff()
+    if (onSuccess) {
+      onSuccess(res?.detail || `Se revocaron ${res?.revocadas_count || ''} horas extras exitosamente.`)
+    }
+    return res
+  }
+
   return {
     staffList: staffWithScheduleStatus,
     loadingStaff,
@@ -209,6 +228,7 @@ export function useStaffManagement() {
     toggleShift,
     authorizeShiftException,
     revokeShiftException,
+    bulkRevokeShiftExceptions,
     deleteStaff,
     createStaff,
     updateStaff,
@@ -217,3 +237,4 @@ export function useStaffManagement() {
     reactivateStaff
   }
 }
+

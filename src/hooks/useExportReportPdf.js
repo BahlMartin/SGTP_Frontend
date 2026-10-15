@@ -40,13 +40,20 @@ export function useExportReportPdf({
         stats: {
           atendidos: metrics?.atendidos ?? 0,
           ingresos: metrics?.ingresos ?? 0,
+          cancelados: metrics?.cancelados ?? 0,
           enCurso: metrics?.enCurso ?? 0,
           esperaPromedio: metrics?.esperaPromedio ?? '—',
           atencionPromedio: metrics?.atencionPromedio ?? '—',
-          criticos: metrics?.criticos ?? 0
+          criticos: metrics?.criticos ?? 0,
+          totalEstudios: metrics?.totalEstudios ?? 0
         },
         triageDistribution: metrics?.triageDistribution ?? {},
         tickets: metrics?.tickets ?? [],
+        franjasHorarias: metrics?.franjasHorarias ?? [],
+        resumenSecciones: metrics?.resumenSecciones ?? [],
+        insumosTubos: metrics?.insumosTubos ?? [],
+        rendimientoAdmision: metrics?.rendimientoAdmision ?? [],
+        rendimientoBox: metrics?.rendimientoBox ?? [],
         generatedBy
       })
 
