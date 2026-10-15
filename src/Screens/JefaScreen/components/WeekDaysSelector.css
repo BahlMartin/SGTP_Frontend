@@ -1,0 +1,114 @@
+.jefa-screen__days-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.jefa-screen__days-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.jefa-screen__days-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary, #647a85);
+}
+
+.jefa-screen__required {
+  color: #b42323;
+  margin-left: 2px;
+}
+
+.jefa-screen__days-summary {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1687c9;
+  background: #eaf6fc;
+  padding: 2px 8px;
+  border-radius: 12px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jefa-screen__days-selector {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.jefa-screen__day-btn {
+  padding: 8px 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4b636e;
+  background: #f4f8fb;
+  border: 1px solid #d9e5ea;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  user-select: none;
+}
+
+.jefa-screen__day-btn:hover:not(:disabled) {
+  border-color: #1687c9;
+  color: #1687c9;
+  background: #eef7fc;
+}
+
+.jefa-screen__day-btn--selected {
+  background: #1687c9;
+  border-color: #1687c9;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(22, 135, 201, 0.28);
+}
+
+.jefa-screen__day-btn--selected:hover:not(:disabled) {
+  background: #1175ae;
+  border-color: #1175ae;
+  color: #ffffff !important;
+}
+
+.jefa-screen__day-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.jefa-screen__days-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.jefa-screen__days-shortcut-btn {
+  background: transparent;
+  border: 1px dashed #d9e5ea;
+  border-radius: 4px;
+  color: #647a85;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.jefa-screen__days-shortcut-btn:hover:not(:disabled) {
+  background: #f4f8fb;
+  color: #1687c9;
+  border-color: #1687c9;
+  border-style: solid;
+}
+
+.jefa-screen__days-shortcut-btn--clear:hover:not(:disabled) {
+  color: #b42323;
+  border-color: #f6c5c1;
+  background: #fff5f5;
+}

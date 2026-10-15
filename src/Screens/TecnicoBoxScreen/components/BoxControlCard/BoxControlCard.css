@@ -16,7 +16,7 @@
 .box-control-card__header-icon {
   width: 20px;
   height: 20px;
-  color: #0284c7;
+  color: var(--medical-primary);
 }
 
 .box-control-card__title {
@@ -64,8 +64,8 @@
 
 .box-control-card__select-input:focus,
 .box-control-card__select-input[aria-expanded='true'] {
-  border-color: #0284c7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(22, 135, 201, 0.14);
 }
 
 .box-control-card__select-input:disabled {
@@ -76,7 +76,7 @@
 .box-control-card__select-icon {
   width: 18px;
   height: 18px;
-  color: #64748b;
+  color: var(--text-muted);
   transition: transform 0.15s ease;
 }
 
@@ -121,12 +121,12 @@
 .box-control-card__option:hover,
 .box-control-card__option:focus-visible {
   outline: none;
-  background: #f0f9ff;
+  background: var(--bg-card-subtle);
 }
 
 .box-control-card__option--selected {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .box-control-card__status-buttons {
@@ -164,10 +164,10 @@
 }
 
 .box-control-card__status-btn--atencion-active {
-  background: #0284c7;
+  background: var(--medical-primary);
   color: #ffffff;
-  border-color: #0369a1;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+  border-color: var(--medical-primary-hover);
+  box-shadow: 0 2px 6px rgba(22, 135, 201, 0.24);
 }
 
 .box-control-card__status-btn--fuera-active {

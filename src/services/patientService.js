@@ -15,6 +15,19 @@ export async function fetchPatientByIdApi(idPaciente) {
   return await apiClient.get(`/patients/${idPaciente}/`)
 }
 
+export async function fetchPatientHistoryApi(idPaciente) {
+  try {
+    return await apiClient.get(`/patients/${idPaciente}/historial/`)
+  } catch (error) {
+    if (error.status === 404) {
+      throw new Error(
+        'El historial de estudios todavía no está disponible en el servidor. Debe desplegarse el endpoint de historial del backend.'
+      )
+    }
+    throw error
+  }
+}
+
 export async function createPatientApi(patientData) {
   const payload = {
     dni: Number(String(patientData.dni).replace(/\D/g, '')),
@@ -49,7 +62,8 @@ export async function searchPatientByDniApi(dni) {
       apellidos: data.apellidos,
       obraSocial: data.obra_social,
       obra_social: data.obra_social,
-      numObraSocial: data.num_obra_social
+      numObraSocial: data.num_obra_social,
+      numeroAfiliado: data.num_obra_social
     }
   } catch (err) {
     if (err.status === 404) {

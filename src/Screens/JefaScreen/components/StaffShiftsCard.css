@@ -22,7 +22,7 @@
 }
 
 .jefa-screen__shifts-icon {
-  color: #0284c7;
+  color: #1687c9;
   width: 18px;
   height: 18px;
 }
@@ -39,7 +39,7 @@
 }
 
 .jefa-screen__btn-add-staff {
-  background: #0284c7;
+  background: var(--medical-primary);
   color: #ffffff;
   font-size: 0.8rem;
   font-weight: 700;
@@ -53,7 +53,7 @@
 }
 
 .jefa-screen__btn-add-staff:hover {
-  background: #0369a1;
+  background: var(--medical-primary-hover);
 }
 
 .jefa-screen__shifts-table-wrap {
@@ -76,15 +76,15 @@
 .jefa-screen__shifts-table th {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #64748b;
+  color: #647a85;
   letter-spacing: 0.5px;
   padding: 8px 10px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #d9e5ea;
 }
 
 .jefa-screen__shifts-table td {
   padding: 10px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #edf2f5;
   font-size: 0.82rem;
 }
 
@@ -92,12 +92,20 @@
   font-weight: 700;
 }
 
+.jefa-screen__shift-person {
+  min-width: 180px;
+}
+
 .jefa-screen__shift-mat {
+  display: block;
+  margin-top: 3px;
   font-size: 0.82rem;
+  color: var(--text-muted);
 }
 
 .jefa-screen__shift-role {
-  background: #f1f5f9;
+  background: #E8F2FF;
+  color: #003B99;
   padding: 2px 8px;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -108,73 +116,131 @@
   font-size: 0.82rem;
 }
 
-.jefa-screen__status-chip {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 12px;
+.jefa-screen__status-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
 }
 
-.jefa-screen__status-chip--active {
-  background: #dcfce7;
-  color: #166534;
+.jefa-screen__status-dot--active {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.16);
 }
 
-.jefa-screen__status-chip--offline {
-  background: #f1f5f9;
-  color: #64748b;
+.jefa-screen__status-dot--inactive {
+  background: #d95a58;
+  box-shadow: 0 0 0 3px rgba(217, 90, 88, 0.14);
+}
+
+.jefa-screen__status-dot--outside {
+  background: #eab308;
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.16);
 }
 
 .jefa-screen__btn-toggle-shift {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   font-size: 0.72rem;
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 4px;
   cursor: pointer;
+  white-space: nowrap;
+}
+
+.jefa-screen__btn-action-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.jefa-screen__shift-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 215px;
 }
 
 .jefa-screen__btn-toggle-shift--enable {
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #86efac;
+  background: #edf8f1;
+  color: #177245;
+  border: 1px solid #b9e8cd;
 }
 
 .jefa-screen__btn-toggle-shift--disable {
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fca5a5;
+  background: #fff0ef;
+  color: #b42323;
+  border: 1px solid #f6c5c1;
+}
+
+.jefa-screen__btn-action-icon-only {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #b9e8cd;
+  background: #edf8f1;
+  color: #177245;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.jefa-screen__btn-action-icon-only:hover {
+  background: #dcf2e4;
+  color: #0d8a4d;
+  border-color: #0d8a4d;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(23, 114, 69, 0.25);
+}
+
+.jefa-screen__btn-action-icon-only:active {
+  transform: translateY(0);
 }
 
 .jefa-screen__btn-delete-staff {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
   padding: 5px 7px;
   border-radius: 4px;
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fca5a5;
+  background: #fff0ef;
+  color: #b42323;
+  border: 1px solid #f6c5c1;
   cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .jefa-screen__btn-edit-staff {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
   padding: 5px 7px;
   border-radius: 4px;
-  background: #e0f2fe;
-  color: #075985;
-  border: 1px solid #7dd3fc;
+  background: #dff3fa;
+  color: #176184;
+  border: 1px solid #b9dce8;
   cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .jefa-screen__btn-edit-staff:hover {
-  background: #bae6fd;
+  background: #c9eaf4;
 }
 
 .jefa-screen__btn-delete-staff:hover {
-  background: #fecaca;
+  background: #ffe1de;
 }
 
 .jefa-screen__btn-delete-icon {
@@ -182,8 +248,91 @@
   height: 13px;
 }
 
-.jefa-screen__permanent-badge {
-  font-size: 0.72rem;
-  color: #64748b;
+.jefa-screen__empty-row {
+  padding: 24px 10px !important;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.jefa-screen__shift-dias-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 105px;
+}
+
+.jefa-screen__shift-dias-text {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary, #183b4a);
+}
+
+.jefa-screen__shift-dias-chips {
+  display: flex;
+  gap: 2px;
+}
+
+.jefa-screen__dia-chip {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #a0b2ba;
+  background: #edf2f5;
+}
+
+.jefa-screen__dia-chip--active {
+  background: #e6f4fb;
+  color: #1687c9;
+  border: 1px solid #b9dce8;
+}
+
+.jefa-screen__extension-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #e6f4fb;
+  border: 1px solid #b9dce8;
+  color: #1687c9;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.jefa-screen__extension-badge-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.jefa-screen__extension-none {
+  font-size: 0.74rem;
+  color: #a0b2ba;
   font-style: italic;
+  white-space: nowrap;
+}
+
+.jefa-screen__shifts-search-wrap {
+  margin-bottom: 14px;
+}
+
+.jefa-screen__empty-clear-btn {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  color: #1687c9;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+}
+
+.jefa-screen__empty-clear-btn:hover {
+  color: #0e5b88;
 }

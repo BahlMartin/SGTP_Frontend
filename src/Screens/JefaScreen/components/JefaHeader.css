@@ -16,9 +16,9 @@
 }
 
 .jefa-screen__alert {
-  background: #f0fdf4;
-  border: 1px solid #86efac;
-  color: #166534;
+  background: #edf8f1;
+  border: 1px solid #b9e8cd;
+  color: #177245;
   padding: 12px 18px;
   border-radius: var(--radius-md);
   margin-bottom: 20px;
@@ -34,4 +34,3 @@
   height: 18px;
   flex-shrink: 0;
 }
-

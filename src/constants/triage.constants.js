@@ -100,5 +100,8 @@ export function getTriageApiValue(categoryKey) {
     throw new Error(`La categoría de triage "${categoryKey}" no es válida.`)
   }
 
+  if (category.id === 'extraccion_con_turno') return 'extraccion con turno'
+  if (category.id === 'extraccion_sin_turno') return 'extraccion sin turno'
+
   return category.id
 }

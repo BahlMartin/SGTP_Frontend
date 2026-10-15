@@ -1,18 +1,60 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   fetchAllStaffApi,
   createStaffUserApi,
   updateStaffUserApi,
   toggleShiftExceptionApi,
   deleteStaffUserApi,
-  reactivateStaffUserApi
+  reactivateStaffUserApi,
+  createHabilitacionHorariaApi,
+  revokeHabilitacionHorariaApi,
+  createPlanificacionHorasExtrasApi
 } from '../services/userService'
-import { unlockUserApi } from '../services/authService'
+import { unlockUserApi, lockUserApi } from '../services/authService'
+import { isWithinShiftGrace } from '../utils/shiftTime.utils'
 
 export function useStaffManagement() {
   const [staffList, setStaffList] = useState([])
+  const [currentTime, setCurrentTime] = useState(() => new Date())
   const [loadingStaff, setLoadingStaff] = useState(false)
   const [staffError, setStaffError] = useState(null)
+
+  useEffect(() => {
+    const timerId = window.setInterval(() => setCurrentTime(new Date()), 30_000)
+    return () => window.clearInterval(timerId)
+  }, [])
+
+  const staffWithScheduleStatus = useMemo(
+    () => staffList.map((staffMember) => {
+      const horarioRestringido = ['Admision', 'Box', 'Secretaria'].includes(staffMember.rol)
+      const diaSemanaHoy = currentTime.getDay() === 0 ? 6 : currentTime.getDay() - 1 // 0=Lun ... 6=Dom
+      const trabajaHoy = !staffMember.dias_laborales_detalle || staffMember.dias_laborales_detalle.includes(diaSemanaHoy)
+
+      const dentroTurnoHabitual = trabajaHoy && isWithinShiftGrace(
+        staffMember.inicio_turno,
+        staffMember.fin_turno,
+        currentTime
+      )
+
+      // Verificar si tiene extensión horaria activa en este instante
+      const extensiones = staffMember.habilitaciones_activas_hoy || []
+      const horaActualStr = currentTime.toTimeString().slice(0, 5)
+      const tieneExtensionActiva = extensiones.some(
+        (ext) => horaActualStr >= ext.hora_inicio && horaActualStr <= ext.hora_fin
+      )
+
+      const dentroHorario = !horarioRestringido || dentroTurnoHabitual || tieneExtensionActiva
+
+      return {
+        ...staffMember,
+        dentro_horario: dentroHorario,
+        disponible: staffMember.activo && dentroHorario,
+        tiene_extension_hoy: extensiones.length > 0,
+        extension_vigente: extensiones[0] || null
+      }
+    }),
+    [currentTime, staffList]
+  )
 
   const loadStaff = useCallback(async () => {
     setLoadingStaff(true)
@@ -109,6 +151,18 @@ export function useStaffManagement() {
     }
   }
 
+  const lockStaff = async (staffMemberId, onSuccess) => {
+    try {
+      await lockUserApi(staffMemberId)
+      await loadStaff()
+      if (onSuccess) {
+        onSuccess('Cuenta de personal bloqueada exitosamente.')
+      }
+    } catch (error) {
+      alert(error.message || 'Error al bloquear al miembro del personal.')
+    }
+  }
+
   const reactivateStaff = async (staffMemberId, onSuccess) => {
     try {
       await reactivateStaffUserApi(staffMemberId)
@@ -121,16 +175,45 @@ export function useStaffManagement() {
     }
   }
 
+  const authorizeShiftException = async (payload, onSuccess) => {
+    if (payload.fechas_seleccionadas) {
+      await createPlanificacionHorasExtrasApi(payload)
+      await loadStaff()
+      if (onSuccess) {
+        onSuccess(
+          `Planificación mensual autorizada (${payload.fechas_seleccionadas.length} días) exitosamente.`
+        )
+      }
+    } else {
+      await createHabilitacionHorariaApi(payload)
+      await loadStaff()
+      if (onSuccess) {
+        onSuccess('Horario excepcional autorizado correctamente.')
+      }
+    }
+  }
+
+  const revokeShiftException = async (habilitacionId, onSuccess) => {
+    await revokeHabilitacionHorariaApi(habilitacionId)
+    await loadStaff()
+    if (onSuccess) {
+      onSuccess('Horario excepcional revocado correctamente.')
+    }
+  }
+
   return {
-    staffList,
+    staffList: staffWithScheduleStatus,
     loadingStaff,
     staffError,
     loadStaff,
     toggleShift,
+    authorizeShiftException,
+    revokeShiftException,
     deleteStaff,
     createStaff,
     updateStaff,
     unlockStaff,
+    lockStaff,
     reactivateStaff
   }
 }

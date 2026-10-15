@@ -19,7 +19,7 @@ export default function Logo({ onClick, withText = false, className = '' }) {
         >
           <path
             d="M2 12H10L14 3L18 21L23 8L27 15L29 12H38"
-            stroke="#2dd4bf"
+            stroke="#ffffff"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"

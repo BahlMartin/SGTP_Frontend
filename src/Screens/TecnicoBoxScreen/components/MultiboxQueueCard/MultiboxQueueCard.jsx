@@ -1,15 +1,17 @@
 import React from 'react'
 import { Radio, Clock } from 'lucide-react'
 import TriageBadge from '../../../../components/TriageBadge/TriageBadge'
+import RefreshButton from '../../../../components/RefreshButton/RefreshButton'
+import { useTriageQueue } from '../../../../context/TriageQueueContext'
 import { calculateMinutesDiff } from '../../../../utils/formatters'
 import './MultiboxQueueCard.css'
 
 export default function MultiboxQueueCard({
-  waitingQueue = [],
-  currentBoxKey,
-  hasPatientInBox = false,
-  onCallNext
+  waitingQueue: waitingQueueProp
 }) {
+  const { waitingQueue: queueFromContext, refreshTickets, loading } = useTriageQueue()
+  const waitingQueue = waitingQueueProp !== undefined ? waitingQueueProp : queueFromContext
+
   return (
     <div className="multibox-queue-card">
       <div className="multibox-queue-card__header">
@@ -17,9 +19,24 @@ export default function MultiboxQueueCard({
           <Radio className="multibox-queue-card__live-icon" />
           <h3 className="multibox-queue-card__title">Cola multibox centralizada</h3>
         </div>
-        <span className="multibox-queue-card__badge">
-          {waitingQueue.length} paciente(s) en espera
-        </span>
+        <div className="multibox-queue-card__header-right">
+          <span
+            className={`multibox-queue-card__badge ${
+              waitingQueue.length > 0
+                ? 'multibox-queue-card__badge--active'
+                : 'multibox-queue-card__badge--empty'
+            }`}
+          >
+            <span className="multibox-queue-card__badge-count">{waitingQueue.length}</span>
+            <span className="multibox-queue-card__badge-text">
+              {waitingQueue.length === 1 ? 'paciente en espera' : 'pacientes en espera'}
+            </span>
+          </span>
+          <RefreshButton
+            onRefresh={refreshTickets}
+            isLoading={loading}
+          />
+        </div>
       </div>
 
       {waitingQueue.length === 0 ? (
@@ -36,7 +53,6 @@ export default function MultiboxQueueCard({
                 <th className="multibox-queue-card__th">CLASIFICACIÓN TRIAGE</th>
                 <th className="multibox-queue-card__th">ESPERA</th>
                 <th className="multibox-queue-card__th">ESTUDIOS</th>
-                <th className="multibox-queue-card__th">ACCIÓN</th>
               </tr>
             </thead>
             <tbody>
@@ -80,17 +96,6 @@ export default function MultiboxQueueCard({
                       <span className="multibox-queue-card__studies">
                         {ticketItem.estudios?.length || 1} estudio(s)
                       </span>
-                    </td>
-                    <td className="multibox-queue-card__td">
-                      <button
-                        type="button"
-                        className="multibox-queue-card__call-btn"
-                        disabled={hasPatientInBox}
-                        onClick={onCallNext}
-                        title="Convocar a este paciente al box activo"
-                      >
-                        Llamar a {currentBoxKey}
-                      </button>
                     </td>
                   </tr>
                 )

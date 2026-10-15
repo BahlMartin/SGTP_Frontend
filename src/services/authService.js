@@ -50,3 +50,12 @@ export async function unlockUserApi(idPersonal) {
   }
   return await apiClient.post('/auth/desbloquear/', payload)
 }
+
+export async function lockUserApi(idPersonal, motivo = '') {
+  const payload = {
+    id_personal: Number(idPersonal),
+    motivo: String(motivo || '')
+  }
+  return await apiClient.patch('/auth/bloquear/', payload)
+}
+

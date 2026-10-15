@@ -1,7 +1,6 @@
 import React from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
-import { useTriageQueue } from '../../context/TriageQueueContext'
 import { useAuth } from '../../context/AuthContext'
 import { useSecretariaReport } from '../../hooks/useSecretariaReport'
 import SecretariaJornadaBar from './components/SecretariaJornadaBar/SecretariaJornadaBar'
@@ -10,7 +9,6 @@ import TriageDistributionCard from './components/TriageDistributionCard/TriageDi
 import './SecretariaScreen.css'
 
 export default function SecretariaScreen() {
-  const { tickets } = useTriageQueue()
   const { userData } = useAuth()
 
   const {
@@ -22,7 +20,7 @@ export default function SecretariaScreen() {
     getPercentage,
     handleExportPdf,
     handleSendEmail
-  } = useSecretariaReport({ tickets, userData })
+  } = useSecretariaReport({ userData })
 
   return (
     <div className="secretaria-screen">

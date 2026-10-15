@@ -7,10 +7,22 @@ import { getTriageApiValue, getTriageInfo } from '../constants/triage.constants'
 export function normalizeTicket(t) {
   if (!t) return null
   const paciente = t.paciente_detalle || {}
-  const estudiosList = (t.estudios || []).map((e) => {
+  const rawEstudios = Array.isArray(t.estudios) ? t.estudios : []
+  const estudiosActivosObj = rawEstudios.filter((e) => {
+    if (typeof e === 'string') return true
+    return e?.estado !== 'Cancelado'
+  })
+  const estudiosCanceladosObj = rawEstudios.filter((e) => {
+    if (typeof e === 'string') return false
+    return e?.estado === 'Cancelado'
+  })
+
+  const extractNombre = (e) => {
     if (typeof e === 'string') return e
     return e?.estudio_detalle?.nombre || e?.nombre || 'Práctica Asistencial'
-  })
+  }
+
+  const estudiosList = (estudiosActivosObj.length > 0 ? estudiosActivosObj : rawEstudios).map(extractNombre)
 
   let estadoNormalizado = t.estado
   if (t.estado === 'Pendiente') estadoNormalizado = 'Espera'
@@ -21,21 +33,32 @@ export function normalizeTicket(t) {
     ...t,
     id: t.id_ticket || t.id,
     id_ticket: t.id_ticket || t.id,
-    num_totem: t.num_totem,
-    num_llamado: t.num_totem ? t.num_totem.replace(/[^\d]/g, '') || t.num_totem : (t.num_llamado || '101'),
+    num_totem: t.num_totem || '',
+    num_llamado: t.num_totem || t.num_llamado || 'S/N',
     fecha_hora_admision: t.fecha_hora_admision,
+    mat_admision: t.personal_admision_matricula || t.mat_admision || '',
+    personal_admision_matricula: t.personal_admision_matricula || t.mat_admision || '',
+    personal_admision_nombre: t.personal_admision_nombre || '',
+    personal_box_nombre: t.personal_box_nombre || '',
+    personal_box_matricula: t.personal_box_matricula || '',
+    fecha_hora_atencion_box: t.fecha_hora_atencion_box || null,
+    motivo_cierre_box: t.motivo_cierre_box || '',
     paciente_id: t.paciente,
     paciente_dni: paciente.dni ? String(paciente.dni) : (t.paciente_dni || ''),
     paciente_nombre: paciente.nombre || t.paciente_nombre || '',
     paciente_apellido: paciente.apellidos || t.paciente_apellido || '',
     paciente_obra_social: paciente.obra_social || t.paciente_obra_social || 'Particular',
+    paciente_numero_afiliado: paciente.num_obra_social || t.paciente_numero_afiliado || '',
     clasificacion_triage: getTriageInfo(t.clasificacion_triage).key,
     justificacion_otro: t.justificacion_otro || '',
+    box_numero: t.box_numero || null,
     box_asignado: t.box_numero ? `Box ${t.box_numero}` : (t.box_asignado || null),
     estado: estadoNormalizado,
     estado_backend: t.estado,
     estudios: estudiosList,
-    estudios_raw: t.estudios || []
+    estudios_raw: rawEstudios,
+    estudios_activos: estudiosActivosObj,
+    estudios_cancelados: estudiosCanceladosObj
   }
 }
 
@@ -43,9 +66,28 @@ export function normalizeTicket(t) {
  * Obtiene todos los tickets registrados en el sistema.
  */
 export async function fetchTicketsApi() {
-  const response = await apiClient.get('/tickets/')
-  const list = Array.isArray(response) ? response : response.results || []
-  return list.map(normalizeTicket)
+  const allTickets = []
+  let page = 1
+  let hasNextPage = true
+
+  while (hasNextPage) {
+    const response = await apiClient.get(page === 1 ? '/tickets/' : `/tickets/?page=${page}`)
+    if (Array.isArray(response)) {
+      allTickets.push(...response)
+      hasNextPage = false
+      continue
+    }
+
+    if (!Array.isArray(response?.results)) {
+      throw new Error('La respuesta del servidor no contiene una lista válida de tickets.')
+    }
+
+    allTickets.push(...response.results)
+    hasNextPage = Boolean(response.next)
+    page += 1
+  }
+
+  return allTickets.map(normalizeTicket)
 }
 
 /**
@@ -71,7 +113,7 @@ export async function fetchTicketByIdApi(idTicket) {
  */
 export async function createTicketApi(ticketData) {
   const payload = {
-    num_totem: ticketData.num_totem || (ticketData.num_llamado ? `T-${ticketData.num_llamado}` : ''),
+    num_totem: ticketData.num_totem || ticketData.num_llamado || '',
     clasificacion_triage: getTriageApiValue(
       ticketData.clasificacion_triage || 'Extraccion sin turno'
     ),
@@ -86,12 +128,21 @@ export async function createTicketApi(ticketData) {
       dni: Number(String(ticketData.paciente_dni || ticketData.dni).replace(/\D/g, '')),
       nombre: ticketData.paciente_nombre || ticketData.nombre || 'Sin Nombre',
       apellidos: ticketData.paciente_apellido || ticketData.apellido || 'Sin Apellido',
-      obra_social: ticketData.paciente_obra_social || ticketData.obraSocial || 'Particular'
+      obra_social: ticketData.paciente_obra_social || ticketData.obra_social || ticketData.obraSocial || 'IOMA',
+      num_obra_social: String(
+        ticketData.paciente_numero_afiliado || ticketData.numeroAfiliado || ''
+      ).replace(/\D/g, '')
     }
   }
 
   const response = await apiClient.post('/tickets/', payload)
-  return normalizeTicket(response)
+  const normalized = normalizeTicket(response)
+  return {
+    ...normalized,
+    mat_admision: response.personal_admision_matricula || normalized.mat_admision || ticketData.mat_admision || '',
+    personal_admision_matricula: response.personal_admision_matricula || normalized.personal_admision_matricula || ticketData.mat_admision || '',
+    personal_admision_nombre: response.personal_admision_nombre || normalized.personal_admision_nombre || ticketData.personal_admision_nombre || ''
+  }
 }
 
 /**
@@ -136,7 +187,8 @@ export async function searchPatientsApi(query) {
             dni: String(found.dni),
             nombre: found.nombre,
             apellido: found.apellidos,
-            obraSocial: found.obra_social,
+            num_obra_social: found.num_obra_social || '',
+            numeroAfiliado: found.num_obra_social || '',
             id_paciente: found.id_paciente
           }
         ]
@@ -155,13 +207,21 @@ export async function searchPatientsApi(query) {
         String(p.dni).includes(q) ||
         (p.nombre && p.nombre.toLowerCase().includes(q)) ||
         (p.apellidos && p.apellidos.toLowerCase().includes(q)) ||
-        (p.obra_social && p.obra_social.toLowerCase().includes(q))
+        (p.obra_social && p.obra_social.toLowerCase().includes(q)) ||
+        (p.num_obra_social && p.num_obra_social.toLowerCase().includes(q))
       )
+      .sort((a, b) => {
+        const aStarts = String(a.dni).startsWith(q) ? 1 : 0
+        const bStarts = String(b.dni).startsWith(q) ? 1 : 0
+        if (aStarts !== bStarts) return bStarts - aStarts
+        return String(a.dni).localeCompare(String(b.dni))
+      })
       .map((p) => ({
         dni: String(p.dni),
         nombre: p.nombre,
         apellido: p.apellidos,
-        obraSocial: p.obra_social,
+        num_obra_social: p.num_obra_social || '',
+        numeroAfiliado: p.num_obra_social || '',
         id_paciente: p.id_paciente
       }))
   } catch (err) {
@@ -169,3 +229,35 @@ export async function searchPatientsApi(query) {
     return []
   }
 }
+
+/**
+ * Consulta el rendimiento y carga del personal (tickets emitidos / pacientes atendidos) para una fecha determinada.
+ */
+export async function fetchRendimientoPersonalApi(fechaStr) {
+  const query = fechaStr ? `?fecha=${fechaStr}` : ''
+  return await apiClient.get(`/tickets/rendimiento-personal/${query}`)
+}
+
+/**
+ * Consulta el resumen de estudios de laboratorio realizados en una fecha, con soporte para Top N y búsqueda específica.
+ */
+export async function fetchResumenEstudiosApi({ fechaStr, search = '', top = null } = {}) {
+  const params = new URLSearchParams()
+  if (fechaStr) params.append('fecha', fechaStr)
+  if (search && search.trim()) params.append('search', search.trim())
+  if (top) params.append('top', String(top))
+
+  const queryString = params.toString() ? `?${params.toString()}` : ''
+  return await apiClient.get(`/tickets/resumen-estudios/${queryString}`)
+}
+
+/**
+ * Consulta los tickets asistenciales emitidos o atendidos por un integrante del personal.
+ * - Para Admisión: tickets emitidos ordenados del último al menor.
+ * - Para Box: tickets recibidos y extraídos por el técnico ordenados del último al menor.
+ */
+export async function fetchTicketsByStaffApi(idPersonal, fechaStr = null) {
+  const query = fechaStr ? `?fecha=${fechaStr}` : ''
+  return await apiClient.get(`/tickets/personal/${idPersonal}/${query}`)
+}
+

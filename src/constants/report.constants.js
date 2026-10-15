@@ -32,6 +32,6 @@ export const REPORT_KPI_DEFINITIONS = [
     icon: BarChart3,
     title: 'Críticos',
     getValue: (metricsData) => metricsData?.criticos ?? 0,
-    getSubtext: () => 'Guardia + Médicos'
+    getSubtext: () => 'De los atendidos · Guardia + Médicos'
   }
 ]

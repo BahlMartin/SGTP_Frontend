@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf'
-import { formatDateDDMMAAAA } from './formatters'
+import { formatDateDDMMAAAA, formatTimeHHMM } from './formatters'
 
 export function generateDailyReportPdf({
   jornadaDate,
@@ -113,7 +113,7 @@ export function generateDailyReportPdf({
       doc.text(String(t.paciente_nombre || '—').substring(0, 24), 42, y + 4)
       doc.text(String(t.clasificacion_triage || '—').substring(0, 16), 90, y + 4)
       doc.text(String(t.estado || '—'), 125, y + 4)
-      doc.text(String(t.mat_admision || 'TEC-ADM'), 150, y + 4)
+      doc.text(String(t.mat_admision || '—'), 150, y + 4)
       doc.text(String(t.box_asignado || '—'), 178, y + 4)
       y += 6
       if (y > 275) {
@@ -126,7 +126,8 @@ export function generateDailyReportPdf({
   // Pie de página
   doc.setFontSize(8)
   doc.setTextColor(148, 163, 184)
-  doc.text(`Documento generado electrónicamente bajo políticas de auditoría inmutable SGTP. UTC: ${new Date().toISOString()}`, 14, 290)
+  const generatedAt = new Date()
+  doc.text(`Documento generado electrónicamente bajo políticas de auditoría inmutable SGTP. Argentina: ${formatDateDDMMAAAA(generatedAt)} ${formatTimeHHMM(generatedAt)}`, 14, 290)
 
   // Descarga del PDF
   const filename = `Reporte_Diario_SGTP_${formattedDate.replace(/\//g, '-')}.pdf`

@@ -1,5 +1,8 @@
 import React, { useState } from 'react'
-import { X, AlertCircle } from 'lucide-react'
+import { X, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import ShiftTimeInput from './ShiftTimeInput'
+import WeekDaysSelector from './WeekDaysSelector'
+import { isValidHalfHourTime } from '../../../utils/shiftTime.utils'
 import './AddStaffModal.css'
 
 export default function AddStaffModal({
@@ -9,20 +12,32 @@ export default function AddStaffModal({
   currentUserRole
 }) {
   const [newStaffName, setNewStaffName] = useState('')
+  const [newStaffSurname, setNewStaffSurname] = useState('')
+  const [newStaffDni, setNewStaffDni] = useState('')
   const [newStaffEmail, setNewStaffEmail] = useState('')
+  const [newStaffPassword, setNewStaffPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [newStaffMatricula, setNewStaffMatricula] = useState('')
   const [newStaffRol, setNewStaffRol] = useState('Box')
-  const [newStaffTurno, setNewStaffTurno] = useState('')
+  const [newStaffShiftStart, setNewStaffShiftStart] = useState('07:00')
+  const [newStaffShiftEnd, setNewStaffShiftEnd] = useState('15:00')
+  const [newStaffWorkDays, setNewStaffWorkDays] = useState([0, 1, 2, 3, 4])
   const [staffError, setStaffError] = useState(null)
 
   if (!isOpen) return null
 
   const resetForm = () => {
     setNewStaffName('')
+    setNewStaffSurname('')
+    setNewStaffDni('')
     setNewStaffEmail('')
+    setNewStaffPassword('')
+    setShowPassword(false)
     setNewStaffMatricula('')
     setNewStaffRol('Box')
-    setNewStaffTurno('')
+    setNewStaffShiftStart('07:00')
+    setNewStaffShiftEnd('15:00')
+    setNewStaffWorkDays([0, 1, 2, 3, 4])
     setStaffError(null)
   }
 
@@ -35,18 +50,38 @@ export default function AddStaffModal({
     event.preventDefault()
     setStaffError(null)
 
+    if (!isValidHalfHourTime(newStaffShiftStart) || !isValidHalfHourTime(newStaffShiftEnd)) {
+      setStaffError('Ingresá las horas en formato HH:MM y en intervalos de 30 minutos (por ejemplo, 07:30).')
+      return
+    }
+
     if (currentUserRole === 'Jefa' && (newStaffRol === 'Admin' || newStaffRol === 'Jefa')) {
       setStaffError('Restricción RBAC: La Jefa solo puede dar de alta personal de Admisión o Box.')
+      return
+    }
+
+    if (!newStaffWorkDays || newStaffWorkDays.length === 0) {
+      setStaffError('Debes seleccionar al menos un día laboral en la semana para el personal.')
+      return
+    }
+
+    if (newStaffPassword.trim() && newStaffPassword.trim().length < 8) {
+      setStaffError('La contraseña debe tener al menos 8 caracteres.')
       return
     }
 
     try {
       await onSubmit({
         nombre: newStaffName,
+        apellidos: newStaffSurname,
+        dni: newStaffDni,
         email: newStaffEmail,
+        password: newStaffPassword.trim() || undefined,
         matricula: newStaffMatricula,
         rol: newStaffRol,
-        turno: newStaffTurno
+        inicio_turno: newStaffShiftStart,
+        fin_turno: newStaffShiftEnd,
+        dias_laborales: newStaffWorkDays
       })
       handleClose()
     } catch (error) {
@@ -74,19 +109,49 @@ export default function AddStaffModal({
 
         <form onSubmit={handleSubmit} className="jefa-screen__staff-form">
           <div className="jefa-screen__modal-field">
-            <label>Nombre y Apellido:</label>
+            <label htmlFor="new-staff-name">Nombre:</label>
             <input
+              id="new-staff-name"
               type="text"
               required
-              placeholder="ej: Lic. Roberto Gomez"
+              placeholder="ej: Roberto"
               value={newStaffName}
               onChange={(event) => setNewStaffName(event.target.value)}
             />
           </div>
 
           <div className="jefa-screen__modal-field">
-            <label>Correo Institucional:</label>
+            <label htmlFor="new-staff-surname">Apellido:</label>
             <input
+              id="new-staff-surname"
+              type="text"
+              required
+              placeholder="ej: Gomez"
+              value={newStaffSurname}
+              onChange={(event) => setNewStaffSurname(event.target.value)}
+            />
+          </div>
+
+          <div className="jefa-screen__modal-field">
+            <label htmlFor="new-staff-dni">DNI:</label>
+            <input
+              id="new-staff-dni"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              required
+              placeholder="ej: 38472910"
+              value={newStaffDni}
+              onChange={(event) =>
+                setNewStaffDni(event.target.value.replace(/\D/g, ''))
+              }
+            />
+          </div>
+
+          <div className="jefa-screen__modal-field">
+            <label htmlFor="new-staff-email">Correo Institucional:</label>
+            <input
+              id="new-staff-email"
               type="email"
               required
               placeholder="rgomez@sgtp.hospital.gob.ar"
@@ -96,8 +161,35 @@ export default function AddStaffModal({
           </div>
 
           <div className="jefa-screen__modal-field">
-            <label>Matrícula Profesional:</label>
+            <label htmlFor="new-staff-password">Contraseña de acceso:</label>
+            <div className="jefa-screen__password-wrapper">
+              <input
+                id="new-staff-password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="ej: SeguridadHospital2026!"
+                value={newStaffPassword}
+                onChange={(event) => setNewStaffPassword(event.target.value)}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="jefa-screen__password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <span className="jefa-screen__field-hint">
+              Opcional. Si se deja vacía, se asignará la contraseña institucional predeterminada.
+            </span>
+          </div>
+
+          <div className="jefa-screen__modal-field">
+            <label htmlFor="new-staff-matricula">Matrícula Profesional:</label>
             <input
+              id="new-staff-matricula"
               type="text"
               required
               placeholder="ej: TEC-8821"
@@ -107,8 +199,9 @@ export default function AddStaffModal({
           </div>
 
           <div className="jefa-screen__modal-field">
-            <label>Rol Asignado:</label>
+            <label htmlFor="new-staff-role">Rol Asignado:</label>
             <select
+              id="new-staff-role"
               value={newStaffRol}
               onChange={(event) => setNewStaffRol(event.target.value)}
             >
@@ -123,14 +216,24 @@ export default function AddStaffModal({
             </select>
           </div>
 
-          <div className="jefa-screen__modal-field">
-            <label>Turno Laboral:</label>
-            <input
-              type="text"
-              required
-              placeholder="ej: Mañana (07:00 - 15:00)"
-              value={newStaffTurno}
-              onChange={(event) => setNewStaffTurno(event.target.value)}
+          <WeekDaysSelector
+            selectedDays={newStaffWorkDays}
+            onChange={setNewStaffWorkDays}
+            required
+          />
+
+          <div className="jefa-screen__modal-field jefa-screen__modal-field--shift">
+            <ShiftTimeInput
+              id="new-staff-shift-start"
+              label="Inicio del turno:"
+              value={newStaffShiftStart}
+              onChange={setNewStaffShiftStart}
+            />
+            <ShiftTimeInput
+              id="new-staff-shift-end"
+              label="Fin del turno:"
+              value={newStaffShiftEnd}
+              onChange={setNewStaffShiftEnd}
             />
           </div>
 

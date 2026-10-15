@@ -1,0 +1,174 @@
+.jefa-screen__modal-card--overtime {
+  max-width: 580px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.overtime-modal__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.overtime-modal__header-icon {
+  width: 24px;
+  height: 24px;
+  color: #1687c9;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.overtime-modal__staff-card {
+  background: #f4f8fb;
+  border: 1px solid #d9e5ea;
+  border-radius: var(--radius-md, 8px);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.overtime-modal__staff-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.overtime-modal__staff-name {
+  font-weight: 700;
+  color: var(--text-primary, #183b4a);
+  font-size: 0.95rem;
+}
+
+.overtime-modal__staff-role {
+  background: #e8f2ff;
+  color: #003b99;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.overtime-modal__staff-sub {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #647a85);
+}
+
+.overtime-modal__staff-shift strong {
+  color: #1687c9;
+}
+
+/* Tabs */
+.overtime-modal__mode-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #d9e5ea;
+  padding-bottom: 8px;
+}
+
+.overtime-modal__tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #647a85;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.overtime-modal__tab-btn:hover {
+  background: #f0f7fb;
+  color: #1687c9;
+}
+
+.overtime-modal__tab-btn--active {
+  background: #e6f4fb;
+  border-color: #b9dce8;
+  color: #0e679b;
+  font-weight: 700;
+}
+
+.overtime-modal__tab-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* ============================================================================== */
+/* BOTONES Y ACCIONES: Cancelar a la izquierda (rojo), Guardar a la derecha (verde) */
+/* ============================================================================== */
+.jefa-screen__modal-card--overtime .jefa-screen__modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+  gap: 12px;
+}
+
+/* Botón Cancelar (Rojo / Descarte) */
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-cancel {
+  background: #fff0ef;
+  color: #b42323;
+  border: 1px solid #f6c5c1;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: var(--radius-md, 6px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.82rem;
+}
+
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-cancel:hover:not(:disabled) {
+  background: #ffe1de;
+  border-color: #e59791;
+  color: #961717;
+  transform: translateY(-1px);
+}
+
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Botón Guardar / Confirmar (Verde asistencial clínico) */
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #177245;
+  color: #ffffff;
+  border: 1px solid #135f39;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: var(--radius-md, 6px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.84rem;
+  box-shadow: 0 2px 4px rgba(23, 114, 69, 0.2);
+}
+
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-submit:hover:not(:disabled) {
+  background: #115734;
+  border-color: #0c3e25;
+  box-shadow: 0 3px 6px rgba(23, 114, 69, 0.3);
+  transform: translateY(-1px);
+}
+
+.jefa-screen__modal-card--overtime .jefa-screen__btn-modal-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+

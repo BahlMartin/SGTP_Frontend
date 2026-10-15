@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Search, UserCheck, X } from 'lucide-react'
 import { searchPatientsApi } from '../../services/ticketService'
+import { fetchPatientHistoryApi } from '../../services/patientService'
+import PatientHistoryModal from '../PatientHistoryModal/PatientHistoryModal'
+import PatientDropdown from '../PatientDropdown/PatientDropdown'
 import './PatientSearch.css'
 
 export default function PatientSearch({ onSelectPatient }) {
@@ -8,6 +11,11 @@ export default function PatientSearch({ onSelectPatient }) {
   const [results, setResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [searchError, setSearchError] = useState('')
+  const [selectedPatient, setSelectedPatient] = useState(null)
+  const [patientHistory, setPatientHistory] = useState(null)
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const [historyError, setHistoryError] = useState('')
   const searchContainerRef = useRef(null)
 
   useEffect(() => {
@@ -28,6 +36,7 @@ export default function PatientSearch({ onSelectPatient }) {
 
   const handleSearch = async (searchValue) => {
     setQuery(searchValue)
+    setSearchError('')
     if (!searchValue.trim()) {
       setResults([])
       setShowDropdown(false)
@@ -41,23 +50,36 @@ export default function PatientSearch({ onSelectPatient }) {
       setShowDropdown(true)
     } catch (err) {
       console.error(err)
+      setSearchError(err.message || 'No se pudo buscar el paciente.')
+      setResults([])
     } finally {
       setIsSearching(false)
     }
   }
 
-  const handleSelect = (patient) => {
-    if (onSelectPatient) {
-      onSelectPatient(patient)
-    }
+  const handleSelect = async (patient) => {
+    setSelectedPatient(patient)
+    setPatientHistory(null)
+    setHistoryError('')
     setShowDropdown(false)
-    setQuery(`${patient.nombre} ${patient.apellido} (DNI: ${patient.dni})`)
+    setIsLoadingHistory(true)
+
+    try {
+      const history = await fetchPatientHistoryApi(patient.id_paciente)
+      setPatientHistory(history)
+    } catch (error) {
+      console.error('Error al cargar historial del paciente:', error)
+      setHistoryError(error.message || 'No se pudo cargar el historial del paciente.')
+    } finally {
+      setIsLoadingHistory(false)
+    }
   }
 
   const clearSearch = () => {
     setQuery('')
     setResults([])
     setShowDropdown(false)
+    setSearchError('')
   }
 
   return (
@@ -67,7 +89,7 @@ export default function PatientSearch({ onSelectPatient }) {
         <input
           type="text"
           className="patient-search__input"
-          placeholder="N° DNI u Obra social"
+          placeholder="DNI o número de afiliado"
           value={query}
           onChange={(event) => handleSearch(event.target.value)}
           onFocus={() => query.trim() && setShowDropdown(true)}
@@ -86,33 +108,51 @@ export default function PatientSearch({ onSelectPatient }) {
         )}
       </div>
 
-      {showDropdown && (
-        <div className="patient-search__dropdown">
-          {isSearching ? (
-            <div className="patient-search__status">Buscando en base clínica...</div>
-          ) : results.length === 0 ? (
-            <div className="patient-search__status">No se encontraron registros previos.</div>
-          ) : (
-            <ul className="patient-search__list">
-              {results.map((patient) => (
-                <li key={patient.dni} className="patient-search__item" onClick={() => handleSelect(patient)}>
-                  <div className="patient-search__avatar">
-                    <UserCheck className="patient-search__avatar-icon" />
-                  </div>
-                  <div className="patient-search__info">
-                    <span className="patient-search__name">
-                      {patient.nombre} {patient.apellido}
-                    </span>
-                    <span className="patient-search__details">
-                      DNI: <strong>{patient.dni}</strong> | OS: <strong>{patient.obraSocial || 'Sin cobertura'}</strong>
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+      <PatientDropdown
+        isOpen={showDropdown}
+        isSearching={isSearching}
+        error={searchError}
+        results={results}
+        emptyMessage="No se encontraron registros previos."
+        onSelectPatient={handleSelect}
+      />
+
+      <PatientHistoryModal
+        patient={selectedPatient}
+        history={patientHistory}
+        isLoading={isLoadingHistory}
+        error={historyError}
+        onPatientUpdated={(updated) => {
+          setSelectedPatient((prev) => ({ ...(prev || {}), ...updated }))
+          if (patientHistory) {
+            setPatientHistory((prev) => ({
+              ...prev,
+              paciente: {
+                ...(prev?.paciente || {}),
+                ...updated
+              }
+            }))
+          }
+          setResults((prev) =>
+            prev.map((item) =>
+              (item.id_paciente === updated.id_paciente || item.id === updated.id_paciente)
+                ? { ...item, ...updated }
+                : item
+            )
+          )
+        }}
+        onSelectPatient={onSelectPatient ? () => {
+          onSelectPatient(selectedPatient)
+          setSelectedPatient(null)
+          setPatientHistory(null)
+          setHistoryError('')
+        } : undefined}
+        onClose={() => {
+          setSelectedPatient(null)
+          setPatientHistory(null)
+          setHistoryError('')
+        }}
+      />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { AuthContextProvider } from './context/AuthContext'
 import { TriageQueueContextProvider } from './context/TriageQueueContext'
 import { BoxContextProvider } from './context/BoxContext'
@@ -16,21 +16,30 @@ import JefaScreen from './Screens/JefaScreen/JefaScreen'
 import SecretariaScreen from './Screens/SecretariaScreen/SecretariaScreen'
 import NotFoundScreen from './Screens/NotFoundScreen/NotFoundScreen'
 
+function TriageQueueWrapper() {
+  return (
+    <TriageQueueContextProvider>
+      <Outlet />
+    </TriageQueueContextProvider>
+  )
+}
+
 export default function App() {
   return (
     <AuthContextProvider>
       <BoxContextProvider>
-        <TriageQueueContextProvider>
-          <Routes>
-            {/* Rutas no autenticadas (Redirige al dashboard si ya está autenticado) */}
-            <Route element={<AlreadyAuthMiddleware />}>
-              <Route path="/login" element={<LoginScreen />} />
-              <Route path="/" element={<Navigate to="/login" replace />} />
-            </Route>
+        <Routes>
+          {/* Rutas no autenticadas (Redirige al dashboard si ya está autenticado) */}
+          <Route element={<AlreadyAuthMiddleware />}>
+            <Route path="/login" element={<LoginScreen />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
+          </Route>
 
-            {/* Rutas autenticadas y protegidas por RBAC y Horario Laboral */}
-            <Route element={<AuthMiddleware />}>
-              <Route element={<ShiftTimeMiddleware />}>
+          {/* Rutas autenticadas y protegidas por RBAC y Horario Laboral */}
+          <Route element={<AuthMiddleware />}>
+            <Route element={<ShiftTimeMiddleware />}>
+              {/* Flujo asistencial: únicamente Admisión y Boxes cargan cola de espera y tickets activos */}
+              <Route element={<TriageQueueWrapper />}>
                 {/* 1. Admisión: Registro de pacientes, triage y emisión de tickets */}
                 <Route element={<RoleMiddleware allowedRoles={['Admision', 'Admin']} />}>
                   <Route path="/admision" element={<AdmisionScreen />} />
@@ -41,26 +50,26 @@ export default function App() {
                   <Route path="/box" element={<TecnicoBoxScreen />} />
                   <Route path="/tecnico" element={<Navigate to="/box" replace />} />
                 </Route>
+              </Route>
 
-                {/* 3. Supervisión: Jefa y Admin */}
-                <Route element={<RoleMiddleware allowedRoles={['Jefa', 'Admin']} />}>
-                  <Route path="/supervision" element={<JefaScreen />} />
-                  <Route path="/jefa" element={<Navigate to="/supervision" replace />} />
-                </Route>
+              {/* 3. Supervisión: Jefa y Admin (Completamente desacoplada de la cola y tickets globales) */}
+              <Route element={<RoleMiddleware allowedRoles={['Jefa', 'Admin']} />}>
+                <Route path="/supervision" element={<JefaScreen />} />
+                <Route path="/jefa" element={<Navigate to="/supervision" replace />} />
+              </Route>
 
-                {/* 4. Reportes: Secretaría, Jefa y Admin */}
-                <Route element={<RoleMiddleware allowedRoles={['Secretaria', 'Jefa', 'Admin']} />}>
-                  <Route path="/reportes" element={<SecretariaScreen />} />
-                  <Route path="/secretaria" element={<Navigate to="/reportes" replace />} />
-                </Route>
+              {/* 4. Reportes: Secretaría, Jefa y Admin */}
+              <Route element={<RoleMiddleware allowedRoles={['Secretaria', 'Jefa', 'Admin']} />}>
+                <Route path="/reportes" element={<SecretariaScreen />} />
+                <Route path="/secretaria" element={<Navigate to="/reportes" replace />} />
               </Route>
             </Route>
+          </Route>
 
-            {/* Ruta Fallback 404 */}
-            <Route path="/404" element={<NotFoundScreen />} />
-            <Route path="*" element={<NotFoundScreen />} />
-          </Routes>
-        </TriageQueueContextProvider>
+          {/* Ruta Fallback 404 */}
+          <Route path="/404" element={<NotFoundScreen />} />
+          <Route path="*" element={<NotFoundScreen />} />
+        </Routes>
       </BoxContextProvider>
     </AuthContextProvider>
   )

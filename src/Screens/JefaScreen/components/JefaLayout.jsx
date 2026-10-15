@@ -13,11 +13,11 @@ export default function JefaLayout({
       <Navbar />
       <main className="jefa-screen__main">
         {headerContent}
+        <div className="jefa-screen__search-panel">{searchContent}</div>
         <div className="jefa-screen__grid">
           <div className="jefa-screen__left-column">{leftContent}</div>
           <div className="jefa-screen__center-column">{centerContent}</div>
         </div>
-        <div className="jefa-screen__search-panel">{searchContent}</div>
       </main>
     </div>
   )

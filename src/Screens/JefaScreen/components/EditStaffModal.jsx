@@ -1,5 +1,8 @@
 import React, { useState } from 'react'
-import { AlertCircle, X } from 'lucide-react'
+import { AlertCircle, X, Eye, EyeOff } from 'lucide-react'
+import ShiftTimeInput from './ShiftTimeInput'
+import WeekDaysSelector from './WeekDaysSelector'
+import { isValidHalfHourTime } from '../../../utils/shiftTime.utils'
 import './AddStaffModal.css'
 
 function getInitialForm(staffMember) {
@@ -7,14 +10,19 @@ function getInitialForm(staffMember) {
     nombre: staffMember?.primerNombre || '',
     apellidos: staffMember?.apellidos || '',
     email: staffMember?.email || '',
+    password: '',
     matricula: staffMember?.matricula || '',
     inicio_turno: String(staffMember?.inicio_turno || '').slice(0, 5),
-    fin_turno: String(staffMember?.fin_turno || '').slice(0, 5)
+    fin_turno: String(staffMember?.fin_turno || '').slice(0, 5),
+    dias_laborales: Array.isArray(staffMember?.dias_laborales_detalle)
+      ? staffMember.dias_laborales_detalle
+      : [0, 1, 2, 3, 4]
   }
 }
 
 export default function EditStaffModal({ staffMember, onClose, onSubmit }) {
   const [formData, setFormData] = useState(() => getInitialForm(staffMember))
+  const [showPassword, setShowPassword] = useState(false)
   const [staffError, setStaffError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
@@ -28,17 +36,38 @@ export default function EditStaffModal({ staffMember, onClose, onSubmit }) {
   const handleSubmit = async (event) => {
     event.preventDefault()
     setStaffError('')
+
+    if (!isValidHalfHourTime(formData.inicio_turno) || !isValidHalfHourTime(formData.fin_turno)) {
+      setStaffError('Ingresá las horas en formato HH:MM y en intervalos de 30 minutos (por ejemplo, 07:30).')
+      return
+    }
+
+    if (!formData.dias_laborales || formData.dias_laborales.length === 0) {
+      setStaffError('Debes seleccionar al menos un día laboral en la semana para el personal.')
+      return
+    }
+
+    if (formData.password?.trim() && formData.password.trim().length < 8) {
+      setStaffError('La nueva contraseña debe contener al menos 8 caracteres.')
+      return
+    }
+
     setIsSaving(true)
 
     try {
-      await onSubmit(staffMember.id, {
+      const updatePayload = {
         nombre: formData.nombre.trim(),
         apellidos: formData.apellidos.trim(),
         email: formData.email.trim().toLowerCase(),
         matricula: formData.matricula.trim(),
         inicio_turno: `${formData.inicio_turno}:00`,
-        fin_turno: `${formData.fin_turno}:00`
-      })
+        fin_turno: `${formData.fin_turno}:00`,
+        dias_laborales: formData.dias_laborales
+      }
+      if (formData.password?.trim()) {
+        updatePayload.password = formData.password.trim()
+      }
+      await onSubmit(staffMember.id, updatePayload)
     } catch (error) {
       setStaffError(error.message || 'Error al actualizar los datos del personal.')
     } finally {
@@ -120,25 +149,57 @@ export default function EditStaffModal({ staffMember, onClose, onSubmit }) {
             />
           </div>
           <div className="jefa-screen__modal-field">
-            <label htmlFor="edit-staff-inicio">Inicio del turno:</label>
-            <input
-              id="edit-staff-inicio"
-              name="inicio_turno"
-              type="time"
-              required
-              value={formData.inicio_turno}
-              onChange={handleChange}
-            />
+            <label htmlFor="edit-staff-password">Nueva Contraseña (Opcional):</label>
+            <div className="jefa-screen__password-wrapper">
+              <input
+                id="edit-staff-password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Dejar en blanco para no modificar"
+                value={formData.password}
+                onChange={handleChange}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="jefa-screen__password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <span className="jefa-screen__field-hint">
+              Completá solo si deseás resetear o actualizar la clave de acceso del personal.
+            </span>
           </div>
-          <div className="jefa-screen__modal-field">
-            <label htmlFor="edit-staff-fin">Fin del turno:</label>
-            <input
+          <WeekDaysSelector
+            selectedDays={formData.dias_laborales}
+            onChange={(newDays) => setFormData((previousData) => ({
+              ...previousData,
+              dias_laborales: newDays
+            }))}
+            required
+          />
+          <div className="jefa-screen__modal-field jefa-screen__modal-field--shift">
+            <ShiftTimeInput
+              id="edit-staff-inicio"
+              label="Inicio del turno:"
+              value={formData.inicio_turno}
+              onChange={(value) => setFormData((previousData) => ({
+                ...previousData,
+                inicio_turno: value
+              }))}
+            />
+            <ShiftTimeInput
               id="edit-staff-fin"
-              name="fin_turno"
-              type="time"
-              required
+              label="Fin del turno:"
               value={formData.fin_turno}
-              onChange={handleChange}
+              onChange={(value) => setFormData((previousData) => ({
+                ...previousData,
+                fin_turno: value
+              }))}
             />
           </div>
 

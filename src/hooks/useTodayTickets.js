@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { getArgentinaDateString, getTodayLocalDateString } from '../utils/formatters'
 
 /**
  * Hook para filtrar de forma optimizada y memorizada los tickets
@@ -6,10 +7,16 @@ import { useMemo } from 'react'
  */
 export function useTodayTickets(ticketsList = []) {
   return useMemo(() => {
-    const todayDateString = new Date().toDateString()
-    return ticketsList.filter((ticketItem) => {
-      if (!ticketItem.fecha_hora_admision) return false
-      return new Date(ticketItem.fecha_hora_admision).toDateString() === todayDateString
-    })
+    const todayDateString = getTodayLocalDateString()
+    return ticketsList
+      .filter((ticketItem) => {
+        if (!ticketItem.fecha_hora_admision) return false
+        return getArgentinaDateString(ticketItem.fecha_hora_admision) === todayDateString
+      })
+      .sort((a, b) => {
+        const timeA = new Date(a.fecha_hora_admision).getTime() || 0
+        const timeB = new Date(b.fecha_hora_admision).getTime() || 0
+        return timeB - timeA
+      })
   }, [ticketsList])
 }

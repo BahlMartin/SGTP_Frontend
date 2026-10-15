@@ -4,19 +4,114 @@
   border-radius: var(--radius-lg);
   padding: 20px;
   box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .jefa-screen__staff-header {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.jefa-screen__staff-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jefa-screen__date-controls {
+  display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 6px;
+}
+
+.jefa-screen__date-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-surface, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-md, 6px);
+  padding: 3px 8px;
+  transition: border-color 0.2s ease;
+}
+
+.jefa-screen__date-picker-wrap:focus-within {
+  border-color: var(--medical-primary, #3b82f6);
+}
+
+.jefa-screen__date-icon {
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.jefa-screen__date-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #f1f5f9);
+  font-size: 0.76rem;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.jefa-screen__date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.6);
+  opacity: 0.7;
+}
+
+.jefa-screen__date-today-btn {
+  background: var(--medical-primary, #3b82f6);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.jefa-screen__date-today-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.jefa-screen__staff-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 0;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.8rem;
+}
+
+.jefa-screen__mini-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  border-top-color: var(--medical-primary, #3b82f6);
+  border-radius: 50%;
+  animation: jefaStaffSpin 0.7s linear infinite;
+}
+
+@keyframes jefaStaffSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .jefa-screen__staff-count {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #0284c7;
+  color: var(--medical-primary);
 }
 
 .jefa-screen__staff-list {
@@ -24,14 +119,55 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1;
+  min-height: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.jefa-screen__staff-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.jefa-screen__staff-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.jefa-screen__staff-list::-webkit-scrollbar-thumb {
+  background: var(--border-card);
+  border-radius: 4px;
 }
 
 .jefa-screen__staff-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #f8fafc;
+  padding: 8px 8px;
+  border-radius: var(--radius-md, 8px);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.jefa-screen__staff-item--clickable {
+  cursor: pointer;
+}
+
+.jefa-screen__staff-item--clickable:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-bottom-color: transparent;
+  transform: translateX(2px);
+}
+
+.jefa-screen__staff-item--clickable:focus-visible {
+  outline: 2px solid var(--medical-primary, #3b82f6);
+  outline-offset: 1px;
+}
+
+.jefa-screen__staff-item--non-clickable {
+  cursor: default;
 }
 
 .jefa-screen__staff-info {
@@ -49,11 +185,22 @@
 
 .jefa-screen__staff-dot--active {
   background: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.16);
 }
 
 .jefa-screen__staff-dot--offline {
-  background: #94a3b8;
+  background: #d95a58;
+  box-shadow: 0 0 0 3px rgba(217, 90, 88, 0.14);
+}
+
+.jefa-screen__staff-dot--blocked {
+  background: #d95a58;
+  box-shadow: 0 0 0 3px rgba(217, 90, 88, 0.14);
+}
+
+.jefa-screen__staff-dot--outside {
+  background: #eab308;
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.16);
 }
 
 .jefa-screen__staff-titles {
@@ -65,6 +212,11 @@
   font-size: 0.88rem;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.jefa-screen__staff-matricula {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
 }
 
 .jefa-screen__staff-subarea {
@@ -87,4 +239,31 @@
 .jefa-screen__staff-load-lbl {
   font-size: 0.68rem;
   color: var(--text-muted);
+}
+
+.jefa-screen__staff-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.jefa-screen__staff-search-wrap {
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.jefa-screen__staff-clear-search-btn {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  color: var(--medical-primary, #1687c9);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+}
+
+.jefa-screen__staff-clear-search-btn:hover {
+  opacity: 0.8;
 }

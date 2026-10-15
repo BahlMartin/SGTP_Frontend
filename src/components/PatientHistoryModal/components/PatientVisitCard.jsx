@@ -1,0 +1,163 @@
+import React from 'react'
+import { Clock, Receipt, Loader2 } from 'lucide-react'
+import { formatDateDDMMAAAA, formatTimeHHMM } from '../../../utils/formatters'
+import './PatientVisitCard.css'
+
+export default function PatientVisitCard({
+  visit,
+  onViewTicket,
+  isFetching = false,
+  mode = 'patient',
+  staffRole = 'admision'
+}) {
+  if (!visit) return null
+
+  const visitId = visit.id_ticket || visit.id
+  const fecha = (mode === 'staff' && staffRole === 'box' && visit.fecha_hora_atencion_box)
+    ? visit.fecha_hora_atencion_box
+    : (visit.fecha_hora_atencion || visit.fecha_hora_admision)
+
+  const getStudyNames = (studies = []) => studies
+    .map((study) => {
+      if (typeof study === 'string') return study
+      return study?.estudio_detalle?.nombre || study?.estudio?.nombre || study?.nombre || ''
+    })
+    .filter(Boolean)
+
+  const studyNames = getStudyNames(visit.estudios)
+  const studiesText = studyNames.length > 0 ? studyNames.join(', ') : 'Rutina estándar'
+
+  const boxDisplay = visit.box_numero || (visit.box_actual ? visit.box_actual.numero || visit.box_actual : null)
+    ? `Box ${visit.box_numero || (visit.box_actual?.numero || visit.box_actual)}`
+    : (visit.box_asignado || 'Sin box asignado')
+
+  const formatProWithMatricula = (nombre, matricula) => {
+    const n = nombre?.trim()
+    const m = matricula?.trim()
+    if (n && m) return `${n} (Mat. ${m})`
+    if (n) return n
+    if (m) return `Mat. ${m}`
+    return 'No registrado'
+  }
+
+  const admisionDisplay = formatProWithMatricula(
+    visit.personal_admision_nombre,
+    visit.personal_admision_matricula || visit.mat_admision
+  )
+
+  const boxProDisplay = formatProWithMatricula(
+    visit.personal_box_nombre,
+    visit.personal_box_matricula
+  )
+
+  const stateClass = (visit.estado || 'default').toLowerCase().replace(/\s+/g, '-')
+
+  // Datos para modo personal
+  const paciente = visit.paciente_detalle || visit.paciente
+  const pacienteNombre = paciente
+    ? `${paciente.apellidos || ''}, ${paciente.nombre || ''}`.replace(/^,\s*|,\s*$/g, '') || `DNI ${paciente.dni}`
+    : 'Paciente no asignado'
+  const pacienteDni = paciente?.dni ? `DNI: ${paciente.dni}` : ''
+  const obraSocial = paciente?.obra_social ? ` · ${paciente.obra_social}` : ''
+  const pacienteSub = `${pacienteDni}${obraSocial}`.trim()
+
+  const contraparteCaption = staffRole === 'admision' ? 'Técnico / Box:' : 'Operador Admisión:'
+  const contraparteVal = staffRole === 'admision'
+    ? (boxProDisplay !== 'No registrado' ? boxProDisplay : 'En espera / Sin box')
+    : admisionDisplay
+
+  const rawStudies = Array.isArray(visit.estudios_raw) ? visit.estudios_raw : []
+  const hasBoxModifications = rawStudies.some((e) => e?.origen === 'box' || e?.estado === 'Cancelado')
+
+  return (
+    <li className="patient-history-modal__visit-item">
+      <div className="patient-history-modal__visit-card">
+        <div className="patient-history-modal__visit-card-header">
+          <div className="patient-history-modal__visit-time">
+            <Clock size={15} />
+            <span>
+              {fecha
+                ? `${formatDateDDMMAAAA(fecha)} · ${formatTimeHHMM(fecha)}`
+                : 'Fecha no informada'}
+            </span>
+          </div>
+
+          <div className="patient-history-modal__visit-tags">
+            <span className="patient-history-modal__badge-totem">
+              {visit.num_totem || 'Ticket'}
+            </span>
+            <span className={`patient-history-modal__badge-state patient-history-modal__badge-state--${stateClass}`}>
+              {visit.estado || 'Atendido'}
+            </span>
+            <span className="patient-history-modal__badge-box">
+              {boxDisplay}
+            </span>
+            {hasBoxModifications && (
+              <span className="patient-history-modal__badge-box" style={{ background: '#e0f2fe', color: '#0369a1', borderColor: '#bae6fd' }}>
+                Ajustado en Box
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="patient-history-modal__visit-card-body">
+          {mode === 'staff' ? (
+            <div className="patient-history-modal__pro-grid">
+              <div className="patient-history-modal__pro-col">
+                <span className="patient-history-modal__pro-caption">Paciente asistido:</span>
+                <span className="patient-history-modal__pro-val">{pacienteNombre}</span>
+                {pacienteSub && (
+                  <span className="patient-history-modal__pro-subval">{pacienteSub}</span>
+                )}
+              </div>
+
+              <div className="patient-history-modal__pro-col">
+                <span className="patient-history-modal__pro-caption">{contraparteCaption}</span>
+                <span className="patient-history-modal__pro-val">{contraparteVal}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="patient-history-modal__pro-grid">
+              <div className="patient-history-modal__pro-col">
+                <span className="patient-history-modal__pro-caption">Admisión:</span>
+                <span className="patient-history-modal__pro-val">{admisionDisplay}</span>
+              </div>
+
+              <div className="patient-history-modal__pro-col">
+                <span className="patient-history-modal__pro-caption">Técnico / Box:</span>
+                <span className="patient-history-modal__pro-val">{boxProDisplay}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="patient-history-modal__studies-row">
+            <span className="patient-history-modal__studies-caption">Estudios:</span>
+            <span className="patient-history-modal__studies-val">{studiesText}</span>
+          </div>
+        </div>
+
+        <div className="patient-history-modal__visit-card-footer">
+          <button
+            type="button"
+            className="patient-history-modal__view-ticket-btn"
+            onClick={() => onViewTicket(visitId)}
+            disabled={isFetching}
+            aria-label={`Ver comprobante del ticket ${visit.num_totem || ''}`}
+          >
+            {isFetching ? (
+              <>
+                <Loader2 size={16} className="patient-history-modal__spinner" />
+                <span>Consultando ticket...</span>
+              </>
+            ) : (
+              <>
+                <Receipt size={16} />
+                <span>Ver Comprobante de Atención</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </li>
+  )
+}
