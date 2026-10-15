@@ -84,7 +84,7 @@ export function useTecnicoBox() {
   const handleCallNext = async () => {
     setIsProcessing(true)
     try {
-      const calledTicket = await callNextPatient(currentBoxNumber, matriculaTecnico)
+      const calledTicket = await callNextPatient(currentBoxNumber)
       await changeBoxStatus(currentBoxNumber, 'En atencion')
       showNotification(
         `Paciente ${calledTicket.paciente_nombre} ${calledTicket.paciente_apellido} (Llamado N° ${calledTicket.num_llamado}) convocado al ${currentBoxKey}`
