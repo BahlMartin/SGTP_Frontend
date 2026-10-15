@@ -1,0 +1,155 @@
+.floating-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 12000;
+  min-width: 320px;
+  max-width: 440px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
+  backdrop-filter: blur(8px);
+}
+
+.floating-toast--enter {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  animation: floatingToastSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.floating-toast--exit {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.96);
+}
+
+@keyframes floatingToastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Tipos temáticos */
+.floating-toast--success {
+  background: #ffffff;
+  border: 1px solid #a7f3d0;
+  border-left: 5px solid #10b981;
+}
+
+.floating-toast--error {
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  border-left: 5px solid #ef4444;
+}
+
+.floating-toast--info {
+  background: #ffffff;
+  border: 1px solid #bfdbfe;
+  border-left: 5px solid #3b82f6;
+}
+
+/* Iconos */
+.floating-toast__icon-wrapper {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.floating-toast--success .floating-toast__icon {
+  width: 22px;
+  height: 22px;
+  color: #10b981;
+}
+
+.floating-toast--error .floating-toast__icon {
+  width: 22px;
+  height: 22px;
+  color: #ef4444;
+}
+
+.floating-toast--info .floating-toast__icon {
+  width: 22px;
+  height: 22px;
+  color: #3b82f6;
+}
+
+/* Contenido */
+.floating-toast__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.floating-toast__title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.floating-toast__message {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #475569;
+}
+
+/* Botón de cierre */
+.floating-toast__btn-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  margin: -4px -4px 0 0;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+
+.floating-toast__btn-close:hover {
+  color: #1e293b;
+  background: #f1f5f9;
+}
+
+/* Barra de progreso de tiempo */
+.floating-toast__progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  animation: floatingToastProgress linear forwards;
+}
+
+.floating-toast--success .floating-toast__progress-bar {
+  background: #10b981;
+}
+
+.floating-toast--error .floating-toast__progress-bar {
+  background: #ef4444;
+}
+
+.floating-toast--info .floating-toast__progress-bar {
+  background: #3b82f6;
+}
+
+@keyframes floatingToastProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}

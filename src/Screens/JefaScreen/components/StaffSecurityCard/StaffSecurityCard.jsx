@@ -6,7 +6,7 @@ import './StaffSecurityCard.css'
 
 export default function StaffSecurityCard({
   staffList = [],
-  _currentUserRole = '',
+  currentUserRole = '',
   currentUserId = null,
   onUnlockStaff,
   onLockStaff
@@ -109,7 +109,8 @@ export default function StaffSecurityCard({
               // Restricción jerárquica: no bloquear al Admin ni al usuario en sesión
               const isSelf = currentUserId && (staffMember.id === currentUserId || staffMember.id_personal === currentUserId)
               const isProtectedRole = staffMember.rol === 'Admin'
-              const canToggle = !isSelf && !isProtectedRole
+              const isSecretary = String(currentUserRole).trim().toLowerCase() === 'secretaria'
+              const canToggle = !isSelf && !isProtectedRole && (isLocked || !isSecretary)
 
               return (
                 <tr key={staffMember.id} className={isLocked ? 'jefa-screen__security-row--locked' : ''}>
@@ -205,9 +206,15 @@ export default function StaffSecurityCard({
                     ) : (
                       <span
                         className="jefa-screen__security-restricted"
-                        title={isSelf ? 'No puedes bloquear tu propia cuenta' : 'Cuenta de nivel superior protegida'}
+                        title={
+                          isSelf
+                            ? 'No puedes bloquear tu propia cuenta'
+                            : isProtectedRole
+                              ? 'Cuenta de nivel superior protegida'
+                              : 'Secretaría solo puede desbloquear cuentas'
+                        }
                       >
-                        Protegida
+                        {isSecretary && !isLocked ? 'Solo desbloqueo' : 'Protegida'}
                       </span>
                     )}
                   </td>

@@ -22,6 +22,7 @@ export default function ActiveMonthOvertimesTab({
   staffMember,
   onClose,
   onRevoke,
+  onBulkRevoke,
   onGoToPlanning
 }) {
   const hoy = new Date()
@@ -31,6 +32,16 @@ export default function ActiveMonthOvertimesTab({
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null)
+
+  // Estados para revocación masiva flexible
+  const [isRevoking, setIsRevoking] = useState(false)
+  const [mostrarRango, setMostrarRango] = useState(false)
+  const [modalConfirmacion, setModalConfirmacion] = useState(null)
+  const [rangoDesde, setRangoDesde] = useState(() => `${anio}-${String(mes).padStart(2, '0')}-01`)
+  const [rangoHasta, setRangoHasta] = useState(() => {
+    const ultimoDia = new Date(anio, mes, 0).getDate()
+    return `${anio}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`
+  })
 
   const staffId = staffMember?.id
   const diasLaborales = useMemo(
@@ -78,6 +89,9 @@ export default function ActiveMonthOvertimesTab({
     setMes(nuevoMes)
     setAnio(nuevoAnio)
     setFechaSeleccionada(null)
+    setRangoDesde(`${nuevoAnio}-${String(nuevoMes).padStart(2, '0')}-01`)
+    const ultimoDia = new Date(nuevoAnio, nuevoMes, 0).getDate()
+    setRangoHasta(`${nuevoAnio}-${String(nuevoMes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`)
   }
 
   // Mapa de habilitaciones agrupadas por fecha ('YYYY-MM-DD')
@@ -165,6 +179,8 @@ export default function ActiveMonthOvertimesTab({
     if (!window.confirm(`¿Confirmás la revocación de las horas extras del día ${fechaStr}?`)) {
       return
     }
+    setIsRevoking(true)
+    setErrorMsg('')
     try {
       if (onRevoke) {
         await onRevoke(habId)
@@ -172,6 +188,117 @@ export default function ActiveMonthOvertimesTab({
       await cargarHabilitacionesMes()
     } catch (err) {
       setErrorMsg(err.message || 'Error al revocar la habilitación.')
+    } finally {
+      setIsRevoking(false)
+    }
+  }
+
+  // Solicitud de Revocación de Todo el Mes
+  const handlePedirRevocarTodas = () => {
+    if (totalDiasActivos === 0) return
+    setModalConfirmacion({
+      title: `Revocar Todas las Horas Extras (${MESES_NOMBRES[mes - 1]} ${anio})`,
+      descripcion: `Se revocarán todas las autorizaciones vigentes de este mes (${totalDiasActivos} días, ${totalHorasMes} hs acumuladas) para ${staffMember?.nombre}. Esta acción no se puede deshacer.`,
+      textoBoton: `Revocar Todo el Mes (${totalDiasActivos} días)`,
+      esPeligroso: true,
+      accion: async () => {
+        if (onBulkRevoke) {
+          await onBulkRevoke({
+            personal_id: staffId,
+            alcance: 'todas',
+            anio,
+            mes
+          })
+        }
+      }
+    })
+  }
+
+  // Solicitud de Revocación de una Semana Completa
+  const handlePedirRevocarSemana = () => {
+    const fechaBase = fechaSeleccionada || items.find((it) => it.activa)?.fecha
+    if (!fechaBase) {
+      setErrorMsg('Seleccioná primero un día en el calendario correspondiente a la semana que deseás revocar.')
+      return
+    }
+
+    const [y, m, d] = String(fechaBase).slice(0, 10).split('-').map(Number)
+    const fechaObj = new Date(y, m - 1, d)
+    const diaSemanaNum = fechaObj.getDay() === 0 ? 6 : fechaObj.getDay() - 1 // 0=Lun, 6=Dom
+    const lunesObj = new Date(fechaObj)
+    lunesObj.setDate(fechaObj.getDate() - diaSemanaNum)
+    const domingoObj = new Date(lunesObj)
+    domingoObj.setDate(lunesObj.getDate() + 6)
+
+    const formatStr = (dt) => {
+      const dy = dt.getFullYear()
+      const dm = String(dt.getMonth() + 1).padStart(2, '0')
+      const dd = String(dt.getDate()).padStart(2, '0')
+      return `${dy}-${dm}-${dd}`
+    }
+
+    const lunesStr = formatStr(lunesObj)
+    const domingoStr = formatStr(domingoObj)
+
+    setModalConfirmacion({
+      title: 'Revocar Horas Extras de la Semana',
+      descripcion: `Se revocarán las autorizaciones activas de la semana comprendida entre el lunes ${lunesStr} y el domingo ${domingoStr} para ${staffMember?.nombre}.`,
+      textoBoton: 'Revocar Semana Asistencial',
+      esPeligroso: true,
+      accion: async () => {
+        if (onBulkRevoke) {
+          await onBulkRevoke({
+            personal_id: staffId,
+            alcance: 'semana',
+            fecha: String(fechaBase).slice(0, 10)
+          })
+        }
+      }
+    })
+  }
+
+  // Solicitud de Revocación por Rango de Fechas
+  const handlePedirRevocarRango = () => {
+    if (!rangoDesde || !rangoHasta) {
+      setErrorMsg('Debe seleccionar la fecha "Desde" y "Hasta" para revocar por período.')
+      return
+    }
+    if (rangoDesde > rangoHasta) {
+      setErrorMsg('La fecha "Desde" debe ser anterior o igual a la fecha "Hasta".')
+      return
+    }
+
+    setModalConfirmacion({
+      title: 'Revocar Horas Extras por Rango',
+      descripcion: `Se revocarán todas las autorizaciones vigentes entre el ${rangoDesde} y el ${rangoHasta} para ${staffMember?.nombre}.`,
+      textoBoton: 'Revocar Rango Seleccionado',
+      esPeligroso: true,
+      accion: async () => {
+        if (onBulkRevoke) {
+          await onBulkRevoke({
+            personal_id: staffId,
+            alcance: 'rango',
+            fecha_desde: rangoDesde,
+            fecha_hasta: rangoHasta
+          })
+        }
+      }
+    })
+  }
+
+  // Ejecución de la Acción Confirmada en Modal
+  const ejecutarAccionConfirmada = async () => {
+    if (!modalConfirmacion?.accion) return
+    setIsRevoking(true)
+    setErrorMsg('')
+    try {
+      await modalConfirmacion.accion()
+      await cargarHabilitacionesMes()
+      setModalConfirmacion(null)
+    } catch (err) {
+      setErrorMsg(err.message || 'Error al ejecutar la revocación.')
+    } finally {
+      setIsRevoking(false)
     }
   }
 
@@ -241,6 +368,97 @@ export default function ActiveMonthOvertimesTab({
           <span style={{ fontSize: '0.72rem', color: '#1687c9', fontWeight: 600 }}>
             Actualizando...
           </span>
+        )}
+      </div>
+
+      {/* Barra de Acciones de Revocación Rápida / Masiva */}
+      <div className="active-overtimes-bulk-bar">
+        <div className="active-overtimes-bulk-bar__header">
+          <span className="active-overtimes-bulk-bar__title">Opciones de Revocación:</span>
+          {isRevoking && (
+            <span className="active-overtimes-bulk-bar__loading">Procesando revocación...</span>
+          )}
+        </div>
+
+        <div className="active-overtimes-bulk-bar__actions">
+          {/* 1. Revocar Todo el Mes */}
+          <button
+            type="button"
+            className="active-overtimes-bulk-bar__btn active-overtimes-bulk-bar__btn--danger"
+            onClick={handlePedirRevocarTodas}
+            disabled={totalDiasActivos === 0 || isRevoking}
+            title="Revocar todas las horas extras de este mes"
+          >
+            <Trash2 size={13} />
+            <span>Revocar Todo el Mes ({totalDiasActivos})</span>
+          </button>
+
+          {/* 2. Revocar Semana */}
+          <button
+            type="button"
+            className="active-overtimes-bulk-bar__btn active-overtimes-bulk-bar__btn--warning"
+            onClick={handlePedirRevocarSemana}
+            disabled={totalDiasActivos === 0 || isRevoking}
+            title={
+              fechaSeleccionada
+                ? `Revocar la semana asistencial de la fecha ${fechaSeleccionada}`
+                : 'Seleccioná un día del calendario para revocar su semana completa'
+            }
+          >
+            <Calendar size={13} />
+            <span>
+              {fechaSeleccionada ? `Revocar Semana (${fechaSeleccionada.slice(8, 10)})` : 'Revocar Semana'}
+            </span>
+          </button>
+
+          {/* 3. Alternar Selector de Rango */}
+          <button
+            type="button"
+            className={`active-overtimes-bulk-bar__btn ${
+              mostrarRango ? 'active-overtimes-bulk-bar__btn--active' : ''
+            }`}
+            onClick={() => setMostrarRango((prev) => !prev)}
+            disabled={totalDiasActivos === 0 || isRevoking}
+            title="Definir un rango de fechas personalizado para revocar"
+          >
+            <CalendarDays size={13} />
+            <span>{mostrarRango ? 'Ocultar Rango' : 'Revocar por Rango'}</span>
+          </button>
+        </div>
+
+        {/* Panel Desplegable de Rango de Fechas */}
+        {mostrarRango && (
+          <div className="active-overtimes-range-panel">
+            <div className="active-overtimes-range-panel__field">
+              <label htmlFor="range-desde">Desde:</label>
+              <input
+                id="range-desde"
+                type="date"
+                value={rangoDesde}
+                onChange={(e) => setRangoDesde(e.target.value)}
+                disabled={isRevoking}
+              />
+            </div>
+            <div className="active-overtimes-range-panel__field">
+              <label htmlFor="range-hasta">Hasta:</label>
+              <input
+                id="range-hasta"
+                type="date"
+                value={rangoHasta}
+                onChange={(e) => setRangoHasta(e.target.value)}
+                disabled={isRevoking}
+              />
+            </div>
+            <button
+              type="button"
+              className="active-overtimes-range-panel__btn-submit"
+              onClick={handlePedirRevocarRango}
+              disabled={!rangoDesde || !rangoHasta || isRevoking}
+            >
+              <Trash2 size={13} />
+              <span>Ejecutar Revocación de Período</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -455,6 +673,41 @@ export default function ActiveMonthOvertimesTab({
           {totalDiasActivos} días activos • {totalHorasMes} hs en {MESES_NOMBRES[mes - 1]}
         </span>
       </div>
+
+      {/* Modal de Confirmación Asistencial con Impacto */}
+      {modalConfirmacion && (
+        <div className="jefa-screen__modal-overlay" style={{ zIndex: 11000 }}>
+          <div className="active-overtimes-confirm-card" role="dialog" aria-modal="true">
+            <div className="active-overtimes-confirm-card__header">
+              <AlertCircle className="active-overtimes-confirm-card__icon" />
+              <h3>{modalConfirmacion.title}</h3>
+            </div>
+            <p className="active-overtimes-confirm-card__desc">
+              {modalConfirmacion.descripcion}
+            </p>
+            <div className="active-overtimes-confirm-card__actions">
+              <button
+                type="button"
+                className="active-overtimes-confirm-card__btn-cancel"
+                onClick={() => setModalConfirmacion(null)}
+                disabled={isRevoking}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className={`active-overtimes-confirm-card__btn-confirm ${
+                  modalConfirmacion.esPeligroso ? 'active-overtimes-confirm-card__btn-confirm--danger' : ''
+                }`}
+                onClick={ejecutarAccionConfirmada}
+                disabled={isRevoking}
+              >
+                {isRevoking ? 'Revocando...' : modalConfirmacion.textoBoton || 'Confirmar Revocación'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -93,3 +93,43 @@
 .overtime-modal__btn-revoke:hover {
   background: #ffe1de;
 }
+
+/* Banner de Extensión Nocturna que Cruza Medianoche */
+.overtime-modal__overnight-notice {
+  background: #f0f4ff;
+  border: 1px solid #c7d7fe;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  color: #1e3a8a;
+}
+
+.overtime-modal__overnight-notice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.overtime-modal__overnight-badge {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #1e40af;
+}
+
+.overtime-modal__overnight-desc {
+  margin: 0 0 6px 0;
+  font-size: 0.76rem;
+  color: #3b82f6;
+}
+
+.overtime-modal__overnight-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.74rem;
+  color: #1e3a8a;
+}
+
+.overtime-modal__overnight-list li {
+  margin-bottom: 2px;
+}

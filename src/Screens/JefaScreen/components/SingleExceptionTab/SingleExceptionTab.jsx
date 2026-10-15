@@ -23,6 +23,9 @@ export default function SingleExceptionTab({
     setHoraInicio,
     horaFin,
     setHoraFin,
+    duracionTotal,
+    tramosOvernight,
+    esNocturno,
     motivo,
     setMotivo,
     motivoPersonalizado,
@@ -116,6 +119,28 @@ export default function SingleExceptionTab({
           +4 horas
         </button>
       </div>
+
+      {/* Banner informativo interactivo cuando la extensión cruza la medianoche (00:00) */}
+      {esNocturno && tramosOvernight.length === 2 && (
+        <div className="overtime-modal__overnight-notice" role="status">
+          <div className="overtime-modal__overnight-notice-header">
+            <span className="overtime-modal__overnight-badge">
+              🌙 Extensión Nocturna ({duracionTotal} hs totales)
+            </span>
+          </div>
+          <p className="overtime-modal__overnight-desc">
+            Cruza la medianoche (00:00 hs). Se desglosará automáticamente marcando ambos días:
+          </p>
+          <ul className="overtime-modal__overnight-list">
+            <li>
+              <strong>Día 1 ({tramosOvernight[0].fecha}):</strong> {tramosOvernight[0].horaInicio} a {tramosOvernight[0].horaFin} ({tramosOvernight[0].duracionHoras} hs)
+            </li>
+            <li>
+              <strong>Día 2 ({tramosOvernight[1].fecha}):</strong> {tramosOvernight[1].horaInicio} a {tramosOvernight[1].horaFin} ({tramosOvernight[1].duracionHoras} hs)
+            </li>
+          </ul>
+        </div>
+      )}
 
       <div className="jefa-screen__modal-field">
         <label htmlFor="overtime-motivo">Motivo de la Extensión:</label>

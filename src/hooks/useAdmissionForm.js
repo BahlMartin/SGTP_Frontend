@@ -157,6 +157,12 @@ export function useAdmissionForm() {
       }
     }
 
+    if (!formData.numeroLlamado || !String(formData.numeroLlamado).trim()) {
+      calculatedErrors.numeroLlamado = 'El número de llamado es obligatorio.'
+    } else if (!/^\d{1,4}$/.test(String(formData.numeroLlamado).trim())) {
+      calculatedErrors.numeroLlamado = 'El número de llamado debe ser un valor numérico de hasta 4 dígitos.'
+    }
+
     if (
       formData.selectedTriage === 'Otro' &&
       (!formData.justificacionOtro || formData.justificacionOtro.trim().length < 5)

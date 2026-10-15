@@ -54,6 +54,8 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
     esperaPromedio: '—',
     atencionPromedio: '—',
     triageDistribution: triageCounts,
+    resumenEstudiosRealizadosPorSeccion: null,
+    resumenEstudiosRealizadosPorMuestra: null,
     tickets: dayTickets
   }
 }
@@ -64,6 +66,48 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
 export async function fetchMetricasDiariasApi(fechaStr) {
   const query = `?fecha=${fechaStr || getTodayLocalDateString()}`
   const data = await apiClient.get(`/reports/metricas-diarias/${query}`)
+
+  const resumenEstudiosRealizadosPorSeccion = Array.isArray(data.resumen_estudios_realizados_por_seccion)
+    ? data.resumen_estudios_realizados_por_seccion
+    : Array.isArray(data.resumen_secciones)
+      ? data.resumen_secciones.map((section) => ({
+          seccion_key: section.seccion_key,
+          nombre_seccion: section.nombre_seccion || section.seccion_nombre || 'Sección',
+          total_estudios: section.total_estudios ?? section.total ?? 0
+        }))
+      : null
+
+  let resumenEstudiosRealizadosPorMuestra = data.resumen_estudios_realizados_por_muestra
+  if (!Array.isArray(resumenEstudiosRealizadosPorMuestra) && Array.isArray(data.insumos_tubos)) {
+    const sampleCounts = {
+      sangre: 0,
+      orina: 0,
+      'materia fecal': 0,
+      otros: 0
+    }
+    const bloodSampleTypes = new Set(['edta', 'citrato', 'suero', 'jeringa', 'sangre'])
+
+    data.insumos_tubos.forEach((sample) => {
+      const sampleType = String(sample.tipo_muestra || '').trim().toLowerCase()
+      const sampleGroup = bloodSampleTypes.has(sampleType)
+        ? 'sangre'
+        : sampleType === 'orina'
+          ? 'orina'
+          : sampleType === 'materia fecal'
+            ? 'materia fecal'
+            : 'otros'
+      sampleCounts[sampleGroup] += Number(sample.total_estudios ?? sample.total_tubos ?? sample.total ?? 0)
+    })
+
+    resumenEstudiosRealizadosPorMuestra = [
+      { muestra_key: 'sangre', nombre_muestra: 'Sangre', total_estudios: sampleCounts.sangre },
+      { muestra_key: 'orina', nombre_muestra: 'Orina', total_estudios: sampleCounts.orina },
+      { muestra_key: 'materia fecal', nombre_muestra: 'Materia fecal', total_estudios: sampleCounts['materia fecal'] },
+      ...(sampleCounts.otros > 0
+        ? [{ muestra_key: 'otros', nombre_muestra: 'Otros', total_estudios: sampleCounts.otros }]
+        : [])
+    ]
+  }
 
   // Mapear distribución de triage al formato esperado por los componentes React
   const triageMap = Object.fromEntries(TRIAGE_LIST.map((c) => [c.id, 0]))
@@ -87,11 +131,23 @@ export async function fetchMetricasDiariasApi(fechaStr) {
     fecha: data.fecha,
     atendidos: data.total_atendidos || 0,
     ingresos: data.total_emitidos || 0,
+    cancelados: data.total_cancelados || 0,
     enCurso,
     criticos: data.total_criticos_atendidos || 0,
+    tasaCompletitud: data.tasa_completitud_porcentaje || 0,
+    tasaDesercion: data.tasa_desercion_porcentaje || 0,
     esperaPromedio: data.promedio_espera_minutos ? formatDurationHuman(Math.round(data.promedio_espera_minutos)) : '—',
     atencionPromedio: data.promedio_atencion_minutos ? formatDurationHuman(Math.round(data.promedio_atencion_minutos)) : '—',
     triageDistribution: triageMap,
+    slaTriage: data.sla_triage || [],
+    franjasHorarias: data.franjas_horarias || [],
+    resumenSecciones: data.resumen_secciones || [],
+    resumenEstudiosRealizadosPorSeccion,
+    resumenEstudiosRealizadosPorMuestra,
+    insumosTubos: data.insumos_tubos || [],
+    auditoriaBox: data.auditoria_box || {},
+    rendimientoAdmision: data.rendimiento_admision || [],
+    rendimientoBox: data.rendimiento_box || [],
     rendimientoPersonal: data.rendimiento_personal || [],
     totalEstudios: data.total_estudios || 0,
     raw: data

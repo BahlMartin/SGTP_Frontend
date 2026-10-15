@@ -74,8 +74,8 @@ export const TriageQueueContextProvider = ({ children }) => {
   }, [])
 
   const callNextPatient = useCallback(
-    async (boxNumero) => {
-      const result = await llamarSiguientePacienteApi(boxNumero)
+    async (boxNumero, ticketId = null) => {
+      const result = await llamarSiguientePacienteApi(boxNumero, ticketId)
       if (!result.ticket) {
         throw new Error(result.mensaje || 'No hay pacientes en cola de espera para este Box.')
       }

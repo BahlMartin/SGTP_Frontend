@@ -42,17 +42,9 @@ export function useTecnicoBox() {
   const patientInBox = activeInBoxes[currentBoxKey]
   const matriculaTecnico = userData?.matricula || 'TEC-3391'
 
-  // Al llamar o posicionar un paciente en el box, preseleccionar todos sus estudios como muestra tomada por defecto
+  // Al llamar o posicionar un paciente en el box, los estudios inician en 'Pendiente' por defecto
   useEffect(() => {
-    if (patientInBox && Array.isArray(patientInBox.estudios) && patientInBox.estudios.length > 0) {
-      const initialMap = {}
-      patientInBox.estudios.forEach((studyName) => {
-        initialMap[studyName] = true
-      })
-      setCompletedStudies(initialMap)
-    } else {
-      setCompletedStudies({})
-    }
+    setCompletedStudies({})
   }, [
     patientInBox?.id_ticket || patientInBox?.id,
     patientInBox?.num_llamado,
@@ -92,7 +84,7 @@ export function useTecnicoBox() {
   const handleCallNext = async () => {
     setIsProcessing(true)
     try {
-      const calledTicket = await callNextPatient(currentBoxNumber, matriculaTecnico)
+      const calledTicket = await callNextPatient(currentBoxNumber)
       await changeBoxStatus(currentBoxNumber, 'En atencion')
       showNotification(
         `Paciente ${calledTicket.paciente_nombre} ${calledTicket.paciente_apellido} (Llamado N° ${calledTicket.num_llamado}) convocado al ${currentBoxKey}`
@@ -155,6 +147,35 @@ export function useTecnicoBox() {
     }))
   }
 
+  const handleSelectAllStudies = (markAsCompleted = true) => {
+    if (!patientInBox || !Array.isArray(patientInBox.estudios)) return
+    const newMap = {}
+    patientInBox.estudios.forEach((studyName) => {
+      newMap[studyName] = markAsCompleted
+    })
+    setCompletedStudies(newMap)
+  }
+
+  const handleCallSpecificPatient = async (ticketId) => {
+    if (patientInBox) {
+      alert(`El ${currentBoxKey} ya tiene un paciente en atención (${patientInBox.paciente_nombre} ${patientInBox.paciente_apellido}). Finalice la consulta actual antes de llamar a otro paciente.`)
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      const calledTicket = await callNextPatient(currentBoxNumber, ticketId)
+      await changeBoxStatus(currentBoxNumber, 'En atencion')
+      showNotification(
+        `Paciente ${calledTicket.paciente_nombre} ${calledTicket.paciente_apellido} convocado directamente a ${currentBoxKey}`
+      )
+    } catch (error) {
+      alert(error.message || 'Error al convocar al paciente.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   return {
     boxes,
     boxesLoading,
@@ -174,9 +195,11 @@ export function useTecnicoBox() {
     matriculaTecnico,
     handleStatusChange,
     handleCallNext,
+    handleCallSpecificPatient,
     handleFinishConsultation,
     handleModifyStudies,
     toggleStudyCheck,
+    handleSelectAllStudies,
     showNotification,
     clearNotice
   }

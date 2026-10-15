@@ -68,6 +68,12 @@
   cursor: pointer;
 }
 
+.admission-form__required-dot {
+  color: #dc2626;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
 .admission-form__input {
   height: 42px;
   border: 1px solid #cbd5e1;
