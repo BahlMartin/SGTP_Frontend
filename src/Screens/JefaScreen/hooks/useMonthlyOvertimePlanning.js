@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react'
 import { adjustTime, isValidHalfHourTime } from '../../../utils/shiftTime.utils'
-import { validateOvertimeNoOverlap } from '../../../utils/shiftValidation.utils'
+import { validateOvertimeNoOverlap, computeOvertimeDuration } from '../../../utils/shiftValidation.utils'
 
 export const MESES_NOMBRES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -37,13 +37,9 @@ export function useMonthlyOvertimePlanning(staffMember, { onSubmit, onClose }) {
   const [isSaving, setIsSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
-  // Duración en horas por día
+  // Duración en horas por día (soporta turnos nocturnos con cruce de medianoche)
   const horasDiarias = useMemo(() => {
-    if (!horaInicio || !horaFin || horaInicio >= horaFin) return 0
-    const [h1, m1] = horaInicio.split(':').map(Number)
-    const [h2, m2] = horaFin.split(':').map(Number)
-    const minutos = (h2 * 60 + m2) - (h1 * 60 + m1)
-    return Number((minutos / 60).toFixed(1))
+    return computeOvertimeDuration(horaInicio, horaFin)
   }, [horaInicio, horaFin])
 
   // Total acumulado de horas extras del mes
@@ -144,7 +140,7 @@ export function useMonthlyOvertimePlanning(staffMember, { onSubmit, onClose }) {
     }
 
     if (horasDiarias <= 0) {
-      setErrorMsg('La hora de inicio debe ser estrictamente anterior a la hora de fin.')
+      setErrorMsg('La hora de inicio no puede ser idéntica a la hora de fin.')
       return
     }
 

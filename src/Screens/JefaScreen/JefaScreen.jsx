@@ -12,6 +12,7 @@ import AuthorizeOvertimeModal from './components/AuthorizeOvertimeModal'
 import ActiveBoxesCard from '../../components/ActiveBoxesCard/ActiveBoxesCard'
 import PatientHistoryModal from '../../components/PatientHistoryModal/PatientHistoryModal'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
+import FloatingToast from '../../components/FloatingToast/FloatingToast'
 import { useAuth } from '../../context/AuthContext'
 import { useBox } from '../../context/BoxContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
@@ -30,6 +31,7 @@ export default function JefaScreen() {
     toggleShift,
     authorizeShiftException,
     revokeShiftException,
+    bulkRevokeShiftExceptions,
     deleteStaff,
     createStaff,
     updateStaff,
@@ -40,11 +42,17 @@ export default function JefaScreen() {
   const { refreshBoxes, boxesLoading } = useBox()
 
   const { notice: statusNotice, showNotice } = useFeedbackNotice(4000)
+  const [toastAlert, setToastAlert] = useState(null)
   const [activeCenterTab, setActiveCenterTab] = useState('shifts') // 'shifts' | 'security'
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
   const [editingStaff, setEditingStaff] = useState(null)
   const [staffForOvertime, setStaffForOvertime] = useState(null)
   const [selectedStaffForTickets, setSelectedStaffForTickets] = useState(null)
+
+  const showToast = (message, type = 'success', title = null) => {
+    setToastAlert({ message, type, title })
+    showNotice(message)
+  }
 
   const handleSelectStaffForTickets = (staffMember) => {
     const roleNorm = String(staffMember?.rol || '').trim().toLowerCase()
@@ -179,40 +187,74 @@ export default function JefaScreen() {
   }, [studiesDate, studiesSearch, showNotice])
 
   const handleCreateStaff = async (newStaffPayload) => {
-    await createStaff(newStaffPayload, userData?.rol, showNotice)
+    try {
+      await createStaff(newStaffPayload, userData?.rol, (msg) => {
+        showToast(msg, 'success', 'Personal Incorporado')
+      })
+    } catch (err) {
+      showToast(err.message || 'Error al incorporar personal.', 'error', 'Error al Crear Personal')
+      throw err
+    }
   }
 
   const handleUpdateStaff = async (staffMemberId, updatePayload) => {
-    await updateStaff(staffMemberId, updatePayload, showNotice)
-    setEditingStaff(null)
+    try {
+      await updateStaff(staffMemberId, updatePayload, (msg) => {
+        showToast(msg, 'success', 'Personal Actualizado')
+      })
+      setEditingStaff(null)
+    } catch (err) {
+      showToast(err.message || 'Error al actualizar datos del personal.', 'error', 'Error al Actualizar')
+      throw err
+    }
   }
 
   const handleToggleShift = (staffMemberId, currentStatus) => {
-    toggleShift(staffMemberId, currentStatus, showNotice)
+    toggleShift(staffMemberId, currentStatus, (msg) => {
+      showToast(msg, 'success', 'Estado de Turno Actualizado')
+    })
   }
 
   const handleAuthorizeOvertime = async (payload) => {
-    await authorizeShiftException(payload, showNotice)
+    await authorizeShiftException(payload, (msg) => {
+      showToast(msg, 'success', 'Horario Excepcional')
+    })
   }
 
   const handleRevokeOvertime = async (habilitacionId) => {
-    await revokeShiftException(habilitacionId, showNotice)
+    await revokeShiftException(habilitacionId, (msg) => {
+      showToast(msg, 'success', 'Horas Extras Revocadas')
+    })
+  }
+
+  const handleBulkRevokeOvertime = async (payload) => {
+    await bulkRevokeShiftExceptions(payload, (msg) => {
+      showToast(msg, 'success', 'Horas Extras Revocadas')
+    })
   }
 
   const handleDeleteStaff = (staffMemberId, staffMemberName, staffMemberRole) => {
-    deleteStaff(staffMemberId, staffMemberName, staffMemberRole, userData?.rol, showNotice)
+    deleteStaff(staffMemberId, staffMemberName, staffMemberRole, userData?.rol, (msg) => {
+      showToast(msg, 'success', 'Personal Eliminado')
+    })
   }
 
   const handleUnlockStaff = (staffMemberId) => {
-    unlockStaff(staffMemberId, showNotice)
+    unlockStaff(staffMemberId, (msg) => {
+      showToast(msg, 'success', 'Cuenta Desbloqueada')
+    })
   }
 
   const handleLockStaff = (staffMemberId) => {
-    lockStaff(staffMemberId, showNotice)
+    lockStaff(staffMemberId, (msg) => {
+      showToast(msg, 'success', 'Cuenta Bloqueada')
+    })
   }
 
   const handleReactivateStaff = (staffMemberId) => {
-    reactivateStaff(staffMemberId, showNotice)
+    reactivateStaff(staffMemberId, (msg) => {
+      showToast(msg, 'success', 'Cuenta Reactivada')
+    })
   }
 
   return (
@@ -342,6 +384,7 @@ export default function JefaScreen() {
           onClose={() => setStaffForOvertime(null)}
           onSubmit={handleAuthorizeOvertime}
           onRevoke={handleRevokeOvertime}
+          onBulkRevoke={handleBulkRevokeOvertime}
         />
       )}
 
@@ -350,6 +393,15 @@ export default function JefaScreen() {
           staffMember={selectedStaffForTickets}
           selectedDate={staffDate}
           onClose={() => setSelectedStaffForTickets(null)}
+        />
+      )}
+
+      {toastAlert && (
+        <FloatingToast
+          message={toastAlert.message}
+          type={toastAlert.type}
+          title={toastAlert.title}
+          onClose={() => setToastAlert(null)}
         />
       )}
     </>

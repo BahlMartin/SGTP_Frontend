@@ -137,6 +137,10 @@ export async function revokeHabilitacionHorariaApi(habilitacionId) {
   return await apiClient.delete(`/users/habilitaciones-horarias/${habilitacionId}/`)
 }
 
+export async function bulkRevokeHabilitacionesApi(payload) {
+  return await apiClient.post('/users/habilitaciones-horarias/revocar-lote/', payload)
+}
+
 export async function reactivateHabilitacionHorariaApi(habilitacionId) {
   return await apiClient.patch(`/users/habilitaciones-horarias/${habilitacionId}/reactivar/`)
 }

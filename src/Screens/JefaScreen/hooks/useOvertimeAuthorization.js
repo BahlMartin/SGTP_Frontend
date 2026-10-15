@@ -1,8 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { isValidHalfHourTime, adjustTime } from '../../../utils/shiftTime.utils'
 import { getTodayLocalDateString } from '../../../utils/formatters'
 import { fetchHabilitacionesHorariasApi } from '../../../services/userService'
-import { validateOvertimeNoOverlap } from '../../../utils/shiftValidation.utils'
+import {
+  validateOvertimeNoOverlap,
+  computeOvertimeDuration,
+  splitOvernightShift
+} from '../../../utils/shiftValidation.utils'
 
 export const MOTIVOS_FRECUENTES = [
   'Extensión post-turno por alta demanda asistencial',
@@ -64,12 +68,28 @@ export function useOvertimeAuthorization(staffMember, { onSubmit, onRevoke, onCl
     setHoraFin(adjustTime(horaInicio, minutos))
   }
 
+  // Cómputo de duración y tramos nocturnos
+  const duracionTotal = useMemo(() => {
+    return computeOvertimeDuration(horaInicio, horaFin)
+  }, [horaInicio, horaFin])
+
+  const tramosOvernight = useMemo(() => {
+    return splitOvernightShift({ fecha, horaInicio, horaFin })
+  }, [fecha, horaInicio, horaFin])
+
+  const esNocturno = tramosOvernight.length > 1
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setErrorMsg('')
 
     if (!isValidHalfHourTime(horaInicio) || !isValidHalfHourTime(horaFin)) {
       setErrorMsg('Las horas deben ingresarse en formato HH:MM y en intervalos de 30 min (ej: 16:30).')
+      return
+    }
+
+    if (duracionTotal <= 0) {
+      setErrorMsg('La hora de inicio no puede ser idéntica a la hora de fin.')
       return
     }
 
@@ -125,6 +145,9 @@ export function useOvertimeAuthorization(staffMember, { onSubmit, onRevoke, onCl
     setHoraInicio,
     horaFin,
     setHoraFin,
+    duracionTotal,
+    tramosOvernight,
+    esNocturno,
     motivo,
     setMotivo,
     motivoPersonalizado,
@@ -139,3 +162,4 @@ export function useOvertimeAuthorization(staffMember, { onSubmit, onRevoke, onCl
     handleRevocarItem
   }
 }
+
