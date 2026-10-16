@@ -46,6 +46,64 @@
   overflow-y: auto;
 }
 
+.recent-tickets-card__list--seven-rows {
+  flex: 0 1 auto;
+  max-height: 508px;
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.recent-tickets-card__list--seven-rows .recent-tickets-card__item {
+  flex: 0 0 64px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.recent-tickets-card__list--seven-rows .recent-tickets-card__entry-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.recent-tickets-card__list--seven-rows .recent-tickets-card__call-num {
+  flex-shrink: 0;
+}
+
+.recent-tickets-card__list--seven-rows .recent-tickets-card__details {
+  flex: 1;
+  min-width: 0;
+}
+
+.recent-tickets-card__list--seven-rows .recent-tickets-card__name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  overflow: hidden;
+}
+
+.recent-tickets-card__list--seven-rows .recent-tickets-card__name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-tickets-card__list--seven-rows .triage-badge {
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 48%;
+  min-width: 0;
+  justify-content: flex-start;
+  white-space: normal;
+  text-align: left;
+}
+
+.recent-tickets-card__list--seven-rows .triage-badge__text {
+  line-height: 1.15;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
 .recent-tickets-card__list::-webkit-scrollbar {
   width: 6px;
 }

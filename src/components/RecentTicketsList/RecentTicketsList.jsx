@@ -15,6 +15,7 @@ function RecentTicketsList({
   emptyMessage = 'No hubo ningún ingreso',
   ticketsList = [],
   maxItems = null,
+  scrollAfterSeven = false,
   onTicketClick = () => {},
   onRefresh = null,
   isLoading = false
@@ -46,7 +47,9 @@ function RecentTicketsList({
       {visibleTickets.length === 0 ? (
         <p className="recent-tickets-card__empty-notice">{emptyMessage}</p>
       ) : (
-        <ul className="recent-tickets-card__list">
+        <ul
+          className={`recent-tickets-card__list${scrollAfterSeven ? ' recent-tickets-card__list--seven-rows' : ''}`}
+        >
           {visibleTickets.map((ticketItem) => {
             const handleKeyDown = (keyboardEvent) => {
               if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
@@ -71,7 +74,14 @@ function RecentTicketsList({
                   </span>
                   <div className="recent-tickets-card__details">
                     <span className="recent-tickets-card__name">
-                      {ticketItem.paciente_nombre} {ticketItem.paciente_apellido}
+                      {scrollAfterSeven ? (
+                        <>
+                          <span>{ticketItem.paciente_nombre}</span>
+                          <span>{ticketItem.paciente_apellido}</span>
+                        </>
+                      ) : (
+                        `${ticketItem.paciente_nombre} ${ticketItem.paciente_apellido}`
+                      )}
                     </span>
                     <span className="recent-tickets-card__time">
                       {formatTimeHHMM(ticketItem.fecha_hora_admision)} hs
@@ -79,7 +89,11 @@ function RecentTicketsList({
                   </div>
                 </div>
 
-                <TriageBadge categoryKey={ticketItem.clasificacion_triage} showPriority={false} />
+                <TriageBadge
+                  categoryKey={ticketItem.clasificacion_triage}
+                  showPriority={false}
+                  compact={scrollAfterSeven}
+                />
               </li>
             )
           })}
