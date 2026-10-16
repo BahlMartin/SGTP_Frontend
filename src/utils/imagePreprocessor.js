@@ -117,7 +117,7 @@ function computeOtsuThreshold(grayscaleData, totalPixels) {
  * @returns {Promise<{ canvas: HTMLCanvasElement, dataUrl: string, blob: Blob }>}
  */
 export async function preprocessRecipeImage(imageSource, options = {}) {
-  const { targetWidth = 1600, binarize = true } = options
+  const { targetWidth = 1600, binarize = false } = options
   const img = await loadImageElement(imageSource)
 
   // 1. Escalar preservando aspecto
@@ -142,38 +142,76 @@ export async function preprocessRecipeImage(imageSource, options = {}) {
   const data = imageData.data
   const totalPixels = width * height
   const grayscale = new Uint8ClampedArray(totalPixels)
+  const histogram = new Int32Array(256)
 
-  // 2. Escala de grises (Luminancia ITU-R BT.601)
-  let minGray = 255
-  let maxGray = 0
-
+  // 2. Escala de grises (Luminancia ponderada ITU-R BT.601) y cálculo de histograma
   for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-    // Luminancia estándar
     const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2])
     grayscale[j] = gray
-    if (gray < minGray) minGray = gray
-    if (gray > maxGray) maxGray = gray
+    histogram[gray]++
   }
 
-  // 3. Estiramiento de contraste (Contrast Stretching)
-  const range = maxGray - minGray || 1
-  for (let j = 0; j < totalPixels; j++) {
-    grayscale[j] = Math.round(((grayscale[j] - minGray) / range) * 255)
-  }
+  let thresholdUsed = null
 
-  // 4. Binarización Otsu
-  const threshold = binarize ? computeOtsuThreshold(grayscale, totalPixels) : 128
+  if (binarize) {
+    // Modo 1: Binarización estricta Otsu (ideal solo para textos impresos nítidos)
+    thresholdUsed = computeOtsuThreshold(grayscale, totalPixels)
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+      const val = grayscale[j] < thresholdUsed ? 0 : 255
+      data[i] = val
+      data[i + 1] = val
+      data[i + 2] = val
+      data[i + 3] = 255
+    }
+  } else {
+    // Modo 2 (Recomendado para recetas y cursiva): Escala de Grises Adaptativa.
+    // Utiliza corte por percentiles (2% para tinta oscura, 95% para papel de fondo).
+    // Blanquea sombras de papel y fondos sucios pero MANTIENE los trazos continuos
+    // del bolígrafo con degradados antialiased, impidiendo que Tesseract descarte las palabras.
+    const lowLimit = Math.floor(totalPixels * 0.02)
+    const highLimit = Math.floor(totalPixels * 0.95)
 
-  // Volcar a ImageData en blanco puro (255) o negro puro (0)
-  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-    const val = binarize
-      ? grayscale[j] < threshold ? 0 : 255
-      : grayscale[j]
+    let count = 0
+    let pLow = 0
+    let pHigh = 255
 
-    data[i] = val     // R
-    data[i + 1] = val // G
-    data[i + 2] = val // B
-    data[i + 3] = 255 // Alpha
+    for (let t = 0; t < 256; t++) {
+      count += histogram[t]
+      if (count >= lowLimit && pLow === 0) {
+        pLow = t
+      }
+      if (count >= highLimit) {
+        pHigh = t
+        break
+      }
+    }
+
+    if (pHigh <= pLow + 15) {
+      pLow = 0
+      pHigh = 255
+    }
+
+    const range = pHigh - pLow
+    const lut = new Uint8ClampedArray(256)
+    for (let t = 0; t < 256; t++) {
+      if (t <= pLow) {
+        lut[t] = 0
+      } else if (t >= pHigh) {
+        lut[t] = 255
+      } else {
+        const norm = (t - pLow) / range
+        // Curva gamma (1.25) para dar cuerpo a la tinta de bolígrafo tenue
+        lut[t] = Math.round(Math.pow(norm, 1.25) * 255)
+      }
+    }
+
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+      const val = lut[grayscale[j]]
+      data[i] = val
+      data[i + 1] = val
+      data[i + 2] = val
+      data[i + 3] = 255
+    }
   }
 
   ctx.putImageData(imageData, 0, 0)
@@ -187,6 +225,6 @@ export async function preprocessRecipeImage(imageSource, options = {}) {
     blob,
     width,
     height,
-    thresholdUsed: threshold
+    thresholdUsed
   }
 }

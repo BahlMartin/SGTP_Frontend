@@ -464,7 +464,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                   className={`ocr-modal__toggle-btn ${viewMode === 'processed' ? 'ocr-modal__toggle-btn--active' : ''}`}
                   onClick={() => setViewMode('processed')}
                 >
-                  <Sparkles size={13} /> Binarizada (B/N Otsu)
+                  <Sparkles size={13} /> Optimizada (Contraste)
                 </button>
               </div>
             )}

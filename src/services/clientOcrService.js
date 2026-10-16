@@ -67,6 +67,16 @@ export async function getTesseractWorker(onProgress) {
       }
     })
 
+    // Configuración adaptativa para documentos médicos y escritura a mano:
+    // 1. user_defined_dpi = 300: evita que Tesseract asuma 70 DPI por defecto y descarte trazos gruesos/cursivos
+    // 2. tessedit_pageseg_mode = 6 (PSM.SINGLE_BLOCK): óptimo para recetas con listas de estudios
+    // 3. preserve_interword_spaces = 1: respeta espacios entre palabras manuscritas
+    await worker.setParameters({
+      user_defined_dpi: '300',
+      tessedit_pageseg_mode: '6',
+      preserve_interword_spaces: '1'
+    })
+
     activeWorker = worker
     return activeWorker
   } finally {
@@ -127,44 +137,88 @@ export function sanitizeRecipeLines(rawLines = []) {
 
 /**
  * Procesa integralmente una orden médica:
- * 1. Preprocesamiento óptico en Canvas (Otsu binarización y contraste).
- * 2. Reconocimiento OCR en cliente mediante Tesseract.js.
+ * 1. Preprocesamiento óptico en Canvas (escala de grises adaptativa sin binarización destructiva).
+ * 2. Reconocimiento OCR en cliente mediante Tesseract.js (DPI 300 + PSM adaptativo).
  * 3. Segmentación y filtrado de ruido no médico.
  *
  * @param {File|Blob|string|HTMLVideoElement} imageSource
  * @param {Function} [onProgress] Callback para reportar estado y porcentaje
+ * @param {Object} [options] Opciones opcionales de preprocesamiento
  * @returns {Promise<{ rawText: string, lines: string[], preprocessedDataUrl: string, confidence: number }>}
  */
-export async function recognizeRecipeClient(imageSource, onProgress) {
+export async function recognizeRecipeClient(imageSource, onProgress, options = {}) {
+  const { binarize = false, targetWidth = 1600 } = options
+
   if (onProgress) {
     onProgress({
       status: 'preprocessing',
       progress: 0.05,
       percent: 5,
-      message: 'Optimizando imagen (filtro de contraste y binarización Otsu)...'
+      message: 'Optimizando imagen (realce de contraste y preservación de trazos)...'
     })
   }
 
-  // 1. Preprocesamiento en Canvas
+  // 1. Preprocesamiento en Canvas (binarize: false preserva trazos tenues y cursivos)
   const preprocessed = await preprocessRecipeImage(imageSource, {
-    targetWidth: 1600,
-    binarize: true
+    targetWidth,
+    binarize
   })
 
   // 2. Obtener worker de Tesseract y ejecutar reconocimiento
   const worker = await getTesseractWorker(onProgress)
 
-  const result = await worker.recognize(preprocessed.canvas)
-  const fullText = result.data?.text || ''
-  const confidence = result.data?.confidence || 0
+  // Primera pasada: PSM 6 (Bloque uniforme de líneas de texto)
+  let result = await worker.recognize(preprocessed.canvas)
+  let fullText = result.data?.text || ''
+  let confidence = result.data?.confidence || 0
 
-  // 3. Segmentar por saltos de línea y sanitizar
-  const splitLines = fullText
+  let splitLines = fullText
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean)
 
-  const candidateLines = sanitizeRecipeLines(splitLines)
+  let candidateLines = sanitizeRecipeLines(splitLines)
+
+  // Si no se detectaron líneas válidas, reintentar con PSM 11 (Sparse Text / Texto disperso manuscrito)
+  if (candidateLines.length === 0) {
+    if (onProgress) {
+      onProgress({
+        status: 'recognizing text',
+        progress: 0.7,
+        percent: 70,
+        message: 'Reintentando con modo para escritura dispersa o manuscrita...'
+      })
+    }
+
+    try {
+      await worker.setParameters({
+        tessedit_pageseg_mode: '11'
+      })
+
+      const retryResult = await worker.recognize(preprocessed.canvas)
+      const retryText = retryResult.data?.text || ''
+      const retryLines = sanitizeRecipeLines(
+        retryText
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter(Boolean)
+      )
+
+      if (retryLines.length > 0) {
+        result = retryResult
+        fullText = retryText
+        confidence = retryResult.data?.confidence || 0
+        candidateLines = retryLines
+      }
+    } catch (err) {
+      console.warn('Reintento con PSM 11 no pudo completarse:', err)
+    } finally {
+      // Restaurar modo por defecto para siguientes ejecuciones
+      await worker.setParameters({
+        tessedit_pageseg_mode: '6'
+      }).catch(() => {})
+    }
+  }
 
   return {
     rawText: fullText,
