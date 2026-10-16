@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Printer, X, CheckCircle } from 'lucide-react'
 import { printThermalTicket } from '../../utils/ticketPrint.utils'
 import TicketReceipt from './components/TicketReceipt'
@@ -34,7 +35,7 @@ export default function TicketModal({ ticket, onClose, title = '', className = '
   const isHistorico = ticket.estado === 'Atendido' || ticket.estado === 'Finalizado'
   const badgeText = title || (isHistorico ? 'Comprobante Asistencial de Historial' : 'Ticket Asistencial Emitido')
 
-  return (
+  return createPortal(
     <div
       className={`ticket-modal ${className}`.trim()}
       onClick={handleBackdropClick}
@@ -65,6 +66,7 @@ export default function TicketModal({ ticket, onClose, title = '', className = '
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

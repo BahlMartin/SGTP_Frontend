@@ -111,22 +111,33 @@ export async function fetchMetricasDiariasApi(fechaStr) {
 
   // Mapear distribución de triage al formato esperado por los componentes React
   const triageMap = Object.fromEntries(TRIAGE_LIST.map((c) => [c.id, 0]))
+  const normalizeCategory = (value) =>
+    String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase()
+      .replace(/[\s.-]+/g, '_')
+
   if (Array.isArray(data.distribucion_triage)) {
     data.distribucion_triage.forEach((item) => {
-      const catKey = String(item.clasificacion_triage || '').toLowerCase().replace(/\s+/g, '_')
-      const matched = TRIAGE_LIST.find(
-        (t) => t.id === catKey || t.nombre?.toLowerCase() === String(item.clasificacion_triage).toLowerCase()
+      const categoryKey = normalizeCategory(item.clasificacion_triage)
+      const matched = TRIAGE_LIST.find((category) =>
+        [category.id, category.key, category.label, category.code].some(
+          (value) => normalizeCategory(value) === categoryKey
+        )
       )
+      const quantity = Number(item.cantidad) || 0
+
       if (matched) {
-        triageMap[matched.id] = (triageMap[matched.id] || 0) + item.cantidad
+        triageMap[matched.id] += quantity
       } else {
-        triageMap[item.clasificacion_triage] = item.cantidad
+        triageMap[item.clasificacion_triage] = quantity
       }
     })
   }
 
   const enCurso = Math.max(0, (data.total_emitidos || 0) - (data.total_atendidos || 0))
-
   return {
     fecha: data.fecha,
     atendidos: data.total_atendidos || 0,

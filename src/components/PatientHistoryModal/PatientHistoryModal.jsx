@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Users, Filter, Check } from 'lucide-react'
 import { fetchTicketByIdApi, fetchTicketsByStaffApi } from '../../services/ticketService'
 import { updatePatientApi } from '../../services/patientService'
@@ -174,7 +175,7 @@ export default function PatientHistoryModal({
       : 'Tickets Atendidos y Extraídos por Técnico')
     : 'Historial Clínico del Paciente'
 
-  return (
+  return createPortal(
     <>
       <div
         className="patient-history-modal"
@@ -337,6 +338,7 @@ export default function PatientHistoryModal({
           onClose={() => setSelectedTicketDetail(null)}
         />
       )}
-    </>
+    </>,
+    document.body
   )
 }

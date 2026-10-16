@@ -186,6 +186,7 @@ export default function AdmisionScreen() {
               title="Últimos ingresos de hoy"
               emptyMessage="No hubo ningun ingreso"
               ticketsList={todayTickets}
+              scrollAfterSeven
               onTicketClick={handleTicketItemClick}
               onRefresh={refreshTickets}
               isLoading={loading}
