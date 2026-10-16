@@ -745,3 +745,123 @@
     transform: rotate(360deg);
   }
 }
+
+/* Banner de Combos de Rutina */
+.ocr-modal__combo-banner {
+  background: linear-gradient(135deg, #eff6ff, #f3e8ff);
+  border: 1px solid #c084fc;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(147, 51, 234, 0.08);
+}
+
+.ocr-modal__combo-badge {
+  align-self: flex-start;
+  background: #9333ea;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.ocr-modal__combo-title {
+  display: block;
+  font-size: 0.92rem;
+  color: #581c87;
+  font-weight: 700;
+}
+
+.ocr-modal__combo-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b21a8;
+  line-height: 1.35;
+}
+
+/* Badges de Procedencia Inteligente */
+.ocr-modal__origin-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ocr-modal__origin-badge--combo {
+  background: #f3e8ff;
+  color: #7e22ce;
+  border: 1px solid #d8b4fe;
+}
+
+.ocr-modal__origin-badge--memory {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.ocr-modal__origin-badge--context {
+  background: #cffafe;
+  color: #0e7490;
+  border: 1px solid #67e8f9;
+}
+
+/* Sugerencias Contextuales Co-ocurrentes */
+.ocr-modal__contextual-box {
+  background: #f0fdf4;
+  border: 1px dashed #86efac;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.ocr-modal__contextual-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #166534;
+  margin-bottom: 8px;
+}
+
+.ocr-modal__contextual-icon {
+  color: #16a34a;
+}
+
+.ocr-modal__contextual-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ocr-modal__contextual-chip {
+  background: #ffffff;
+  border: 1px solid #86efac;
+  color: #15803d;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.ocr-modal__contextual-chip:hover {
+  background: #dcfce7;
+  border-color: #22c55e;
+  transform: translateY(-1px);
+}
+

@@ -13,7 +13,7 @@ import {
   SlidersHorizontal,
   Plus
 } from 'lucide-react'
-import { processRecipeFullFlow } from '../../services/ocrService'
+import { processRecipeFullFlow, reportOcrFeedbackApi } from '../../services/ocrService'
 import { fetchStudiesApi } from '../../services/studyService'
 import './RecipeOcrModal.css'
 
@@ -232,6 +232,29 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   }
 
   const handleConfirm = () => {
+    // Disparar retroalimentación de aprendizaje activo en segundo plano (fire-and-forget)
+    if (ocrResult?.detectedLines?.length > 0 && selectedStudies.length > 0) {
+      const asociacionesDirectas = selectedStudies
+        .filter(
+          (s) =>
+            s.textoOrigen &&
+            s.textoOrigen !== 'Agregado manualmente' &&
+            s.textoOrigen !== 'Sugerencia contextual'
+        )
+        .map((s) => ({
+          texto: s.textoOrigen,
+          estudioId: s.id
+        }))
+
+      reportOcrFeedbackApi({
+        lineasOrigen: ocrResult.detectedLines,
+        estudiosConfirmadosIds: selectedStudies.map((s) => s.id),
+        asociacionesDirectas
+      }).catch((err) => {
+        console.warn('Feedback OCR no crítico falló:', err)
+      })
+    }
+
     onConfirmStudies(selectedStudies)
     stopCamera()
     onClose()
@@ -446,6 +469,19 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
               </div>
             </div>
 
+            {/* Banner de Combo o Batería de Rutina detectada */}
+            {ocrResult.comboDetectado && (
+              <div className="ocr-modal__combo-banner">
+                <div className="ocr-modal__combo-badge">📦 Combo Detectado</div>
+                <div className="ocr-modal__combo-content">
+                  <strong className="ocr-modal__combo-title">{ocrResult.comboDetectado}</strong>
+                  <p className="ocr-modal__combo-desc">
+                    Se preseleccionaron automáticamente las prácticas correspondientes a este perfil de rutina.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Alternar vista de imagen original vs realzada */}
             {ocrResult.preprocessedDataUrl && (
               <div className="ocr-modal__view-toggle">
@@ -510,7 +546,19 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                         <span className="ocr-modal__study-name">{study.nombre}</span>
                         <div className="ocr-modal__study-meta">
                           <span className="ocr-modal__study-code">{study.codigoPractica}</span>
-                          {scoreNumber > 0 && (
+                          {study.origenDeteccion === 'COMBO_RUTINA' ? (
+                            <span className="ocr-modal__origin-badge ocr-modal__origin-badge--combo">
+                              Combo de Rutina
+                            </span>
+                          ) : study.origenDeteccion === 'MEMORIA_APRENDIDA' ? (
+                            <span className="ocr-modal__origin-badge ocr-modal__origin-badge--memory">
+                              Memoria del equipo
+                            </span>
+                          ) : study.origenDeteccion === 'VALIDADO_POR_CONTEXTO' ? (
+                            <span className="ocr-modal__origin-badge ocr-modal__origin-badge--context">
+                              Validado por contexto
+                            </span>
+                          ) : scoreNumber > 0 ? (
                             <span
                               className={`ocr-modal__study-score ${
                                 scoreNumber >= 85 ? 'ocr-modal__study-score--high' : 'ocr-modal__study-score--medium'
@@ -518,7 +566,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                             >
                               {scoreNumber}% coincidencia
                             </span>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </label>
@@ -526,6 +574,50 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                 })}
               </div>
             )}
+
+            {/* Sugerencias contextuales de estudios co-ocurrentes */}
+            {ocrResult.sugerenciasContextuales?.length > 0 && (() => {
+              const visibleSuggestions = ocrResult.sugerenciasContextuales.filter(
+                (sug) => !selectedStudies.some((s) => s.id === sug.id_estudio)
+              )
+              if (visibleSuggestions.length === 0) return null
+
+              return (
+                <div className="ocr-modal__contextual-box">
+                  <div className="ocr-modal__contextual-header">
+                    <Sparkles size={14} className="ocr-modal__contextual-icon" />
+                    <span>Prácticas solicitadas habitualmente en conjunto:</span>
+                  </div>
+                  <div className="ocr-modal__contextual-chips">
+                    {visibleSuggestions.map((sug) => (
+                      <button
+                        key={sug.id_estudio}
+                        type="button"
+                        className="ocr-modal__contextual-chip"
+                        title={sug.motivo || 'Estudio frecuente en este combo'}
+                        onClick={() => {
+                          setSelectedStudies((prev) => [
+                            ...prev,
+                            {
+                              id: sug.id_estudio,
+                              nombre: sug.nombre,
+                              categoria: 'Sugerencia Contextual',
+                              codigoPractica: sug.codigo_practica || '',
+                              score: Math.round((sug.indice_afinidad || 0.8) * 100),
+                              textoOrigen: 'Sugerencia contextual',
+                              origenDeteccion: 'VALIDADO_POR_CONTEXTO'
+                            }
+                          ])
+                        }}
+                      >
+                        <Plus size={13} />
+                        <span>{sug.nombre}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Buscador para agregar estudios adicionales manualmente */}
             <div className="ocr-modal__manual-section">
