@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'   
 import { CheckCircle2 } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import { useAuth } from '../../context/AuthContext'
@@ -7,6 +7,8 @@ import SecretariaJornadaBar from './components/SecretariaJornadaBar/SecretariaJo
 import SecretariaKpiGrid from './components/SecretariaKpiGrid/SecretariaKpiGrid'
 import TriageDistributionCard from './components/TriageDistributionCard/TriageDistributionCard'
 import './SecretariaScreen.css'
+
+import useWebSocket from '../../hooks/useWebSocket' // [NUEVO]
 
 export default function SecretariaScreen() {
   const { userData } = useAuth()
@@ -21,6 +23,19 @@ export default function SecretariaScreen() {
     handleExportPdf,
     handleSendEmail
   } = useSecretariaReport({ userData })
+
+  // [NUEVO] Escuchar el canal de reportes
+  useWebSocket('reportes', {
+    onMessage: useCallback((msg) => {
+      if (msg?.action === 'REFRESH_REPORTS') {
+        // Si tu hook useSecretariaReport no expone una función "refreshMetrics", 
+        // un truco reactivo limpio es re-asignar la fecha actual para que 
+        // el useEffect dentro del hook vuelva a dispararse:
+        setJornadaDate((prev) => new Date(prev).toISOString().split('T')[0] + ' ') 
+        setTimeout(() => setJornadaDate(jornadaDate), 50) 
+      }
+    }, [jornadaDate, setJornadaDate])
+  })
 
   return (
     <div className="secretaria-screen">
