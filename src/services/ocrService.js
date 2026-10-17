@@ -1,10 +1,12 @@
 import apiClient from './apiClient'
-import { recognizeRecipeClient } from './clientOcrService'
+import { recognizeRecipePaddle } from './paddleOcrService'
+
+export { recognizeRecipePaddle }
 
 /**
  * Servicio de Reconocimiento y Mapeo de Recetas Médicas con Memoria Adaptativa.
- * Orquesta la captura local (Tesseract.js + Canvas en WebAssembly)
- * y el cruce semántico con el catálogo de estudios, combos de rutina y coocurrencias.
+ * Ejecuta PaddleOCR (PP-OCRv5 en WebAssembly) en el cliente y cruza las líneas
+ * extraídas con el catálogo de estudios, combos de rutina y coocurrencias en Django.
  */
 
 /**
@@ -53,75 +55,80 @@ export async function mapStudiesFromTextApi(textos = []) {
 }
 
 /**
- * Flujo Completo Asistido por Cliente:
- * 1. Filtro óptico Canvas (escala de grises adaptativa y contraste).
- * 2. Reconocimiento OCR con Tesseract.js en el navegador (DPI 300 + PSM adaptativo).
- * 3. Cruce léxico, combos de rutina y memoria adaptativa en el Backend Django.
+ * Procesa integralmente una orden médica utilizando exclusivamente PaddleOCR (PP-OCRv5):
+ * 1. Preprocesamiento óptico adaptativo.
+ * 2. Detección basada en polígonos libres (DBNet).
+ * 3. Reconocimiento de secuencias de texto (SVTR).
+ * 4. Cruce semántico con backend Django (Fuzzy matching, Combos de rutina, Alias, Coocurrencias).
  *
  * @param {File|Blob|string|HTMLVideoElement} imageSource
  * @param {Function} [onProgress] Callback para reportar estados del proceso
- * @param {Object} [options] Opciones opcionales de preprocesamiento
  */
-export async function processRecipeFullFlow(imageSource, onProgress, options = {}) {
+export async function processRecipeFullFlow(imageSource, onProgress) {
   if (!imageSource) {
     throw new Error('Debe proporcionar una imagen o captura válida de la receta médica.')
   }
 
-  // 1 y 2: Preprocesamiento y OCR local en navegador
-  const ocrOutput = await recognizeRecipeClient(imageSource, onProgress, options)
-
   if (onProgress) {
     onProgress({
-      status: 'matching',
-      progress: 0.9,
-      percent: 90,
-      message: 'Mapeando estudios clínicos, combos de rutina y memoria adaptativa...'
+      status: 'paddle_pass',
+      progress: 0.15,
+      percent: 15,
+      message: 'Escaneando con PaddleOCR (PP-OCRv5)...'
     })
   }
 
-  // 3: Si no se extrajeron líneas legibles
-  if (!ocrOutput.lines || ocrOutput.lines.length === 0) {
-    if (onProgress) {
-      onProgress({
-        status: 'done',
-        progress: 1,
-        percent: 100,
-        message: 'Finalizado sin coincidencias'
-      })
-    }
-    return {
-      success: true,
-      mensaje: 'No se identificaron prácticas clínicas legibles en la imagen.',
-      totalSugerencias: 0,
-      comboDetectado: null,
-      sugerencias: [],
-      suggestedStudies: [],
-      sugerenciasContextuales: [],
-      rawText: ocrOutput.rawText,
-      detectedLines: [],
-      preprocessedDataUrl: ocrOutput.preprocessedDataUrl,
-      confidence: ocrOutput.confidence
-    }
+  const t0 = performance.now()
+  const paddleOutput = await recognizeRecipePaddle(imageSource, onProgress)
+  const durationMs = Math.round(performance.now() - t0)
+
+  let mapping = {
+    suggestedStudies: [],
+    sugerenciasContextuales: [],
+    comboDetectado: null,
+    totalSugerencias: 0
   }
 
-  // 4: Enviar textos filtrados al backend para pipeline de mapeo inteligente
-  const mappingResult = await mapStudiesFromTextApi(ocrOutput.lines)
+  if (paddleOutput?.lines?.length > 0) {
+    if (onProgress) {
+      onProgress({
+        status: 'mapping_backend',
+        progress: 0.85,
+        percent: 85,
+        message: 'Mapeando prácticas con el nomenclador clínico...'
+      })
+    }
+    mapping = await mapStudiesFromTextApi(paddleOutput.lines)
+  }
+
+  const suggestedStudies = (mapping.suggestedStudies || []).map((s) => ({
+    ...s,
+    motorOcr: 'PaddleOCR'
+  }))
 
   if (onProgress) {
     onProgress({
       status: 'done',
       progress: 1,
       percent: 100,
-      message: 'Completado'
+      message: `Análisis finalizado: ${suggestedStudies.length} prácticas identificadas con PaddleOCR`
     })
   }
 
   return {
-    ...mappingResult,
-    rawText: ocrOutput.rawText,
-    detectedLines: ocrOutput.lines,
-    preprocessedDataUrl: ocrOutput.preprocessedDataUrl,
-    confidence: ocrOutput.confidence
+    success: true,
+    totalSugerencias: suggestedStudies.length,
+    comboDetectado: mapping.comboDetectado || null,
+    sugerencias: suggestedStudies,
+    suggestedStudies,
+    sugerenciasContextuales: mapping.sugerenciasContextuales || [],
+    rawText: paddleOutput?.rawText || '',
+    detectedLines: paddleOutput?.lines || [],
+    preprocessedDataUrl: paddleOutput?.preprocessedDataUrl,
+    confidence: paddleOutput?.confidence || 0,
+    durationMs,
+    wordsCount: paddleOutput?.metrics?.wordsCount || paddleOutput?.lines?.length || 0,
+    engineUsed: 'PaddleOCR (PP-OCRv5)'
   }
 }
 
@@ -137,44 +144,29 @@ export async function processRecipeFullFlow(imageSource, onProgress, options = {
  * @param {number[]} feedbackData.estudiosConfirmadosIds
  * @param {Array<{ texto: string, estudioId: number }>} feedbackData.asociacionesDirectas
  */
-export async function reportOcrFeedbackApi(feedbackData = {}) {
+export async function reportOcrFeedbackApi(feedbackData) {
   try {
-    const payload = {
-      lineas_origen: feedbackData.lineasOrigen || [],
-      estudios_confirmados_ids: feedbackData.estudiosConfirmadosIds || [],
-      asociaciones_directas: (feedbackData.asociacionesDirectas || []).map((a) => ({
-        texto: a.texto,
-        estudio_id: a.estudioId
-      }))
-    }
-    return await apiClient.post('/ocr/retroalimentar/', payload)
+    const response = await apiClient.post('/ocr/feedback-aprendizaje/', feedbackData)
+    return response
   } catch (err) {
-    console.warn('No se pudo enviar retroalimentación OCR en segundo plano:', err)
+    console.warn('No se pudo registrar feedback de aprendizaje OCR:', err)
     return null
   }
 }
 
 /**
- * Método legacy para compatibilidad hacia atrás: sube archivo binario al backend.
+ * @deprecated Función heredada de compatibilidad. Utilice processRecipeFullFlow.
  */
-export async function scanRecipeOcrApi(fileOrBlob) {
-  if (!fileOrBlob) {
-    throw new Error('Debe proporcionar un archivo de imagen válido.')
-  }
-
-  const formData = new FormData()
-  formData.append('file', fileOrBlob)
-
-  const response = await apiClient.upload('/ocr/escanear-receta/', formData)
-
+export async function parseRecipeImageApi(imageSource, onProgress) {
+  const result = await processRecipeFullFlow(imageSource, onProgress)
   return {
     success: true,
-    mensaje: response.mensaje,
-    totalSugerencias: response.total_sugerencias || 0,
+    mensaje: `Se reconocieron ${result.suggestedStudies.length} prácticas.`,
+    totalSugerencias: result.totalSugerencias,
     comboDetectado: null,
-    sugerencias: response.sugerencias || [],
+    sugerencias: result.sugerencias || [],
     sugerenciasContextuales: [],
-    suggestedStudies: (response.sugerencias || []).map((s) => ({
+    suggestedStudies: (result.sugerencias || []).map((s) => ({
       id: s.id_estudio,
       nombre: s.nombre,
       categoria: s.tipo_muestra || 'Otro',

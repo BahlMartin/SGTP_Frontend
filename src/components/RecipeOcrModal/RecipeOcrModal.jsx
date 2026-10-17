@@ -158,12 +158,12 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     }
   }, [handlePasteEvent])
 
-  // Iniciar procesamiento completo (Canvas Otsu -> Tesseract.js -> Django Mapeo)
+  // Iniciar procesamiento completo con PaddleOCR PP-OCRv5 -> Django Mapeo
   const handleProcessOcr = async () => {
     if (!file && !imagePreview) return
     setAnalyzing(true)
     setOcrError(null)
-    setProgressInfo({ percent: 5, message: 'Iniciando filtro de preprocesamiento...' })
+    setProgressInfo({ percent: 10, message: 'Inicializando red neuronal PaddleOCR...' })
 
     try {
       const source = file || imagePreview
@@ -260,6 +260,9 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     onClose()
   }
 
+  // Estudios sugeridos identificados por PaddleOCR
+  const displayedStudies = ocrResult?.suggestedStudies || []
+
   return (
     <div className="ocr-modal" role="dialog" aria-modal="true" aria-labelledby="ocr-modal-title">
       <div className="ocr-modal__card">
@@ -277,13 +280,13 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         <div className="ocr-modal__header">
           <div className="ocr-modal__chip-ai">
             <Sparkles size={16} />
-            <span>OCR Institucional Seguro (Tesseract.js + Canvas)</span>
+            <span>OCR Inteligente (PaddleOCR PP-OCRv5)</span>
           </div>
           <h3 id="ocr-modal-title" className="ocr-modal__title">
             Escaneo y Reconocimiento de Receta Médica
           </h3>
           <p className="ocr-modal__subtitle">
-            Procesamiento en memoria volátil de la PC local (Cumplimiento PHI). La imagen nunca viaja a internet.
+            Procesamiento neuronal 100% en memoria de la PC local (Privacidad PHI). Detección por polígonos libres (DBNet) y lectura profunda (SVTR).
           </p>
         </div>
 
@@ -443,7 +446,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                 {analyzing ? (
                   <>
                     <span className="ocr-modal__spinner" />
-                    Procesando receta con Tesseract.js...
+                    Procesando receta con PaddleOCR...
                   </>
                 ) : (
                   <>
@@ -518,18 +521,24 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                 </span>
                 {ocrResult.confidence > 0 && (
                   <span className="ocr-modal__info-chip">
-                    Confianza OCR: {Math.round(ocrResult.confidence)}%
+                    Confianza promedio: {Math.round(ocrResult.confidence)}%
+                  </span>
+                )}
+                {ocrResult.engineUsed && (
+                  <span className="ocr-modal__info-chip ocr-modal__info-chip--engine">
+                    {ocrResult.engineUsed}
                   </span>
                 )}
               </div>
             </div>
 
             {/* Grilla de Prácticas Detectadas */}
-            {ocrResult.suggestedStudies?.length > 0 && (
+            {displayedStudies.length > 0 ? (
               <div className="ocr-modal__studies-grid">
-                {ocrResult.suggestedStudies.map((study) => {
+                {displayedStudies.map((study) => {
                   const isSelected = selectedStudies.some((s) => s.id === study.id)
                   const scoreNumber = Number(study.score) || 0
+
                   return (
                     <label
                       key={study.id}
@@ -546,6 +555,9 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                         <span className="ocr-modal__study-name">{study.nombre}</span>
                         <div className="ocr-modal__study-meta">
                           <span className="ocr-modal__study-code">{study.codigoPractica}</span>
+                          <span className="ocr-modal__motor-badge ocr-modal__motor-badge--paddle">
+                            🎯 PaddleOCR
+                          </span>
                           {study.origenDeteccion === 'COMBO_RUTINA' ? (
                             <span className="ocr-modal__origin-badge ocr-modal__origin-badge--combo">
                               Combo de Rutina
@@ -572,6 +584,13 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                     </label>
                   )
                 })}
+              </div>
+            ) : (
+              <div className="ocr-modal__no-studies-msg">
+                <AlertCircle size={16} />
+                <span>
+                  No se identificaron prácticas automáticamente con PaddleOCR. Puede agregar los estudios manualmente usando el buscador inferior.
+                </span>
               </div>
             )}
 
