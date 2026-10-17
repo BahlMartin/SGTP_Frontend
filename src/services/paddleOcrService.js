@@ -41,15 +41,30 @@ export async function getPaddleOcrInstance(onProgress) {
       // Silenciar advertencias informativas de optimización interna de grafos de ONNX Runtime
       if (typeof window !== 'undefined' && !window.__onnx_warn_filtered) {
         window.__onnx_warn_filtered = true
+        const shouldFilter = (args) => {
+          return args.some(
+            (arg) =>
+              typeof arg === 'string' &&
+              (arg.includes('onnxruntime') ||
+                arg.includes('CleanUnusedInitializersAndNodeArgs') ||
+                arg.includes('Removing initializer') ||
+                arg.includes('[W:onnxruntime:'))
+          )
+        }
         const origWarn = console.warn
         console.warn = (...args) => {
-          if (typeof args[0] === 'string' && args[0].includes('[W:onnxruntime:')) return
+          if (shouldFilter(args)) return
           origWarn.apply(console, args)
         }
         const origLog = console.log
         console.log = (...args) => {
-          if (typeof args[0] === 'string' && args[0].includes('[W:onnxruntime:')) return
+          if (shouldFilter(args)) return
           origLog.apply(console, args)
+        }
+        const origInfo = console.info
+        console.info = (...args) => {
+          if (shouldFilter(args)) return
+          origInfo.apply(console, args)
         }
       }
 

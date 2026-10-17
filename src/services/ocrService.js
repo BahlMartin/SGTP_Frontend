@@ -144,9 +144,17 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
  * @param {number[]} feedbackData.estudiosConfirmadosIds
  * @param {Array<{ texto: string, estudioId: number }>} feedbackData.asociacionesDirectas
  */
-export async function reportOcrFeedbackApi(feedbackData) {
+export async function reportOcrFeedbackApi(feedbackData = {}) {
   try {
-    const response = await apiClient.post('/ocr/feedback-aprendizaje/', feedbackData)
+    const payload = {
+      lineas_origen: feedbackData.lineasOrigen || feedbackData.lineas_origen || [],
+      estudios_confirmados_ids: feedbackData.estudiosConfirmadosIds || feedbackData.estudios_confirmados_ids || [],
+      asociaciones_directas: (feedbackData.asociacionesDirectas || feedbackData.asociaciones_directas || []).map((a) => ({
+        texto: a.texto,
+        estudio_id: a.estudioId ?? a.estudio_id
+      }))
+    }
+    const response = await apiClient.post('/ocr/retroalimentar/', payload)
     return response
   } catch (err) {
     console.warn('No se pudo registrar feedback de aprendizaje OCR:', err)
