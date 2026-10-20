@@ -14,7 +14,15 @@
 }
 
 .box-screen__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
   margin-bottom: 24px;
+}
+
+.box-screen__heading {
+  min-width: 0;
 }
 
 .box-screen__title {
@@ -28,6 +36,87 @@
   font-size: 0.95rem;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+.box-screen__options {
+  display: none;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.box-screen__options-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--medical-primary);
+  border-radius: var(--radius-md);
+  background: var(--medical-primary);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(22, 135, 201, 0.2);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.box-screen__options-button:hover,
+.box-screen__options-button:focus-visible {
+  background: var(--medical-primary-hover);
+  box-shadow: 0 4px 12px rgba(22, 135, 201, 0.28);
+}
+
+.box-screen__options-button:focus-visible,
+.box-screen__options-menu-item:focus-visible,
+.box-screen__secondary-panel-close:focus-visible {
+  outline: 2px solid var(--medical-primary);
+  outline-offset: 2px;
+}
+
+.box-screen__options-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 120;
+  display: grid;
+  gap: 4px;
+  width: max-content;
+  min-width: 240px;
+  padding: 6px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+}
+
+.box-screen__options-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.box-screen__options-menu-item:hover {
+  background: var(--surface-hover);
+  color: var(--medical-primary);
+}
+
+.box-screen__options-menu-item svg {
+  flex-shrink: 0;
+  color: var(--medical-primary);
 }
 
 .box-screen__feedback-banner {
@@ -69,20 +158,229 @@
   align-items: start;
 }
 
+.box-screen__secondary-panel {
+  min-width: 0;
+}
+
+.box-screen__secondary-dialog {
+  display: contents;
+}
+
+.box-screen__secondary-panel-header {
+  display: none;
+}
+
+.box-screen__secondary-content {
+  min-width: 0;
+}
+
 .box-screen__left-column {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
+.box-screen__secondary-item {
+  min-width: 0;
+}
+
 .box-screen__right-column {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
 }
 
 @media (max-width: 1024px) {
+  .box-screen__main {
+    padding: 24px 24px 40px;
+  }
+
+  .box-screen__options {
+    display: block;
+  }
+
   .box-screen__grid {
     grid-template-columns: 1fr;
+  }
+
+  .box-screen__secondary-panel {
+    display: none;
+  }
+
+  .box-screen__secondary-panel--open {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.68);
+  }
+
+  .box-screen__secondary-dialog {
+    display: flex;
+    flex-direction: column;
+    width: min(680px, 100%);
+    max-height: min(88vh, 820px);
+    overflow: hidden;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .box-screen__secondary-dialog--search {
+    width: min(760px, 100%);
+    min-height: min(560px, 88vh);
+    overflow: visible;
+  }
+
+  .box-screen__secondary-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-card);
+  }
+
+  .box-screen__secondary-panel-title {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .box-screen__secondary-panel-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 6px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--bg-card-subtle);
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .box-screen__secondary-panel-close:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+  }
+
+  .box-screen__secondary-content {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 16px;
+  }
+
+  .box-screen__secondary-dialog--search .box-screen__secondary-content {
+    overflow: visible;
+  }
+
+  .box-screen__secondary-dialog--search .patient-dropdown {
+    max-height: 280px;
+  }
+
+  .box-screen__left-column {
+    gap: 0;
+  }
+
+  .box-screen__secondary-item {
+    display: none;
+  }
+
+  .box-screen__secondary-item--active {
+    display: block;
+  }
+
+  .box-screen__right-column {
+    order: -1;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .box-screen > .navbar {
+    height: 64px;
+    flex-wrap: nowrap;
+    gap: 0;
+    padding: 0 14px;
+  }
+
+  .box-screen > .navbar .navbar__center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    order: initial;
+    width: auto;
+    flex: 0 0 auto;
+    transform: translate(-50%, -50%);
+  }
+
+  .box-screen > .navbar .navbar__pills {
+    width: auto;
+    overflow: visible;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .box-screen__main {
+    padding: 20px 14px 32px;
+  }
+
+  .box-screen__header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .box-screen__title {
+    font-size: 1.55rem;
+  }
+
+  .box-screen__subtitle {
+    line-height: 1.45;
+  }
+
+  .box-screen__options-button {
+    min-height: 40px;
+    padding: 0 10px;
+    font-size: 0.8rem;
+  }
+
+  .box-screen__options-menu {
+    min-width: min(240px, calc(100vw - 28px));
+  }
+
+  .box-screen__secondary-panel--open {
+    padding: 10px;
+  }
+
+  .box-screen__secondary-content {
+    padding: 12px;
+  }
+
+  .box-screen__secondary-dialog--search {
+    min-height: min(520px, calc(100vh - 20px));
+  }
+
+  .box-screen__right-column {
+    gap: 16px;
+  }
+
+}
+
+@media (max-width: 480px) {
+  .box-screen > .navbar {
+    padding: 0 10px;
+  }
+
+  .box-screen > .navbar .navbar__left .logo__text,
+  .box-screen > .navbar .navbar__user-meta {
+    display: none;
   }
 }

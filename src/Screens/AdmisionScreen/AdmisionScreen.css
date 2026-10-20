@@ -11,12 +11,6 @@
   width: 100%;
 }
 
-.admision-screen > .navbar .navbar__center {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
 .admision-screen > .navbar .navbar__pills {
   width: auto;
   overflow: visible;

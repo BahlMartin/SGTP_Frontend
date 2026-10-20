@@ -385,4 +385,124 @@
   .multibox-queue-card__search-box {
     min-width: 100%;
   }
+
+  .multibox-queue-card__table-wrapper {
+    overflow-x: visible;
+  }
+
+  .multibox-queue-card__table {
+    table-layout: fixed;
+  }
+
+  .multibox-queue-card__table th:nth-child(1),
+  .multibox-queue-card__table td:nth-child(1) {
+    width: 13%;
+  }
+
+  .multibox-queue-card__table th:nth-child(2),
+  .multibox-queue-card__table td:nth-child(2) {
+    width: 22%;
+  }
+
+  .multibox-queue-card__table th:nth-child(3),
+  .multibox-queue-card__table td:nth-child(3) {
+    width: 32%;
+  }
+
+  .multibox-queue-card__table th:nth-child(4),
+  .multibox-queue-card__table td:nth-child(4) {
+    width: 12%;
+  }
+
+  .multibox-queue-card__table th:nth-child(5),
+  .multibox-queue-card__table td:nth-child(5) {
+    width: 9%;
+  }
+
+  .multibox-queue-card__table th:nth-child(6),
+  .multibox-queue-card__table td:nth-child(6) {
+    width: 12%;
+  }
+
+  .multibox-queue-card__th {
+    padding: 8px 3px;
+    font-size: 0.58rem;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .multibox-queue-card__td {
+    padding: 8px 3px;
+    font-size: 0.68rem;
+    overflow-wrap: anywhere;
+  }
+
+  .multibox-queue-card__call-pill {
+    font-size: 0.7rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .multibox-queue-card__patient-name {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.68rem;
+    overflow-wrap: anywhere;
+  }
+
+  .multibox-queue-card__patient-sub {
+    font-size: 0.58rem;
+    overflow-wrap: anywhere;
+  }
+
+  .multibox-queue-card__table .triage-badge {
+    max-width: 100%;
+    gap: 4px;
+    padding: 3px 4px;
+    font-size: 0.62rem;
+  }
+
+  .multibox-queue-card__table .triage-badge__text {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.1;
+  }
+
+  .multibox-queue-card__table .triage-badge__dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .multibox-queue-card__wait-time {
+    flex-wrap: wrap;
+    gap: 2px;
+    font-size: 0.62rem;
+  }
+
+  .multibox-queue-card__wait-icon {
+    width: 10px;
+    height: 10px;
+  }
+
+  .multibox-queue-card__studies {
+    font-size: 0.6rem;
+  }
+
+  .multibox-queue-card__td--actions {
+    padding-right: 1px;
+    padding-left: 1px;
+  }
+
+  .multibox-queue-card__btn-call-direct {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 3px;
+  }
+
+  .multibox-queue-card__btn-call-direct span {
+    display: none;
+  }
 }
