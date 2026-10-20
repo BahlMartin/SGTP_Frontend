@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'   
 import { Users, ShieldCheck, RefreshCw } from 'lucide-react'
 import JefaLayout from './components/JefaLayout'
 import JefaHeader from './components/JefaHeader'
@@ -21,6 +21,8 @@ import {
   fetchResumenEstudiosApi
 } from '../../services/ticketService'
 import { getTodayLocalDateString } from '../../utils/formatters'
+
+import useWebSocket from '../../hooks/useWebSocket' // [NUEVO]
 
 export default function JefaScreen() {
   const { userData } = useAuth()
@@ -112,10 +114,15 @@ export default function JefaScreen() {
     }
   }
 
-  const formattedRefreshTime = lastRefreshedAt.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
+  // [NUEVO] Escuchar el Monitor Operativo
+  useWebSocket('monitor-operativo', {
+    onMessage: useCallback((msg) => {
+      // Cuando ingresa un ticket nuevo o se cierra una atención (REFRESH_REPORTS),
+      // forzamos la actualización silenciosa del dashboard de la jefa.
+      if (msg?.action === 'NEW_TICKET' || msg?.action === 'REFRESH_REPORTS') {
+        handleRefreshAll()
+      }
+    }, [handleRefreshAll])
   })
 
   // Carga reactiva de rendimiento de personal al cambiar la fecha seleccionada
@@ -355,3 +362,4 @@ export default function JefaScreen() {
     </>
   )
 }
+
