@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'   
 import { CheckCircle2 } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
@@ -9,6 +9,8 @@ import RefreshButton from '../../components/RefreshButton/RefreshButton'
 import PatientInAttentionCard from './components/PatientInAttentionCard/PatientInAttentionCard'
 import MultiboxQueueCard from './components/MultiboxQueueCard/MultiboxQueueCard'
 import './TecnicoBoxScreen.css'
+
+import useWebSocket from '../../hooks/useWebSocket' // [NUEVO]
 
 export default function TecnicoBoxScreen() {
   const {
@@ -34,6 +36,16 @@ export default function TecnicoBoxScreen() {
     toggleStudyCheck
   } = useTecnicoBox()
 
+  // [NUEVO] Escuchar la cola centralizada
+  useWebSocket('queue', {
+    onMessage: useCallback((msg) => {
+      if (msg?.action === 'NEW_TICKET' || msg?.action === 'TICKET_LLAMADO') {
+        // Un nuevo paciente llegó o un colega llamó a alguien, refrescamos
+        refreshBoxes() 
+      }
+    }, [refreshBoxes])
+  }) 
+  
   return (
     <div className="box-screen">
       <Navbar />
