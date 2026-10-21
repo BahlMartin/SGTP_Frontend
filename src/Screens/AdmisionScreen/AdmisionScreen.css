@@ -8,7 +8,6 @@
 .admision-screen > .navbar {
   position: fixed;
   inset: 0 0 auto;
-  width: 100%;
 }
 
 .admision-screen > .navbar .navbar__pills {
@@ -82,11 +81,6 @@
     flex-wrap: nowrap;
     gap: 0;
     padding: 0 14px;
-  }
-
-  .admision-screen > .navbar .navbar__center {
-    order: initial;
-    width: auto;
   }
 
   .admision-screen__main {
