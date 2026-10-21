@@ -125,6 +125,13 @@ export default function JefaScreen() {
     }, [handleRefreshAll])
   })
 
+  // 
+  const formattedRefreshTime = lastRefreshedAt.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+
   // Carga reactiva de rendimiento de personal al cambiar la fecha seleccionada
   useEffect(() => {
     let isMounted = true
