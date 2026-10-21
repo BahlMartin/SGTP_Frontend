@@ -178,7 +178,10 @@ export default function MultiboxQueueCard({
                       </div>
                     </td>
                     <td className="multibox-queue-card__td">
-                      <TriageBadge categoryKey={ticketItem.clasificacion_triage} />
+                      <TriageBadge
+                        categoryKey={ticketItem.clasificacion_triage}
+                        compact
+                      />
                     </td>
                     <td className="multibox-queue-card__td">
                       <span className="multibox-queue-card__wait-time">
@@ -202,6 +205,7 @@ export default function MultiboxQueueCard({
                             ? 'Finalice la atención actual antes de convocar a otro paciente'
                             : `Llamar inmediatamente al Box ${currentBoxNumber} ignorando orden de triage`
                         }
+                        aria-label={`Llamar paciente ${ticketItem.paciente_nombre} ${ticketItem.paciente_apellido} al Box ${currentBoxNumber}`}
                       >
                         <Bell size={13} className="multibox-queue-card__btn-call-icon" />
                         <span>Llamar a box</span>

@@ -37,25 +37,125 @@
   max-width: 1440px;
   width: 100%;
   margin: 0 auto;
-  padding: 32px 36px 60px;
+  padding: 96px 36px 60px;
 }
 
-.jefa-screen__grid {
+.jefa-screen__page-header {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
-  width: 100%;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
 }
 
-.jefa-screen__left-column {
+.jefa-screen__header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.jefa-screen__page-header--management .jefa-screen__back-button {
+  margin-bottom: 12px;
+}
+
+.jefa-screen__page-header--management {
+  flex-direction: column;
+}
+
+.jefa-screen__overview {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
+}
+
+.jefa-screen__management-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
   align-items: stretch;
+}
+
+.jefa-screen__management-view {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  min-width: 0;
+}
+
+.jefa-screen__overview-grid {
+  display: contents;
+}
+
+.jefa-screen__overview-grid > *,
+.jefa-screen__management-grid > * {
+  min-width: 0;
+}
+
+.jefa-screen__desktop-boxes {
+  min-width: 0;
+}
+
+.jefa-screen__desktop-management {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.jefa-screen__search-panel {
+  width: 100%;
+  margin: 0 0 24px;
+}
+
+.jefa-screen__search-panel > * {
   width: 100%;
 }
 
-/* Barra superior de monitoreo y botón de actualización global */
+.jefa-screen__view-tabs {
+  display: inline-flex;
+  width: fit-content;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f1f5f9;
+}
+
+.jefa-screen__view-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.jefa-screen__view-tab:hover {
+  background: rgba(255, 255, 255, 0.6);
+  color: #1e293b;
+}
+
+.jefa-screen__view-tab--active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.jefa-screen__view-tab-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.jefa-screen__view-tab--active .jefa-screen__view-tab-icon {
+  color: #0d9488;
+}
+
 .jefa-screen__overview-toolbar {
   grid-column: 1 / -1;
   display: flex;
@@ -114,8 +214,12 @@
   box-shadow: 0 1px 2px rgba(22, 135, 201, 0.15);
 }
 
-.jefa-screen__overview-refresh-btn:focus-visible {
-  outline: 2px solid var(--medical-primary, #1687c9);
+.jefa-screen__overview-refresh-btn:focus-visible,
+.jefa-screen__options-button:focus-visible,
+.jefa-screen__options-menu-item:focus-visible,
+.jefa-screen__secondary-panel-close:focus-visible,
+.jefa-screen__back-button:focus-visible {
+  outline: 2px solid var(--medical-primary);
   outline-offset: 2px;
 }
 
@@ -150,94 +254,291 @@
   }
 }
 
-.jefa-screen__center-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  width: 100%;
+.jefa-screen__options {
+  position: relative;
+  flex-shrink: 0;
 }
 
-.jefa-screen__center-content-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.jefa-screen__view-tabs {
-  display: inline-flex;
-  background: #f1f5f9;
-  padding: 4px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  width: fit-content;
-  gap: 4px;
-}
-
-.jefa-screen__view-tab {
+.jefa-screen__options-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  font-size: 0.82rem;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--medical-primary);
+  border-radius: var(--radius-md);
+  background: var(--medical-primary);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.88rem;
   font-weight: 700;
-  color: #64748b;
-  background: transparent;
-  border: none;
-  border-radius: 7px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 3px 8px rgba(22, 135, 201, 0.2);
+  transition: background 0.15s, box-shadow 0.15s;
 }
 
-.jefa-screen__view-tab:hover {
-  color: #1e293b;
-  background: rgba(255, 255, 255, 0.6);
+.jefa-screen__options-button:hover {
+  background: var(--medical-primary-hover);
+  box-shadow: 0 4px 12px rgba(22, 135, 201, 0.28);
 }
 
-.jefa-screen__view-tab--active {
-  background: #ffffff;
-  color: #0f172a;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+.jefa-screen__options-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 120;
+  display: grid;
+  gap: 4px;
+  width: max-content;
+  min-width: 260px;
+  padding: 6px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
 }
 
-.jefa-screen__view-tab-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.jefa-screen__view-tab--active .jefa-screen__view-tab-icon {
-  color: #0d9488;
-}
-
-.jefa-screen__search-panel {
-  margin: 0 0 24px;
+.jefa-screen__options-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
 }
 
-.jefa-screen__search-panel > * {
-  width: 100%;
+.jefa-screen__options-menu-item:hover {
+  background: var(--surface-hover);
+  color: var(--medical-primary);
 }
 
-@media (max-width: 1200px) {
-  .jefa-screen__left-column {
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+.jefa-screen__options-menu-item svg {
+  flex-shrink: 0;
+  color: var(--medical-primary);
+}
+
+.jefa-screen__back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.jefa-screen__back-button:hover {
+  border-color: var(--medical-primary);
+  color: var(--medical-primary);
+}
+
+.jefa-screen__secondary-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.68);
+}
+
+.jefa-screen__secondary-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(960px, 100%);
+  max-height: min(88vh, 900px);
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+}
+
+.jefa-screen__secondary-dialog--search {
+  width: min(760px, 100%);
+  min-height: min(440px, 88vh);
+  overflow: visible;
+}
+
+.jefa-screen__secondary-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-card);
+}
+
+.jefa-screen__secondary-panel-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.jefa-screen__secondary-panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-card-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.jefa-screen__secondary-panel-close:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.jefa-screen__secondary-content {
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+}
+
+.jefa-screen__secondary-dialog--search .jefa-screen__secondary-content {
+  overflow: visible;
+}
+
+.jefa-screen__secondary-content .active-boxes-card {
+  min-height: 360px;
+}
+
+@media (max-width: 1024px) {
+  .jefa-screen__main {
+    padding: 88px 24px 36px;
   }
 
+  .jefa-screen__overview {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .jefa-screen__overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .jefa-screen__desktop-boxes,
+  .jefa-screen__desktop-management,
   .jefa-screen__search-panel {
-    margin-bottom: 16px;
+    display: none;
   }
 }
 
 @media (max-width: 768px) {
-  .jefa-screen__main {
-    padding: 20px 16px 40px;
+  .jefa-screen > .navbar {
+    height: 64px;
+    flex-wrap: nowrap;
+    gap: 0;
+    padding: 0 14px;
   }
 
-  .jefa-screen__left-column {
+  .jefa-screen > .navbar .navbar__pills {
+    width: auto;
+    overflow: visible;
+    justify-content: center;
+  }
+
+  .jefa-screen__main {
+    padding: 84px 16px 32px;
+  }
+
+}
+
+@media (max-width: 640px) {
+  .jefa-screen__main {
+    padding: 82px 14px 28px;
+  }
+
+  .jefa-screen__page-header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .jefa-screen__options-button {
+    min-height: 40px;
+    padding: 0 10px;
+    font-size: 0.8rem;
+  }
+
+  .jefa-screen__options-menu {
+    min-width: min(260px, calc(100vw - 28px));
+  }
+
+  .jefa-screen__overview-grid,
+  .jefa-screen__management-view {
+    gap: 16px;
+  }
+
+  .jefa-screen__overview-grid {
+    display: grid;
     grid-template-columns: 1fr;
   }
 
-  .jefa-screen__left-column > * {
-    height: auto;
-    min-height: 380px;
+  .jefa-screen__overview-toolbar {
+    align-items: flex-start;
+  }
+
+  .jefa-screen__overview-refresh-btn {
+    gap: 5px;
+    padding: 6px 8px;
+    font-size: 0.72rem;
+  }
+
+  .jefa-screen__overview-refresh-time {
+    display: none;
+  }
+
+  .jefa-screen__secondary-panel {
+    padding: 10px;
+  }
+
+  .jefa-screen__secondary-content {
+    padding: 12px;
+  }
+
+  .jefa-screen__secondary-dialog--search {
+    min-height: min(520px, calc(100vh - 20px));
+  }
+
+  .jefa-screen__back-button {
+    padding: 0 9px;
+    font-size: 0.76rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .jefa-screen > .navbar {
+    padding: 0 10px;
+  }
+
+  .jefa-screen > .navbar .navbar__left .logo__text,
+  .jefa-screen > .navbar .navbar__user-meta {
+    display: none;
   }
 }

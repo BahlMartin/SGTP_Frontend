@@ -2,14 +2,16 @@ import React from 'react'
 import { CheckCircle } from 'lucide-react'
 import './JefaHeader.css'
 
-export default function JefaHeader({ statusMessage }) {
+export default function JefaHeader({
+  statusMessage,
+  title = 'Supervisión',
+  subtitle = 'Búsqueda de pacientes y gestión del personal asistencial'
+}) {
   return (
-    <>
+    <div className="jefa-screen__header-content">
       <div className="jefa-screen__header">
-        <h1 className="jefa-screen__title">Supervisión</h1>
-        <p className="jefa-screen__subtitle">
-          Búsqueda de pacientes y gestión del personal asistencial
-        </p>
+        <h1 className="jefa-screen__title">{title}</h1>
+        <p className="jefa-screen__subtitle">{subtitle}</p>
       </div>
 
       {statusMessage && (
@@ -18,6 +20,6 @@ export default function JefaHeader({ statusMessage }) {
           <span>{statusMessage}</span>
         </div>
       )}
-    </>
+    </div>
   )
 }

@@ -4,6 +4,7 @@
   border-radius: var(--radius-lg);
   padding: 28px 32px;
   box-shadow: var(--shadow-sm);
+  min-width: 0;
 }
 
 .admission-form-card__header {
@@ -18,6 +19,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .admission-form-card__icon {
@@ -28,6 +30,7 @@
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-primary);
+  line-height: 1.35;
 }
 
 .admission-form {
@@ -38,7 +41,7 @@
 
 .admission-form__row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
 
@@ -51,6 +54,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .admission-form__field--full {
@@ -58,7 +62,7 @@
 }
 
 .admission-form__field--center {
-  width: 320px;
+  width: min(320px, 100%);
 }
 
 .admission-form__label {
@@ -75,6 +79,8 @@
 }
 
 .admission-form__input {
+  width: 100%;
+  min-width: 0;
   height: 42px;
   border: 1px solid #cbd5e1;
   border-radius: var(--radius-sm);
@@ -150,6 +156,7 @@
 
 .admission-form__seq-input {
   flex: 1;
+  min-width: 0;
   height: 100%;
   border: none;
   background: transparent;
@@ -266,6 +273,10 @@
 }
 
 @media (max-width: 640px) {
+  .admission-form-card {
+    padding: 20px 18px;
+  }
+
   .admission-form-card__header {
     flex-direction: column;
     align-items: flex-start;
@@ -274,5 +285,38 @@
 
   .admission-form__row {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 400px) {
+  .admission-form-card {
+    padding: 16px 14px;
+  }
+
+  .admission-form-card__header-title-group {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .admission-form-card__icon {
+    flex-shrink: 0;
+  }
+
+  .admission-form__reset-btn--header {
+    align-self: stretch;
+  }
+
+  .admission-form__prefix-select {
+    max-width: 62%;
+    padding: 0 6px;
+    font-size: 0.82rem;
+  }
+
+  .admission-form__call-dash {
+    padding: 0 5px;
+  }
+
+  .admission-form__seq-input {
+    padding: 0 8px;
   }
 }

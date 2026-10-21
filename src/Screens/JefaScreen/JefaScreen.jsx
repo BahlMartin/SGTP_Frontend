@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Users, ShieldCheck, RefreshCw } from 'lucide-react'
+import { RefreshCw, ShieldCheck, Users } from 'lucide-react'
 import JefaLayout from './components/JefaLayout'
 import JefaHeader from './components/JefaHeader'
 import LabMatrixCard from './components/LabMatrixCard'
@@ -43,7 +43,8 @@ export default function JefaScreen() {
 
   const { notice: statusNotice, showNotice } = useFeedbackNotice(4000)
   const [toastAlert, setToastAlert] = useState(null)
-  const [activeCenterTab, setActiveCenterTab] = useState('shifts') // 'shifts' | 'security'
+  const [isManagementView, setIsManagementView] = useState(false)
+  const [activeCenterTab, setActiveCenterTab] = useState('shifts')
   const [showAddStaffModal, setShowAddStaffModal] = useState(false)
   const [editingStaff, setEditingStaff] = useState(null)
   const [staffForOvertime, setStaffForOvertime] = useState(null)
@@ -260,13 +261,33 @@ export default function JefaScreen() {
   return (
     <>
       <JefaLayout
-        headerContent={<JefaHeader statusMessage={statusNotice} />}
-        leftContent={
-          <>
+        headerContent={
+          <JefaHeader
+            statusMessage={statusNotice}
+            title={isManagementView ? 'Gestión de personal y cuentas' : 'Supervisión'}
+            subtitle={
+              isManagementView
+                ? 'Administración de turnos, personal y seguridad de cuentas'
+                : 'Búsqueda de pacientes y gestión del personal asistencial'
+            }
+          />
+        }
+        isManagementView={isManagementView}
+        onGoToManagement={() => setIsManagementView(true)}
+        onBackToMain={() => setIsManagementView(false)}
+        desktopSearchContent={
+          <div className="jefa-screen__search-panel">
+            <PatientSearch />
+          </div>
+        }
+        primaryContent={
+          <div className="jefa-screen__overview">
             <div className="jefa-screen__overview-toolbar">
               <div className="jefa-screen__overview-toolbar-left">
                 <span className="jefa-screen__overview-title">Monitoreo operativo</span>
-                <span className="jefa-screen__overview-subtitle">Personal, boxes y laboratorio</span>
+                <span className="jefa-screen__overview-subtitle">
+                  Personal, boxes y laboratorio
+                </span>
               </div>
               <button
                 type="button"
@@ -285,40 +306,50 @@ export default function JefaScreen() {
               </button>
             </div>
 
-            <ActiveStaffCard
-              staffList={staffList}
-              selectedDate={staffDate}
-              onDateChange={setStaffDate}
-              workloadByStaff={workloadByStaff}
-              isLoading={loadingStaffWorkload}
-              onSelectStaff={handleSelectStaffForTickets}
-            />
-            <ActiveBoxesCard
-              canToggleStatus={true}
-              onNotice={showNotice}
-              onSelectStaff={handleSelectStaffForTickets}
-            />
-            <LabMatrixCard
-              labStudies={labStudies}
-              selectedDate={studiesDate}
-              onDateChange={setStudiesDate}
-              searchQuery={studiesSearch}
-              onSearchChange={setStudiesSearch}
-              onClearSearch={() => setStudiesSearch('')}
-              isLoading={loadingStudies}
-              filterMode={studiesFilter}
-              onFilterChange={setStudiesFilter}
-            />
-          </>
+            <div className="jefa-screen__overview-grid">
+              <ActiveStaffCard
+                staffList={staffList}
+                selectedDate={staffDate}
+                onDateChange={setStaffDate}
+                workloadByStaff={workloadByStaff}
+                isLoading={loadingStaffWorkload}
+                onSelectStaff={handleSelectStaffForTickets}
+              />
+              <div className="jefa-screen__desktop-boxes">
+                <ActiveBoxesCard
+                  canToggleStatus={true}
+                  onNotice={showNotice}
+                  onSelectStaff={handleSelectStaffForTickets}
+                />
+              </div>
+              <LabMatrixCard
+                labStudies={labStudies}
+                selectedDate={studiesDate}
+                onDateChange={setStudiesDate}
+                searchQuery={studiesSearch}
+                onSearchChange={setStudiesSearch}
+                onClearSearch={() => setStudiesSearch('')}
+                isLoading={loadingStudies}
+                filterMode={studiesFilter}
+                onFilterChange={setStudiesFilter}
+              />
+            </div>
+          </div>
         }
-        centerContent={
-          <div className="jefa-screen__center-content-wrapper">
-            <div className="jefa-screen__view-tabs" role="tablist" aria-label="Secciones de gestión de personal">
+        desktopManagementContent={
+          <div className="jefa-screen__desktop-management">
+            <div
+              className="jefa-screen__view-tabs"
+              role="tablist"
+              aria-label="Secciones de gestión de personal"
+            >
               <button
                 type="button"
                 role="tab"
                 aria-selected={activeCenterTab === 'shifts'}
-                className={`jefa-screen__view-tab ${activeCenterTab === 'shifts' ? 'jefa-screen__view-tab--active' : ''}`}
+                className={`jefa-screen__view-tab ${
+                  activeCenterTab === 'shifts' ? 'jefa-screen__view-tab--active' : ''
+                }`}
                 onClick={() => setActiveCenterTab('shifts')}
               >
                 <Users className="jefa-screen__view-tab-icon" />
@@ -328,14 +359,70 @@ export default function JefaScreen() {
                 type="button"
                 role="tab"
                 aria-selected={activeCenterTab === 'security'}
-                className={`jefa-screen__view-tab ${activeCenterTab === 'security' ? 'jefa-screen__view-tab--active' : ''}`}
+                className={`jefa-screen__view-tab ${
+                  activeCenterTab === 'security' ? 'jefa-screen__view-tab--active' : ''
+                }`}
                 onClick={() => setActiveCenterTab('security')}
               >
                 <ShieldCheck className="jefa-screen__view-tab-icon" />
                 <span>Seguridad y Bloqueo de Cuentas</span>
               </button>
             </div>
-
+            {activeCenterTab === 'shifts' ? (
+              <StaffShiftsCard
+                staffList={staffList}
+                currentUserRole={userData?.rol}
+                onOpenAddStaff={() => setShowAddStaffModal(true)}
+                onAuthorizeOvertime={setStaffForOvertime}
+                onToggleShift={handleToggleShift}
+                onDeleteStaff={handleDeleteStaff}
+                onEditStaff={setEditingStaff}
+                onUnlockStaff={handleUnlockStaff}
+                onReactivateStaff={handleReactivateStaff}
+              />
+            ) : (
+              <StaffSecurityCard
+                staffList={staffList}
+                currentUserRole={userData?.rol}
+                currentUserId={userData?.id_personal || userData?.id}
+                onUnlockStaff={handleUnlockStaff}
+                onLockStaff={handleLockStaff}
+              />
+            )}
+          </div>
+        }
+        managementContent={
+          <div className="jefa-screen__management-view">
+            <div
+              className="jefa-screen__view-tabs"
+              role="tablist"
+              aria-label="Secciones de gestión de personal"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeCenterTab === 'shifts'}
+                className={`jefa-screen__view-tab ${
+                  activeCenterTab === 'shifts' ? 'jefa-screen__view-tab--active' : ''
+                }`}
+                onClick={() => setActiveCenterTab('shifts')}
+              >
+                <Users className="jefa-screen__view-tab-icon" />
+                <span>Personal y Asignación de Turnos</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeCenterTab === 'security'}
+                className={`jefa-screen__view-tab ${
+                  activeCenterTab === 'security' ? 'jefa-screen__view-tab--active' : ''
+                }`}
+                onClick={() => setActiveCenterTab('security')}
+              >
+                <ShieldCheck className="jefa-screen__view-tab-icon" />
+                <span>Seguridad y Bloqueo de Cuentas</span>
+              </button>
+            </div>
             {activeCenterTab === 'shifts' ? (
               <StaffShiftsCard
                 staffList={staffList}
@@ -360,6 +447,13 @@ export default function JefaScreen() {
           </div>
         }
         searchContent={<PatientSearch />}
+        boxesContent={
+          <ActiveBoxesCard
+            canToggleStatus={true}
+            onNotice={showNotice}
+            onSelectStaff={handleSelectStaffForTickets}
+          />
+        }
       />
 
       <AddStaffModal

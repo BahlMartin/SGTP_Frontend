@@ -5,12 +5,24 @@
   flex-direction: column;
 }
 
+.admision-screen > .navbar {
+  position: fixed;
+  inset: 0 0 auto;
+}
+
+.admision-screen > .navbar .navbar__pills {
+  width: auto;
+  overflow: visible;
+  justify-content: center;
+}
+
 .admision-screen__main {
   flex: 1;
   max-width: 1400px;
   width: 100%;
+  min-width: 0;
   margin: 0 auto;
-  padding: 32px 36px 60px;
+  padding: 96px clamp(20px, 3vw, 36px) 60px;
 }
 
 .admision-screen__header {
@@ -33,9 +45,14 @@
 /* Grilla principal */
 .admision-screen__grid {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
   gap: 24px;
   align-items: stretch;
+}
+
+.admision-screen__grid > *,
+.admision-screen__side-column > * {
+  min-width: 0;
 }
 
 /* Columna Lateral */
@@ -47,7 +64,7 @@
   min-height: 0;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1100px) {
   .admision-screen__grid {
     grid-template-columns: 1fr;
     align-items: start;
@@ -55,5 +72,59 @@
 
   .admision-screen__side-column {
     height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .admision-screen > .navbar {
+    height: 64px;
+    flex-wrap: nowrap;
+    gap: 0;
+    padding: 0 14px;
+  }
+
+  .admision-screen__main {
+    padding: 88px 20px 40px;
+  }
+
+  .admision-screen__header {
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admision-screen__main {
+    padding: 84px 14px 32px;
+  }
+
+  .admision-screen__title {
+    font-size: 1.6rem;
+  }
+
+  .admision-screen__subtitle {
+    line-height: 1.45;
+  }
+
+  .admision-screen__grid {
+    gap: 16px;
+  }
+
+  .admision-screen__side-column {
+    gap: 16px;
+  }
+
+  .admision-screen .recent-tickets-card__header {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .admision-screen > .navbar {
+    padding: 0 10px;
+  }
+
+  .admision-screen > .navbar .navbar__left .logo__text,
+  .admision-screen > .navbar .navbar__user-meta {
+    display: none;
   }
 }
