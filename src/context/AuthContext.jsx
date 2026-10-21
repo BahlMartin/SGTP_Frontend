@@ -71,6 +71,12 @@ export const AuthContextProvider = ({ children }) => {
     setIsLogged(true)
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(res.user))
+      
+      // NUEVO BLOQUE: Guardar el token
+      if (res.token) {
+        sessionStorage.setItem('token', res.token)
+      }
+      
     } catch (e) {
       console.warn('No se pudo guardar la sesión en almacenamiento local:', e)
     }
@@ -85,6 +91,10 @@ export const AuthContextProvider = ({ children }) => {
       setIsLogged(false)
       try {
         localStorage.removeItem(STORAGE_KEY)
+        
+        // NUEVA LINEA: Limpiar el token
+        sessionStorage.removeItem('token')
+        
       } catch (e) {
         console.warn('Error al limpiar almacenamiento local:', e)
       }
