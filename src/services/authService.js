@@ -37,8 +37,6 @@ export async function loginApi(email, password) {
   }
 }
 
-  c
-
 export async function logoutApi() {
   try {
     return await apiClient.post('/auth/logout/')
