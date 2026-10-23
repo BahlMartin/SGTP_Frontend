@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'   
+import React, { useEffect, useState } from 'react'
 import { Users, ShieldCheck, RefreshCw } from 'lucide-react'
 import JefaLayout from './components/JefaLayout'
 import JefaHeader from './components/JefaHeader'
@@ -16,13 +16,12 @@ import { useAuth } from '../../context/AuthContext'
 import { useBox } from '../../context/BoxContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
 import { useFeedbackNotice } from '../../hooks/useFeedbackNotice'
+import { useWebSocket } from '../../hooks/useWebSocket'
 import {
   fetchRendimientoPersonalApi,
   fetchResumenEstudiosApi
 } from '../../services/ticketService'
 import { getTodayLocalDateString } from '../../utils/formatters'
-
-import useWebSocket from '../../hooks/useWebSocket' // [NUEVO]
 
 export default function JefaScreen() {
   const { userData } = useAuth()
@@ -48,6 +47,15 @@ export default function JefaScreen() {
   const [staffForOvertime, setStaffForOvertime] = useState(null)
   const [selectedStaffForTickets, setSelectedStaffForTickets] = useState(null)
 
+  // --- Conexiones WebSocket ---
+  // --- Conexiones WebSocket en tiempo real ---
+  const { lastMessage: wsTicketMessage } = useWebSocket('ws/tickets')
+  const { lastMessage: wsLabMessage } = useWebSocket('ws/laboratorio') // o 'ws/lab' según tu app/routing.py
+  const { lastMessage: wsReportMessage } = useWebSocket('ws/reportes')
+  const { lastMessage: wsQueueMessage } = useWebSocket('ws/queue')
+  const { lastMessage: wsBoxMessage } = useWebSocket('ws/boxes') 
+  const { lastMessage: wsMonitorMessage } = useWebSocket('ws/monitor-operativo')
+
   const handleSelectStaffForTickets = (staffMember) => {
     const roleNorm = String(staffMember?.rol || '').trim().toLowerCase()
     if (roleNorm === 'jefa' || roleNorm === 'secretaria') return
@@ -62,7 +70,7 @@ export default function JefaScreen() {
   })
   const [loadingStaffWorkload, setLoadingStaffWorkload] = useState(false)
 
-  // Estado para estudios de laboratorio (búsqueda y filtro Top 5 / Todos por fecha)
+  // Estado para estudios de laboratorio
   const [studiesDate, setStudiesDate] = useState(() => getTodayLocalDateString())
   const [studiesSearch, setStudiesSearch] = useState('')
   const [studiesFilter, setStudiesFilter] = useState('all') // 'all' | 'top5'
@@ -72,6 +80,67 @@ export default function JefaScreen() {
   const [lastRefreshedAt, setLastRefreshedAt] = useState(() => new Date())
 
   const isGlobalRefreshing = isRefreshingAll || loadingStaffWorkload || loadingStudies || boxesLoading
+
+  // 1. PANEL "PERSONAL Y CARGA": Reaccionar a cambios en Tickets o Reportes
+  useEffect(() => {
+    const msg = wsTicketMessage || wsReportMessage || wsMonitorMessage
+    if (!msg) return
+
+    const eventName = msg.event
+
+    if (
+      eventName === 'TICKET_CREATED' ||
+      eventName === 'REALTIME_METRICS_UPDATED' ||
+      eventName === 'QUEUE_UPDATED' ||
+      eventName === 'STAFF_UPDATED'
+    ) {
+      // Re-consultamos métricas
+      fetchRendimientoPersonalApi(staffDate)
+        .then((data) => {
+          setWorkloadByStaff({
+            ticketsIssuedByStaff: data.tickets_por_personal || {},
+            patientsAttendedByBoxStaff: data.atenciones_por_personal || {}
+          })
+        })
+        .catch((err) => console.error('Error al actualizar carga por WS:', err))
+
+      // AGREGADO: Actualizamos el personal activo (quién está en turno)
+      loadStaff().catch(err => console.error('Error al recargar personal:', err))
+      
+      setLastRefreshedAt(new Date())
+    }
+  }, [wsTicketMessage, wsReportMessage, wsMonitorMessage, staffDate, loadStaff])
+
+  // 2. PANEL "BOXES DE ATENCIÓN": Reaccionar a cambios en Boxes
+  useEffect(() => {
+    if (!wsBoxMessage) return
+    const eventName = wsBoxMessage.event
+
+    if (eventName === 'BOX_ATTENDING' || eventName === 'BOX_UPDATED') {
+      refreshBoxes().catch(err => console.error('Error al actualizar boxes por WS:', err))
+      setLastRefreshedAt(new Date())
+    }
+  }, [wsBoxMessage, refreshBoxes])
+
+  // 3. PANEL "ESTUDIOS DE LABORATORIO": Reaccionar a cambios
+  useEffect(() => {
+    if (!wsLabMessage) return
+    const eventName = wsLabMessage.event
+
+    if (eventName === 'LAB_RESULT_READY') {
+      fetchResumenEstudiosApi({
+        fechaStr: studiesDate,
+        search: studiesSearch,
+        top: null
+      })
+        .then((data) => {
+          setLabStudies(data.estudios || [])
+        })
+        .catch((err) => console.error('Error al actualizar laboratorio por WS:', err))
+
+      setLastRefreshedAt(new Date())
+    }
+  }, [wsLabMessage, studiesDate, studiesSearch])
 
   const handleRefreshAll = async () => {
     setIsRefreshingAll(true)
@@ -114,18 +183,6 @@ export default function JefaScreen() {
     }
   }
 
-  // [NUEVO] Escuchar el Monitor Operativo
-  useWebSocket('monitor-operativo', {
-    onMessage: useCallback((msg) => {
-      // Cuando ingresa un ticket nuevo o se cierra una atención (REFRESH_REPORTS),
-      // forzamos la actualización silenciosa del dashboard de la jefa.
-      if (msg?.action === 'NEW_TICKET' || msg?.action === 'REFRESH_REPORTS') {
-        handleRefreshAll()
-      }
-    }, [handleRefreshAll])
-  })
-
-  // 
   const formattedRefreshTime = lastRefreshedAt.toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
@@ -160,7 +217,7 @@ export default function JefaScreen() {
     }
   }, [staffDate, showNotice])
 
-  // Carga reactiva de estudios de laboratorio al cambiar fecha o término de búsqueda (con debounce sutil)
+  // Carga reactiva de estudios de laboratorio
   useEffect(() => {
     let isMounted = true
     setLoadingStudies(true)
@@ -369,4 +426,3 @@ export default function JefaScreen() {
     </>
   )
 }
-
