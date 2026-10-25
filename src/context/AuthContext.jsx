@@ -1,7 +1,8 @@
 import { createContext, useState, useEffect, useCallback, useContext } from 'react'
-import { loginApi, logoutApi } from '../services/authService'
+import { loginApi, logoutApi, fetchCurrentSessionApi } from '../services/authService'
 
 const STORAGE_KEY = 'sgtp_session_user'
+const TOKEN_KEY = 'token'
 
 export const AuthContext = createContext({
   isLogged: false,
@@ -23,12 +24,35 @@ export const AuthContextProvider = ({ children }) => {
     return Boolean(localStorage.getItem(STORAGE_KEY))
   })
 
+  // Sincronizar y rehidratar token de sesión en arranque
+  useEffect(() => {
+    // Si ya existe en localStorage pero no en sessionStorage, copiarlo
+    const localToken = localStorage.getItem(TOKEN_KEY)
+    if (localToken && !sessionStorage.getItem(TOKEN_KEY)) {
+      sessionStorage.setItem(TOKEN_KEY, localToken)
+    }
+
+    // Si el usuario está marcado como logueado o tiene cookie de sesión, recuperar token fresco del backend
+    if (isLogged || localToken || (typeof document !== 'undefined' && document.cookie.includes('sessionid'))) {
+      fetchCurrentSessionApi().then((res) => {
+        if (res && res.token) {
+          sessionStorage.setItem(TOKEN_KEY, res.token)
+          localStorage.setItem(TOKEN_KEY, res.token)
+        }
+      }).catch(() => {
+        // Ignorar fallos de red silenciosos al verificar sesión
+      })
+    }
+  }, [isLogged])
+
   useEffect(() => {
     const handleUnauthorized = () => {
       setUserData(null)
       setIsLogged(false)
       try {
         localStorage.removeItem(STORAGE_KEY)
+        localStorage.removeItem(TOKEN_KEY)
+        sessionStorage.removeItem(TOKEN_KEY)
       } catch (e) {
         console.warn('Error al limpiar almacenamiento local:', e)
       }
@@ -72,9 +96,10 @@ export const AuthContextProvider = ({ children }) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(res.user))
       
-      // NUEVO BLOQUE: Guardar el token
+      // Guardar el token en sessionStorage y localStorage
       if (res.token) {
-        sessionStorage.setItem('token', res.token)
+        sessionStorage.setItem(TOKEN_KEY, res.token)
+        localStorage.setItem(TOKEN_KEY, res.token)
       }
       
     } catch (e) {
@@ -91,15 +116,14 @@ export const AuthContextProvider = ({ children }) => {
       setIsLogged(false)
       try {
         localStorage.removeItem(STORAGE_KEY)
-        
-        // NUEVA LINEA: Limpiar el token
-        sessionStorage.removeItem('token')
-        
+        localStorage.removeItem(TOKEN_KEY)
+        sessionStorage.removeItem(TOKEN_KEY)
       } catch (e) {
         console.warn('Error al limpiar almacenamiento local:', e)
       }
     }
   }, [])
+
 
   return (
     <AuthContext.Provider

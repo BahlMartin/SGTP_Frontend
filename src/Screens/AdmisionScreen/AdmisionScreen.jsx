@@ -76,13 +76,20 @@ export default function AdmisionScreen() {
   const [admissionError, setAdmissionError] = useState('')
 
   // Implementación de WebSocket
-  const { lastMessage: wsTicketMessage } = useWebSocket('ws/tickets')
+  const { lastMessage: wsTicketMessage } = useWebSocket('tickets')
 
   useEffect(() => {
-    if (wsTicketMessage && wsTicketMessage.event === 'TICKET_CREATED') {
+    const isTicketCreated = wsTicketMessage && (
+      wsTicketMessage.event === 'TICKET_CREATED' ||
+      wsTicketMessage.action === 'NEW_TICKET' ||
+      wsTicketMessage.action === 'TICKET_CREATED' ||
+      wsTicketMessage.event === 'NEW_TICKET'
+    )
+    if (isTicketCreated) {
       refreshTickets()
     }
   }, [wsTicketMessage, refreshTickets])
+
 
   // Filtrado de tickets emitidos hoy delegado al hook
   const todayTickets = useTodayTickets(tickets)

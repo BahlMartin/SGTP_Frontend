@@ -36,15 +36,22 @@ export default function TecnicoBoxScreen() {
   } = useTecnicoBox()
 
   // Implementación de WebSocket
-  const { lastMessage: wsQueueMessage } = useWebSocket('ws/queue')
-  const { lastMessage: wsBoxMessage } = useWebSocket('ws/boxes')
+  const { lastMessage: wsQueueMessage } = useWebSocket('queue')
+  const { lastMessage: wsBoxMessage } = useWebSocket('boxes')
 
   useEffect(() => {
-    // Si la cola se actualiza o un compañero libera un box, recargamos la vista de boxes (que incluye la cola)
-    if (wsQueueMessage?.event === 'QUEUE_UPDATED' || wsBoxMessage?.event === 'BOX_ATTENDING' || wsBoxMessage?.event === 'BOX_UPDATED') {
+    // Si la cola se actualiza, se llama un paciente o un compañero actualiza/libera un box, recargamos la vista
+    const qEvt = wsQueueMessage?.event || wsQueueMessage?.action
+    const bEvt = wsBoxMessage?.event || wsBoxMessage?.action
+
+    const isQueueChange = ['QUEUE_UPDATED', 'TICKET_LLAMADO', 'TICKET_CALLED', 'TICKET_CREATED', 'NEW_TICKET'].includes(qEvt)
+    const isBoxChange = ['BOX_ATTENDING', 'BOX_UPDATED', 'UPDATE_BOX'].includes(bEvt)
+
+    if (isQueueChange || isBoxChange) {
       refreshBoxes()
     }
   }, [wsQueueMessage, wsBoxMessage, refreshBoxes])
+
 
   return (
     <div className="box-screen">

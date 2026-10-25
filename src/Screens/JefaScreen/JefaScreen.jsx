@@ -47,14 +47,13 @@ export default function JefaScreen() {
   const [staffForOvertime, setStaffForOvertime] = useState(null)
   const [selectedStaffForTickets, setSelectedStaffForTickets] = useState(null)
 
-  // --- Conexiones WebSocket ---
   // --- Conexiones WebSocket en tiempo real ---
-  const { lastMessage: wsTicketMessage } = useWebSocket('ws/tickets')
-  const { lastMessage: wsLabMessage } = useWebSocket('ws/laboratorio') // o 'ws/lab' según tu app/routing.py
-  const { lastMessage: wsReportMessage } = useWebSocket('ws/reportes')
-  const { lastMessage: wsQueueMessage } = useWebSocket('ws/queue')
-  const { lastMessage: wsBoxMessage } = useWebSocket('ws/boxes') 
-  const { lastMessage: wsMonitorMessage } = useWebSocket('ws/monitor-operativo')
+  const { lastMessage: wsTicketMessage } = useWebSocket('tickets')
+  const { lastMessage: wsLabMessage } = useWebSocket('laboratorio')
+  const { lastMessage: wsReportMessage } = useWebSocket('reportes')
+  const { lastMessage: wsQueueMessage } = useWebSocket('queue')
+  const { lastMessage: wsBoxMessage } = useWebSocket('boxes') 
+  const { lastMessage: wsMonitorMessage } = useWebSocket('monitor-operativo')
 
   const handleSelectStaffForTickets = (staffMember) => {
     const roleNorm = String(staffMember?.rol || '').trim().toLowerCase()
@@ -81,18 +80,23 @@ export default function JefaScreen() {
 
   const isGlobalRefreshing = isRefreshingAll || loadingStaffWorkload || loadingStudies || boxesLoading
 
-  // 1. PANEL "PERSONAL Y CARGA": Reaccionar a cambios en Tickets o Reportes
+  // 1. PANEL "PERSONAL Y CARGA": Reaccionar a cambios en Tickets, Reportes, Monitor o Cola
   useEffect(() => {
-    const msg = wsTicketMessage || wsReportMessage || wsMonitorMessage
+    const msg = wsTicketMessage || wsReportMessage || wsMonitorMessage || wsQueueMessage
     if (!msg) return
 
-    const eventName = msg.event
+    const eventName = msg.event || msg.action
 
     if (
-      eventName === 'TICKET_CREATED' ||
-      eventName === 'REALTIME_METRICS_UPDATED' ||
-      eventName === 'QUEUE_UPDATED' ||
-      eventName === 'STAFF_UPDATED'
+      [
+        'TICKET_CREATED',
+        'NEW_TICKET',
+        'REALTIME_METRICS_UPDATED',
+        'REFRESH_REPORTS',
+        'QUEUE_UPDATED',
+        'TICKET_LLAMADO',
+        'STAFF_UPDATED'
+      ].includes(eventName)
     ) {
       // Re-consultamos métricas
       fetchRendimientoPersonalApi(staffDate)
@@ -109,23 +113,24 @@ export default function JefaScreen() {
       
       setLastRefreshedAt(new Date())
     }
-  }, [wsTicketMessage, wsReportMessage, wsMonitorMessage, staffDate, loadStaff])
+  }, [wsTicketMessage, wsReportMessage, wsMonitorMessage, wsQueueMessage, staffDate, loadStaff])
 
-  // 2. PANEL "BOXES DE ATENCIÓN": Reaccionar a cambios en Boxes
+  // 2. PANEL "BOXES DE ATENCIÓN": Reaccionar a cambios en Boxes o Monitor
   useEffect(() => {
-    if (!wsBoxMessage) return
-    const eventName = wsBoxMessage.event
+    const msg = wsBoxMessage || wsMonitorMessage
+    if (!msg) return
+    const eventName = msg.event || msg.action
 
-    if (eventName === 'BOX_ATTENDING' || eventName === 'BOX_UPDATED') {
+    if (['BOX_ATTENDING', 'BOX_UPDATED', 'UPDATE_BOX'].includes(eventName)) {
       refreshBoxes().catch(err => console.error('Error al actualizar boxes por WS:', err))
       setLastRefreshedAt(new Date())
     }
-  }, [wsBoxMessage, refreshBoxes])
+  }, [wsBoxMessage, wsMonitorMessage, refreshBoxes])
 
   // 3. PANEL "ESTUDIOS DE LABORATORIO": Reaccionar a cambios
   useEffect(() => {
     if (!wsLabMessage) return
-    const eventName = wsLabMessage.event
+    const eventName = wsLabMessage.event || wsLabMessage.action
 
     if (eventName === 'LAB_RESULT_READY') {
       fetchResumenEstudiosApi({
@@ -141,6 +146,7 @@ export default function JefaScreen() {
       setLastRefreshedAt(new Date())
     }
   }, [wsLabMessage, studiesDate, studiesSearch])
+
 
   const handleRefreshAll = async () => {
     setIsRefreshingAll(true)

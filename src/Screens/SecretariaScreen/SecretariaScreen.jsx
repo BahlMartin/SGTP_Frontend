@@ -24,20 +24,27 @@ export default function SecretariaScreen() {
   } = useSecretariaReport({ userData })
 
   // Implementación de WebSocket
-  const { lastMessage: wsReportMessage } = useWebSocket('ws/reportes')
-  const { lastMessage: wsTicketMessage } = useWebSocket('ws/tickets')
+  const { lastMessage: wsReportMessage } = useWebSocket('reportes')
+  const { lastMessage: wsTicketMessage } = useWebSocket('tickets')
 
   React.useEffect(() => {
-    if (wsReportMessage?.event === 'REALTIME_METRICS_UPDATED' || wsTicketMessage?.event === 'TICKET_CREATED') {
+    const rEvt = wsReportMessage?.event || wsReportMessage?.action
+    const tEvt = wsTicketMessage?.event || wsTicketMessage?.action
+
+    const isReportChange = ['REALTIME_METRICS_UPDATED', 'REFRESH_REPORTS'].includes(rEvt)
+    const isTicketChange = ['TICKET_CREATED', 'NEW_TICKET'].includes(tEvt)
+
+    if (isReportChange || isTicketChange) {
       // Como el hook recarga los datos al cambiar la fecha, forzamos un re-render suave 
       // si estás mirando el día de HOY. Si estás viendo reportes del mes pasado, no hacemos nada.
       const today = new Date().toISOString().split('T')[0]
       if (jornadaDate === today) {
-         // Este truco dispara el useEffect de tu hook useSecretariaReport
+         // Este truco dispara el useEffect del hook useSecretariaReport
          setJornadaDate(prev => prev) 
       }
     }
   }, [wsReportMessage, wsTicketMessage, jornadaDate, setJornadaDate])
+
 
   return (
     <div className="secretaria-screen">

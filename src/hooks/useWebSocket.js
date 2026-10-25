@@ -2,10 +2,94 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import ENVIRONMENT from '../config/enviroment.config'
 
 /**
- * Hook reutilizable para conexiones WebSocket con reconexión automática.
- * Obtiene la URL base exclusivamente desde ENVIRONMENT.URL_WS (definida por VITE_WS_URL en .env).
+ * Resuelve el token de sesión desde múltiples fuentes:
+ * 1. sessionStorage ('token')
+ * 2. localStorage ('token' o 'sgtp_session_token')
+ * 3. document.cookie ('sessionid')
+ * 4. localStorage ('sgtp_session_user')
+ */
+export function resolveSessionToken() {
+  try {
+    const sessToken = sessionStorage.getItem('token')
+    if (sessToken && typeof sessToken === 'string' && sessToken.trim()) {
+      return sessToken.trim()
+    }
+  } catch {
+    // Ignore storage errors
+  }
+
+  try {
+    const localToken = localStorage.getItem('token') || localStorage.getItem('sgtp_session_token')
+    if (localToken && typeof localToken === 'string' && localToken.trim()) {
+      return localToken.trim()
+    }
+  } catch {
+    // Ignore storage errors
+  }
+
+  if (typeof document !== 'undefined' && document.cookie) {
+    const match = document.cookie.match(/(?:^|;\s*)sessionid=([^;]+)/)
+    if (match && match[1]) {
+      return decodeURIComponent(match[1])
+    }
+  }
+
+  try {
+    const sessionUserRaw = localStorage.getItem('sgtp_session_user')
+    if (sessionUserRaw) {
+      const parsed = JSON.parse(sessionUserRaw)
+      if (parsed?.token) return parsed.token
+      if (parsed?.sessionid) return parsed.sessionid
+    }
+  } catch {
+    // Ignore JSON errors
+  }
+
+  return null
+}
+
+/**
+ * Normaliza la URL de conexión WebSocket para garantizar la estructura `/ws/<endpoint>`.
+ * La URL base suele terminar en `/ws` (ej. `ws://localhost:8000/ws` o `wss://dominio.com/ws`).
  *
- * @param {string} endpointPath - Ruta relativa del endpoint ws (ej: 'tickets/' o 'boxes/')
+ * @param {string} endpointPath - Ruta como 'tickets', 'ws/tickets', '/ws/tickets', etc.
+ * @returns {string} URL completa y sanitizada lista para conectar
+ */
+export function buildWebSocketUrl(endpointPath = '') {
+  if (!ENVIRONMENT.URL_WS) return ''
+
+  // Limpiar barras finales de la base
+  const cleanBase = ENVIRONMENT.URL_WS.replace(/\/+$/, '')
+
+  // Limpiar barras y prefijo 'ws/' si el usuario lo incluyó en el endpoint
+  let cleanSubPath = (endpointPath || '').trim().replace(/^\/+|\/+$/g, '')
+  if (cleanSubPath.startsWith('ws/')) {
+    cleanSubPath = cleanSubPath.slice(3).replace(/^\/+/, '')
+  } else if (cleanSubPath === 'ws') {
+    cleanSubPath = ''
+  }
+
+  let finalUrl = ''
+  if (cleanBase.endsWith('/ws')) {
+    finalUrl = cleanSubPath ? `${cleanBase}/${cleanSubPath}` : cleanBase
+  } else {
+    finalUrl = cleanSubPath ? `${cleanBase}/ws/${cleanSubPath}` : `${cleanBase}/ws`
+  }
+
+  // Inyección automática del token de sesión en la query string
+  const token = resolveSessionToken()
+  if (token) {
+    const separator = finalUrl.includes('?') ? '&' : '?'
+    finalUrl = `${finalUrl}${separator}token=${encodeURIComponent(token)}`
+  }
+
+  return finalUrl
+}
+
+/**
+ * Hook reutilizable para conexiones WebSocket con reconexión automática y normalización de URLs.
+ *
+ * @param {string} endpointPath - Ruta del endpoint (ej: 'tickets', 'boxes', 'queue', 'reportes', 'monitor-operativo')
  * @param {object} options - Opciones opcionales { onMessage, autoReconnect: true }
  */
 export const useWebSocket = (endpointPath = '', options = {}) => {
@@ -25,9 +109,8 @@ export const useWebSocket = (endpointPath = '', options = {}) => {
       return
     }
 
-    const cleanBase = ENVIRONMENT.URL_WS.replace(/\/$/, '')
-    const cleanPath = endpointPath.replace(/^\//, '')
-    const fullUrl = cleanPath ? `${cleanBase}/${cleanPath}` : cleanBase
+    const fullUrl = buildWebSocketUrl(endpointPath)
+    if (!fullUrl) return
 
     const ws = new WebSocket(fullUrl)
     socketRef.current = ws
@@ -43,6 +126,14 @@ export const useWebSocket = (endpointPath = '', options = {}) => {
       } catch {
         // Se mantiene como texto plano si no es JSON válido
       }
+
+      // Normalización bidireccional de conveniencia: asegurar que event y action existan siempre
+      if (parsedData && typeof parsedData === 'object') {
+        const eventName = parsedData.event || parsedData.action
+        if (!parsedData.event && eventName) parsedData.event = eventName
+        if (!parsedData.action && eventName) parsedData.action = eventName
+      }
+
       setLastMessage(parsedData)
       if (onMessageCallbackRef.current) {
         onMessageCallbackRef.current(parsedData)

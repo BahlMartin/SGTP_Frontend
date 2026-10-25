@@ -46,6 +46,16 @@ export async function logoutApi() {
   }
 }
 
+export async function fetchCurrentSessionApi() {
+  try {
+    const response = await apiClient.get('/auth/session/')
+    return response
+  } catch (error) {
+    return null
+  }
+}
+
+
 export async function unlockUserApi(idPersonal) {
   const payload = {
     id_personal: Number(idPersonal)
