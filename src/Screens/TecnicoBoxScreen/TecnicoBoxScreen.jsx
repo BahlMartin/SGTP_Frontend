@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
@@ -10,7 +10,6 @@ import PatientInAttentionCard from './components/PatientInAttentionCard/PatientI
 import MultiboxQueueCard from './components/MultiboxQueueCard/MultiboxQueueCard'
 import './TecnicoBoxScreen.css'
 import { useWebSocket } from '../../hooks/useWebSocket'
-import React, { useEffect } from 'react'
 
 export default function TecnicoBoxScreen() {
   const {

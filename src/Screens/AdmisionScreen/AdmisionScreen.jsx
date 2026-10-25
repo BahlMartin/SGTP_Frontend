@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import Navbar from '../../components/Navbar/Navbar'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import TicketModal from '../../components/TicketModal/TicketModal'
@@ -11,7 +11,6 @@ import { useAdmissionForm } from '../../hooks/useAdmissionForm'
 import { useTodayTickets } from '../../hooks/useTodayTickets'
 import './AdmisionScreen.css'
 import { useWebSocket } from '../../hooks/useWebSocket'
-import React, { useState, useCallback, useEffect } from 'react'
 
 function getTicketNumberKey(ticketNumber) {
   if (!ticketNumber) return ''
