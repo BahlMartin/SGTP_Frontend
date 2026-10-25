@@ -193,6 +193,25 @@ export const useWebSocket = (endpointPath = '', options = {}) => {
     }
   }, [connect])
 
+  // Escuchar cuando el token se resuelva para autenticar de inmediato si el socket ya está conectado
+  useEffect(() => {
+    const handleTokenReady = (event) => {
+      const token = event.detail?.token || resolveSessionToken()
+      if (token && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({
+          type: 'AUTH',
+          token: token
+        }))
+      }
+    }
+
+    window.addEventListener('auth:token_ready', handleTokenReady)
+    return () => {
+      window.removeEventListener('auth:token_ready', handleTokenReady)
+    }
+  }, [])
+
+
   const sendMessage = useCallback((payload) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       const data = typeof payload === 'string' ? payload : JSON.stringify(payload)

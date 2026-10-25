@@ -38,12 +38,16 @@ export const AuthContextProvider = ({ children }) => {
         if (res && res.token) {
           sessionStorage.setItem(TOKEN_KEY, res.token)
           localStorage.setItem(TOKEN_KEY, res.token)
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('auth:token_ready', { detail: { token: res.token } }))
+          }
         }
       }).catch(() => {
         // Ignorar fallos de red silenciosos al verificar sesión
       })
     }
   }, [isLogged])
+
 
   useEffect(() => {
     const handleUnauthorized = () => {

@@ -2,12 +2,13 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://sgtp-backend.onrender.com/app/$1"
+      "destination": "https://sgtp-backend-1.onrender.com/app/$1"
     },
     {
       "source": "/api",
-      "destination": "https://sgtp-backend.onrender.com/app/"
+      "destination": "https://sgtp-backend-1.onrender.com/app/"
     },
+
     {
       "source": "/(.*)",
       "destination": "/index.html"
