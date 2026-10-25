@@ -50,7 +50,7 @@ export function resolveSessionToken() {
 
 /**
  * Normaliza la URL de conexión WebSocket para garantizar la estructura `/ws/<endpoint>`.
- * La URL base suele terminar en `/ws` (ej. `ws://localhost:8000/ws` o `wss://dominio.com/ws`).
+ * La URL permanece 100% limpia sin tokens sensibles en la query string.
  *
  * @param {string} endpointPath - Ruta como 'tickets', 'ws/tickets', '/ws/tickets', etc.
  * @returns {string} URL completa y sanitizada lista para conectar
@@ -58,7 +58,7 @@ export function resolveSessionToken() {
 export function buildWebSocketUrl(endpointPath = '') {
   if (!ENVIRONMENT.URL_WS) return ''
 
-  // Limpiar barras finales de la base
+  // Limpiar barras finales de la base (ej. wss://dominio.com/ws)
   const cleanBase = ENVIRONMENT.URL_WS.replace(/\/+$/, '')
 
   // Limpiar barras y prefijo 'ws/' si el usuario lo incluyó en el endpoint
@@ -69,31 +69,21 @@ export function buildWebSocketUrl(endpointPath = '') {
     cleanSubPath = ''
   }
 
-  let finalUrl = ''
   if (cleanBase.endsWith('/ws')) {
-    finalUrl = cleanSubPath ? `${cleanBase}/${cleanSubPath}` : cleanBase
-  } else {
-    finalUrl = cleanSubPath ? `${cleanBase}/ws/${cleanSubPath}` : `${cleanBase}/ws`
+    return cleanSubPath ? `${cleanBase}/${cleanSubPath}` : cleanBase
   }
-
-  // Inyección automática del token de sesión en la query string
-  const token = resolveSessionToken()
-  if (token) {
-    const separator = finalUrl.includes('?') ? '&' : '?'
-    finalUrl = `${finalUrl}${separator}token=${encodeURIComponent(token)}`
-  }
-
-  return finalUrl
+  return cleanSubPath ? `${cleanBase}/ws/${cleanSubPath}` : `${cleanBase}/ws`
 }
 
 /**
- * Hook reutilizable para conexiones WebSocket con reconexión automática y normalización de URLs.
+ * Hook reutilizable para conexiones WebSocket con reconexión automática y autenticación In-Band.
  *
  * @param {string} endpointPath - Ruta del endpoint (ej: 'tickets', 'boxes', 'queue', 'reportes', 'monitor-operativo')
  * @param {object} options - Opciones opcionales { onMessage, autoReconnect: true }
  */
 export const useWebSocket = (endpointPath = '', options = {}) => {
   const [isConnected, setIsConnected] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [lastMessage, setLastMessage] = useState(null)
   const socketRef = useRef(null)
   const reconnectTimeoutRef = useRef(null)
@@ -117,6 +107,16 @@ export const useWebSocket = (endpointPath = '', options = {}) => {
 
     ws.onopen = () => {
       setIsConnected(true)
+
+      // Autenticación por mensaje inicial (In-Band Auth)
+      // El token viaja seguro dentro del socket en lugar de la URL pública
+      const token = resolveSessionToken()
+      if (token) {
+        ws.send(JSON.stringify({
+          type: 'AUTH',
+          token: token
+        }))
+      }
     }
 
     ws.onmessage = (event) => {
@@ -125,6 +125,22 @@ export const useWebSocket = (endpointPath = '', options = {}) => {
         parsedData = JSON.parse(event.data)
       } catch {
         // Se mantiene como texto plano si no es JSON válido
+      }
+
+      // Mensajes de control interno del protocolo
+      if (parsedData?.type === 'AUTH_SUCCESS') {
+        setIsAuthenticated(true)
+        return
+      }
+
+      if (parsedData?.type === 'AUTH_ERROR') {
+        setIsAuthenticated(false)
+        console.warn('Autenticación WebSocket rechazada:', parsedData.detail)
+        return
+      }
+
+      if (parsedData?.type === 'pong') {
+        return
       }
 
       // Normalización bidireccional de conveniencia: asegurar que event y action existan siempre
@@ -140,8 +156,16 @@ export const useWebSocket = (endpointPath = '', options = {}) => {
       }
     }
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       setIsConnected(false)
+      setIsAuthenticated(false)
+
+      // Si el servidor cerró expresamente por permisos (4003 Forbidden), no reintentar en bucle
+      if (event.code === 4003) {
+        console.warn('WebSocket cerrado por falta de permisos (4003 Forbidden). No se reintentará automáticamente.')
+        return
+      }
+
       const shouldReconnect = options.autoReconnect !== false
       if (shouldReconnect) {
         // Reconexión tras 3 segundos
@@ -180,6 +204,7 @@ export const useWebSocket = (endpointPath = '', options = {}) => {
 
   return {
     isConnected,
+    isAuthenticated,
     lastMessage,
     sendMessage,
     socket: socketRef.current
