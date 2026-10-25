@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'   
+import React from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
@@ -9,8 +9,8 @@ import RefreshButton from '../../components/RefreshButton/RefreshButton'
 import PatientInAttentionCard from './components/PatientInAttentionCard/PatientInAttentionCard'
 import MultiboxQueueCard from './components/MultiboxQueueCard/MultiboxQueueCard'
 import './TecnicoBoxScreen.css'
-
-import useWebSocket from '../../hooks/useWebSocket' // [NUEVO]
+import { useWebSocket } from '../../hooks/useWebSocket'
+import React, { useEffect } from 'react'
 
 export default function TecnicoBoxScreen() {
   const {
@@ -36,16 +36,17 @@ export default function TecnicoBoxScreen() {
     toggleStudyCheck
   } = useTecnicoBox()
 
-  // [NUEVO] Escuchar la cola centralizada
-  useWebSocket('queue', {
-    onMessage: useCallback((msg) => {
-      if (msg?.action === 'NEW_TICKET' || msg?.action === 'TICKET_LLAMADO') {
-        // Un nuevo paciente llegó o un colega llamó a alguien, refrescamos
-        refreshBoxes() 
-      }
-    }, [refreshBoxes])
-  }) 
-  
+  // Implementación de WebSocket
+  const { lastMessage: wsQueueMessage } = useWebSocket('ws/queue')
+  const { lastMessage: wsBoxMessage } = useWebSocket('ws/boxes')
+
+  useEffect(() => {
+    // Si la cola se actualiza o un compañero libera un box, recargamos la vista de boxes (que incluye la cola)
+    if (wsQueueMessage?.event === 'QUEUE_UPDATED' || wsBoxMessage?.event === 'BOX_ATTENDING' || wsBoxMessage?.event === 'BOX_UPDATED') {
+      refreshBoxes()
+    }
+  }, [wsQueueMessage, wsBoxMessage, refreshBoxes])
+
   return (
     <div className="box-screen">
       <Navbar />
