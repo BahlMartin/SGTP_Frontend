@@ -303,6 +303,8 @@ export default function JefaScreen() {
                 <span className="jefa-screen__overview-title">Monitoreo operativo</span>
                 <span className="jefa-screen__overview-subtitle">Personal, boxes y laboratorio</span>
               </div>
+              {/* Botón de actualizar desactivado temporalmente para validar actualizaciones automáticas vía WebSocket */}
+              {/*
               <button
                 type="button"
                 className="jefa-screen__overview-refresh-btn"
@@ -318,6 +320,7 @@ export default function JefaScreen() {
                 <span>Actualizar</span>
                 <span className="jefa-screen__overview-refresh-time">{formattedRefreshTime}</span>
               </button>
+              */}
             </div>
 
             <ActiveStaffCard
