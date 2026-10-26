@@ -234,8 +234,14 @@ export async function searchPatientsApi(query) {
  * Consulta el rendimiento y carga del personal (tickets emitidos / pacientes atendidos) para una fecha determinada.
  */
 export async function fetchRendimientoPersonalApi(fechaStr) {
-  const query = fechaStr ? `?fecha=${fechaStr}` : ''
-  return await apiClient.get(`/tickets/rendimiento-personal/${query}`)
+  const params = new URLSearchParams()
+  if (fechaStr) params.append('fecha', fechaStr)
+  
+  // Romper el caché para que las métricas de carga de personal sean siempre en tiempo real
+  params.append('_t', Date.now())
+
+  const queryString = params.toString() ? `?${params.toString()}` : ''
+  return await apiClient.get(`/tickets/rendimiento-personal/${queryString}`)
 }
 
 /**
@@ -246,6 +252,9 @@ export async function fetchResumenEstudiosApi({ fechaStr, search = '', top = nul
   if (fechaStr) params.append('fecha', fechaStr)
   if (search && search.trim()) params.append('search', search.trim())
   if (top) params.append('top', String(top))
+
+  // Parámetro dinámico para evitar que el navegador cachee la respuesta tras un evento WebSocket
+  params.append('_t', Date.now())
 
   const queryString = params.toString() ? `?${params.toString()}` : ''
   return await apiClient.get(`/tickets/resumen-estudios/${queryString}`)
@@ -260,4 +269,3 @@ export async function fetchTicketsByStaffApi(idPersonal, fechaStr = null) {
   const query = fechaStr ? `?fecha=${fechaStr}` : ''
   return await apiClient.get(`/tickets/personal/${idPersonal}/${query}`)
 }
-
