@@ -5,7 +5,6 @@ import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useTecnicoBox } from '../../hooks/useTecnicoBox'
 import BoxControlCard from './components/BoxControlCard/BoxControlCard'
 import ActiveBoxesCard from '../../components/ActiveBoxesCard/ActiveBoxesCard'
-import RefreshButton from '../../components/RefreshButton/RefreshButton'
 import PatientInAttentionCard from './components/PatientInAttentionCard/PatientInAttentionCard'
 import MultiboxQueueCard from './components/MultiboxQueueCard/MultiboxQueueCard'
 import './TecnicoBoxScreen.css'
@@ -14,8 +13,6 @@ import { useWebSocket } from '../../hooks/useWebSocket'
 export default function TecnicoBoxScreen() {
   const {
     boxes,
-    boxesLoading,
-    boxesError,
     refreshBoxes,
     refreshTickets,
     currentBoxNumber,
@@ -82,12 +79,6 @@ export default function TecnicoBoxScreen() {
             <ActiveBoxesCard
               canToggleStatus={false}
               onSelectStaff={null}
-              actionSlot={
-                <RefreshButton
-                  onRefresh={refreshBoxes}
-                  isLoading={boxesLoading}
-                />
-              }
             />
           </div>
 
