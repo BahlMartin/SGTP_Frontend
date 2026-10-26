@@ -47,13 +47,8 @@ export default function JefaScreen() {
   const [staffForOvertime, setStaffForOvertime] = useState(null)
   const [selectedStaffForTickets, setSelectedStaffForTickets] = useState(null)
 
-  // --- Conexiones WebSocket en tiempo real ---
-  const { lastMessage: wsTicketMessage } = useWebSocket('tickets')
-  const { lastMessage: wsLabMessage } = useWebSocket('laboratorio')
-  const { lastMessage: wsReportMessage } = useWebSocket('reportes')
-  const { lastMessage: wsQueueMessage } = useWebSocket('queue')
-  const { lastMessage: wsBoxMessage } = useWebSocket('boxes') 
-  const { lastMessage: wsMonitorMessage } = useWebSocket('monitor-operativo')
+  // --- Conexión WebSocket Única Centralizada (Monitor Operativo para Jefatura) ---
+  const { lastMessage: wsMessage } = useWebSocket('monitor-operativo')
 
   const handleSelectStaffForTickets = (staffMember) => {
     const roleNorm = String(staffMember?.rol || '').trim().toLowerCase()
@@ -80,12 +75,10 @@ export default function JefaScreen() {
 
   const isGlobalRefreshing = isRefreshingAll || loadingStaffWorkload || loadingStudies || boxesLoading
 
-  // 1. PANEL "PERSONAL Y CARGA": Reaccionar a cambios en Tickets, Reportes, Monitor o Cola
+  // 1. PANEL "PERSONAL Y CARGA": Reaccionar a cambios en Tickets, Reportes, Cola o Boxes
   useEffect(() => {
-    const msg = wsTicketMessage || wsReportMessage || wsMonitorMessage || wsQueueMessage
-    if (!msg) return
-
-    const eventName = msg.event || msg.action
+    if (!wsMessage) return
+    const eventName = wsMessage.event || wsMessage.action
 
     if (
       [
@@ -95,10 +88,13 @@ export default function JefaScreen() {
         'REFRESH_REPORTS',
         'QUEUE_UPDATED',
         'TICKET_LLAMADO',
-        'STAFF_UPDATED'
+        'STAFF_UPDATED',
+        'BOX_UPDATED',
+        'BOX_ATTENDING',
+        'LAB_STUDIES_UPDATED'
       ].includes(eventName)
     ) {
-      // Re-consultamos métricas
+      // Re-consultamos métricas de carga de personal
       fetchRendimientoPersonalApi(staffDate)
         .then((data) => {
           setWorkloadByStaff({
@@ -108,52 +104,50 @@ export default function JefaScreen() {
         })
         .catch((err) => console.error('Error al actualizar carga por WS:', err))
 
-      // AGREGADO: Actualizamos el personal activo (quién está en turno)
+      // Actualizamos el personal activo (quién está en turno)
       loadStaff().catch(err => console.error('Error al recargar personal:', err))
       
       setLastRefreshedAt(new Date())
     }
-  }, [wsTicketMessage, wsReportMessage, wsMonitorMessage, wsQueueMessage, staffDate, loadStaff])
+  }, [wsMessage, staffDate, loadStaff])
 
-  // 2. PANEL "BOXES DE ATENCIÓN": Reaccionar a cambios en Boxes o Monitor
+  // 2. PANEL "BOXES DE ATENCIÓN": Reaccionar a cambios de estado o atención en Boxes
   useEffect(() => {
-    const msg = wsBoxMessage || wsMonitorMessage
-    if (!msg) return
-    const eventName = msg.event || msg.action
+    if (!wsMessage) return
+    const eventName = wsMessage.event || wsMessage.action
 
-    if (['BOX_ATTENDING', 'BOX_UPDATED', 'UPDATE_BOX'].includes(eventName)) {
+    if (['BOX_ATTENDING', 'BOX_UPDATED', 'UPDATE_BOX', 'TICKET_LLAMADO'].includes(eventName)) {
       refreshBoxes().catch(err => console.error('Error al actualizar boxes por WS:', err))
       setLastRefreshedAt(new Date())
     }
-  }, [wsBoxMessage, wsMonitorMessage, refreshBoxes])
+  }, [wsMessage, refreshBoxes])
 
   // 3. PANEL "ESTUDIOS DE LABORATORIO": Reaccionar al cierre de atención en Box (estudios consolidados)
   useEffect(() => {
-    const labEvent = wsLabMessage?.event || wsLabMessage?.action
-    const monitorEvent = wsMonitorMessage?.event || wsMonitorMessage?.action
+    if (!wsMessage) return
+    const eventName = wsMessage.event || wsMessage.action
 
-    const targetEvents = [
-      'LAB_STUDIES_UPDATED',
-      'ESTUDIOS_ACTUALIZADOS',
-      'REFRESH_LAB_STUDIES',
-      'LAB_RESULT_READY'
-    ]
-
-    const hasLabUpdate = targetEvents.includes(labEvent) || targetEvents.includes(monitorEvent)
-    if (!hasLabUpdate) return
-
-    fetchResumenEstudiosApi({
-      fechaStr: studiesDate,
-      search: studiesSearch,
-      top: null
-    })
-      .then((data) => {
-        setLabStudies(data.estudios || [])
+    if (
+      [
+        'LAB_STUDIES_UPDATED',
+        'ESTUDIOS_ACTUALIZADOS',
+        'REFRESH_LAB_STUDIES',
+        'LAB_RESULT_READY'
+      ].includes(eventName)
+    ) {
+      fetchResumenEstudiosApi({
+        fechaStr: studiesDate,
+        search: studiesSearch,
+        top: null
       })
-      .catch((err) => console.error('Error al actualizar laboratorio por WS:', err))
+        .then((data) => {
+          setLabStudies(data.estudios || [])
+        })
+        .catch((err) => console.error('Error al actualizar laboratorio por WS:', err))
 
-    setLastRefreshedAt(new Date())
-  }, [wsLabMessage, wsMonitorMessage, studiesDate, studiesSearch])
+      setLastRefreshedAt(new Date())
+    }
+  }, [wsMessage, studiesDate, studiesSearch])
 
 
   const handleRefreshAll = async () => {
