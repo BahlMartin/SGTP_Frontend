@@ -48,11 +48,13 @@ export const BoxContextProvider = ({ children }) => {
 
   useWebSocket('boxes', {
     onMessage: useCallback((msg) => {
-      const isBoxUpdate = (msg?.action === 'UPDATE_BOX' || msg?.event === 'BOX_UPDATED' || msg?.action === 'BOX_UPDATED')
+    // Escuchar el evento exacto que envía el backend
+      const isBoxUpdate = (msg?.action === 'BOX_ATTENDING' || msg?.event === 'BOX_ATTENDING')
       if (isBoxUpdate && msg?.data) {
         setBoxes((previousBoxes) => {
+        // Usar box_id en lugar de numero
           const matchingBoxIndex = previousBoxes.findIndex(
-            (currentBox) => Number(currentBox.numero) === Number(msg.data.numero)
+            (currentBox) => Number(currentBox.id) === Number(msg.data.box_id)
           )
           if (matchingBoxIndex < 0) return [...previousBoxes, msg.data]
 
