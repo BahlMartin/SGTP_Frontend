@@ -127,25 +127,33 @@ export default function JefaScreen() {
     }
   }, [wsBoxMessage, wsMonitorMessage, refreshBoxes])
 
-  // 3. PANEL "ESTUDIOS DE LABORATORIO": Reaccionar a cambios
+  // 3. PANEL "ESTUDIOS DE LABORATORIO": Reaccionar al cierre de atención en Box (estudios consolidados)
   useEffect(() => {
-    if (!wsLabMessage) return
-    const eventName = wsLabMessage.event || wsLabMessage.action
+    const labEvent = wsLabMessage?.event || wsLabMessage?.action
+    const monitorEvent = wsMonitorMessage?.event || wsMonitorMessage?.action
 
-    if (eventName === 'LAB_RESULT_READY') {
-      fetchResumenEstudiosApi({
-        fechaStr: studiesDate,
-        search: studiesSearch,
-        top: null
+    const targetEvents = [
+      'LAB_STUDIES_UPDATED',
+      'ESTUDIOS_ACTUALIZADOS',
+      'REFRESH_LAB_STUDIES',
+      'LAB_RESULT_READY'
+    ]
+
+    const hasLabUpdate = targetEvents.includes(labEvent) || targetEvents.includes(monitorEvent)
+    if (!hasLabUpdate) return
+
+    fetchResumenEstudiosApi({
+      fechaStr: studiesDate,
+      search: studiesSearch,
+      top: null
+    })
+      .then((data) => {
+        setLabStudies(data.estudios || [])
       })
-        .then((data) => {
-          setLabStudies(data.estudios || [])
-        })
-        .catch((err) => console.error('Error al actualizar laboratorio por WS:', err))
+      .catch((err) => console.error('Error al actualizar laboratorio por WS:', err))
 
-      setLastRefreshedAt(new Date())
-    }
-  }, [wsLabMessage, studiesDate, studiesSearch])
+    setLastRefreshedAt(new Date())
+  }, [wsLabMessage, wsMonitorMessage, studiesDate, studiesSearch])
 
 
   const handleRefreshAll = async () => {
