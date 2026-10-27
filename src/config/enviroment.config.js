@@ -4,7 +4,10 @@ const ENVIRONMENT = {
   // En producción (Vercel) utiliza '/api' (proxy inverso en vercel.json) para no exponer el backend real ni tener CORS.
   // En desarrollo local o si se define en .env, utiliza VITE_API_URL o fallback a '/api' (gestionado por proxy en vite.config.js).
   URL_API: import.meta.env.VITE_API_URL || '/api',
-  URL_WS: import.meta.env.VITE_WS_URL || (isProduction ? '' : 'ws://localhost:8000/ws'),
+  
+  //Apuntamos directamente al backend de Render en producción.
+  URL_WS: import.meta.env.VITE_WS_URL || (isProduction ? 'wss://sgtp-backend-1.onrender.com' : 'ws://localhost:8000'),
+  
   ENABLE_JWE: import.meta.env.VITE_ENABLE_JWE === 'true',
   OCR_SERVICE_URL: import.meta.env.VITE_OCR_SERVICE_URL || 'http://localhost:8001/ocr',
   APP_NAME: 'SGTP - Sistema de Gestión de Triage y Flujo de Pacientes',
@@ -12,4 +15,3 @@ const ENVIRONMENT = {
 }
 
 export default ENVIRONMENT
-
