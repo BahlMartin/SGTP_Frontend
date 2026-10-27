@@ -70,6 +70,9 @@ export async function fetchTicketsApi() {
   let page = 1
   let hasNextPage = true
 
+  // Generamos un único timestamp para toda la paginación de esta llamada
+  const t = Date.now()
+
   while (hasNextPage) {
     const response = await apiClient.get(page === 1 ? '/tickets/' : `/tickets/?page=${page}`)
     if (Array.isArray(response)) {
@@ -94,7 +97,8 @@ export async function fetchTicketsApi() {
  * Obtiene la cola de espera de tickets pendientes ordenada por prioridad médica (FIFO asistencial).
  */
 export async function fetchColaEsperaApi() {
-  const response = await apiClient.get('/tickets/cola-espera/')
+  // CRÍTICO: Romper el caché agregando el timestamp en la query string
+  const response = await apiClient.get(`/tickets/cola-espera/?_t=${Date.now()}`)
   const list = Array.isArray(response) ? response : response.results || []
   return list.map(normalizeTicket)
 }
