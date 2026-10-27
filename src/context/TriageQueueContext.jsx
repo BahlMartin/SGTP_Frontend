@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from './AuthContext'
+//  IMPORTACIÓN DEL HOOK DE WEBSOCKETS 
+import useWebSocket from '../hooks/useWebSocket' 
 import {
   fetchTicketsApi,
   fetchColaEsperaApi,
@@ -45,6 +47,23 @@ export const TriageQueueContextProvider = ({ children }) => {
       setLoading(false)
     }
   }, [])
+
+  // ESCUCHA DE WEBSOCKETS AQUÍ
+  useWebSocket('queue', {
+    onMessage: useCallback((msg) => {
+      if (msg?.event === 'QUEUE_UPDATED') {
+        refreshTickets()
+      }
+    }, [refreshTickets])
+  })
+
+  useWebSocket('tickets', {
+    onMessage: useCallback((msg) => {
+      if (['TICKET_CREATED', 'TICKET_UPDATED', 'TICKET_LLAMADO'].includes(msg?.event)) {
+        refreshTickets()
+      }
+    }, [refreshTickets])
+  })
 
   useEffect(() => {
     if (isLogged) {
