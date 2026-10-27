@@ -122,7 +122,7 @@ export default function JefaScreen() {
     }
   }, [wsMessage, refreshBoxes])
 
-  // 3. PANEL "ESTUDIOS DE LABORATORIO": Reaccionar al cierre de atención en Box (estudios consolidados)
+  // 3. PANEL "ESTUDIOS DE LABORATORIO": Reaccionar a nuevos tickets y cierres en Box
   useEffect(() => {
     if (!wsMessage) return
     const eventName = wsMessage.event || wsMessage.action
@@ -132,7 +132,9 @@ export default function JefaScreen() {
         'LAB_STUDIES_UPDATED',
         'ESTUDIOS_ACTUALIZADOS',
         'REFRESH_LAB_STUDIES',
-        'LAB_RESULT_READY'
+        'LAB_RESULT_READY',
+        'TICKET_CREATED',   // <- AGREGADO: Detecta cuando se emite un nuevo ticket con estudios
+        'NEW_TICKET'       // <- AGREGADO: Compatibilidad con action backend
       ].includes(eventName)
     ) {
       fetchResumenEstudiosApi({
@@ -141,7 +143,9 @@ export default function JefaScreen() {
         top: null
       })
         .then((data) => {
-          setLabStudies(data.estudios || [])
+          // Soporta tanto si la API retorna una lista directa [...] como si retorna { estudios: [...] }
+          const listaEstudios = Array.isArray(data) ? data : (data?.estudios || data?.results || [])
+          setLabStudies(listaEstudios)
         })
         .catch((err) => console.error('Error al actualizar laboratorio por WS:', err))
 
