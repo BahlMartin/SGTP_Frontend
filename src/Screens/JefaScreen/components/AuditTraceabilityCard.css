@@ -17,7 +17,7 @@
 
 .jefa-screen__audit-title {
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -40,7 +40,7 @@
   background: #1687c9;
   color: #ffffff;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 7px 14px;
   border-radius: var(--radius-sm);
   display: inline-flex;
@@ -65,7 +65,7 @@
   border: 1px solid #d9e5ea;
   color: #183b4a;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 7px 14px;
   border-radius: var(--radius-sm);
   display: inline-flex;

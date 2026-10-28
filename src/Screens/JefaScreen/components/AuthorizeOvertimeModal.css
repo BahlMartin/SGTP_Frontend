@@ -96,7 +96,7 @@
   background: #e6f4fb;
   border-color: #b9dce8;
   color: #0e679b;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .overtime-modal__tab-icon {
@@ -120,7 +120,7 @@
   background: #fff0ef;
   color: #b42323;
   border: 1px solid #f6c5c1;
-  font-weight: 700;
+  font-weight: 600;
   padding: 8px 18px;
   border-radius: var(--radius-md, 6px);
   cursor: pointer;
@@ -149,7 +149,7 @@
   background: #177245;
   color: #ffffff;
   border: 1px solid #135f39;
-  font-weight: 700;
+  font-weight: 600;
   padding: 8px 20px;
   border-radius: var(--radius-md, 6px);
   cursor: pointer;

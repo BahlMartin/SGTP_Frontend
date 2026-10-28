@@ -76,7 +76,7 @@
 .active-overtimes-tab__summary-item strong {
   color: #177245;
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* ============================================================================== */
@@ -221,7 +221,7 @@
   background: #0284c7;
   color: #ffffff;
   font-size: 0.52rem;
-  font-weight: 800;
+  font-weight: 700;
   padding: 0 4px;
   border-radius: 999px;
   line-height: 1.3;
@@ -237,7 +237,7 @@
 
 .active-overtimes-calendar__day-pill {
   font-size: 0.62rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #ffffff;
   background: #177245;
   padding: 1px 4px;
@@ -289,7 +289,7 @@
   height: 16px;
   border-radius: 3px;
   font-size: 0.62rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .active-overtimes-calendar__legend-badge--active {
@@ -426,7 +426,7 @@
 /* Badges */
 .active-overtimes-tab__badge {
   font-size: 0.66rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -453,7 +453,7 @@
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -473,7 +473,7 @@
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -495,7 +495,7 @@
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 0.74rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -666,7 +666,7 @@
   background: #177245;
   color: #ffffff;
   font-size: 0.62rem;
-  font-weight: 800;
+  font-weight: 600;
   padding: 0 5px;
   border-radius: 999px;
   line-height: 1.4;

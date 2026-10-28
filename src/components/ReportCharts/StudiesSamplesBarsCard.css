@@ -23,7 +23,7 @@
 .studies-samples-card__title {
   margin: 0;
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* Total destacado */
@@ -38,7 +38,7 @@
 
 .studies-samples-card__total strong {
   font-size: 2rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   color: #0f766e;
 }
@@ -66,7 +66,7 @@
 
 .studies-samples-card__value {
   font-size: 1.3rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
 }
 

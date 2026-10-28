@@ -92,7 +92,7 @@
 
 .overtime-calendar__day-pill {
   font-size: 0.65rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #ffffff;
   background: #1687c9;
   padding: 1px 5px;
@@ -133,7 +133,7 @@
   height: 16px;
   border-radius: 3px;
   font-size: 0.62rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .overtime-calendar__legend-badge--active {

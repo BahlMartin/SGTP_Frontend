@@ -36,7 +36,7 @@
 
 .jefa-screen__security-title {
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text-primary, #0f172a);
   margin: 0;
 }
@@ -281,7 +281,7 @@
   align-items: center;
   gap: 6px;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;

@@ -37,7 +37,7 @@
 .not-found__btn {
   background: #0284c7;
   color: #ffffff;
-  font-weight: 700;
+  font-weight: 600;
   padding: 10px 22px;
   border-radius: var(--radius-md);
   display: inline-flex;
