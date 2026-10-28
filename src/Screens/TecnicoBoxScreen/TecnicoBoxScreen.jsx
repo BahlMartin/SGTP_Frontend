@@ -208,7 +208,6 @@ export default function TecnicoBoxScreen() {
                     />
                   </div>
 
-<<<<<<< HEAD
                   <div
                     className={`box-screen__secondary-item ${
                       activeSecondaryPanel === 'search' ? 'box-screen__secondary-item--active' : ''
@@ -225,25 +224,12 @@ export default function TecnicoBoxScreen() {
                     <ActiveBoxesCard
                       canToggleStatus={false}
                       onSelectStaff={null}
-                      actionSlot={
-                        <RefreshButton
-                          onRefresh={refreshBoxes}
-                          isLoading={boxesLoading}
-                        />
-                      }
                     />
                   </div>
                 </div>
               </div>
             </div>
           </section>
-=======
-            <ActiveBoxesCard
-              canToggleStatus={false}
-              onSelectStaff={null}
-            />
-          </div>
->>>>>>> develop
 
           {/* Columna Derecha: Paciente en atención y Cola Multibox Centralizada */}
           <div className="box-screen__right-column">
