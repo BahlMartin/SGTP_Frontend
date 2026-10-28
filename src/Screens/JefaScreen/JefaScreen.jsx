@@ -108,7 +108,8 @@ export default function JefaScreen() {
         .then((data) => {
           setWorkloadByStaff({
             ticketsIssuedByStaff: data.tickets_por_personal || {},
-            patientsAttendedByBoxStaff: data.atenciones_por_personal || {}
+            patientsAttendedByBoxStaff: data.atenciones_por_personal || {},
+            patientsAbsentByBoxStaff: data.ausentes_por_personal || {}
           })
         })
         .catch((err) => console.error('Error al actualizar carga por WS:', err))
@@ -169,7 +170,8 @@ export default function JefaScreen() {
           .then((data) => {
             setWorkloadByStaff({
               ticketsIssuedByStaff: data.tickets_por_personal || {},
-              patientsAttendedByBoxStaff: data.atenciones_por_personal || {}
+              patientsAttendedByBoxStaff: data.atenciones_por_personal || {},
+            patientsAbsentByBoxStaff: data.ausentes_por_personal || {}
             })
           })
           .catch((error) => {
@@ -218,7 +220,8 @@ export default function JefaScreen() {
         if (!isMounted) return
         setWorkloadByStaff({
           ticketsIssuedByStaff: data.tickets_por_personal || {},
-          patientsAttendedByBoxStaff: data.atenciones_por_personal || {}
+          patientsAttendedByBoxStaff: data.atenciones_por_personal || {},
+          patientsAbsentByBoxStaff: data.ausentes_por_personal || {}
         })
       })
       .catch((error) => {

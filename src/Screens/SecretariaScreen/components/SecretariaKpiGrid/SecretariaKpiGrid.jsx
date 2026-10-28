@@ -5,6 +5,7 @@ import './SecretariaKpiGrid.css'
 
 export default function SecretariaKpiGrid({
   atendidos = 0,
+  cancelados = 0,
   ingresos = 0,
   enCurso = 0,
   esperaPromedio = '—',
@@ -13,6 +14,7 @@ export default function SecretariaKpiGrid({
 }) {
   const currentMetrics = {
     atendidos,
+    cancelados,
     ingresos,
     enCurso,
     esperaPromedio,

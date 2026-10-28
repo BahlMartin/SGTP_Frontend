@@ -130,6 +130,28 @@ export function useTecnicoBox() {
     }
   }
 
+  const handleCancelConsultation = async (observaciones = '') => {
+    if (!patientInBox) {
+      alert('No hay paciente en atención en este box.')
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      const nombrePaciente = `${patientInBox.paciente_nombre || ''} ${patientInBox.paciente_apellido || ''}`.trim()
+      await finishAttention(currentBoxNumber, 'Cancelado', observaciones)
+      await refreshBoxes()
+      showNotification(
+        `Turno de ${nombrePaciente || 'paciente'} cancelado por ausencia. ${currentBoxKey} disponible.`
+      )
+    } catch (error) {
+      alert(error.message || 'Error al cancelar el turno del paciente.')
+      throw error
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   const handleModifyStudies = async ({ cancelarEstudios, agregarEstudios }) => {
     if (!patientInBox) {
       alert('No hay paciente en atención en este box.')
@@ -217,6 +239,7 @@ export function useTecnicoBox() {
     handleCallNext,
     handleCallSpecificPatient,
     handleFinishConsultation,
+    handleCancelConsultation,
     handleModifyStudies,
     toggleStudyCheck,
     handleSelectAllStudies,

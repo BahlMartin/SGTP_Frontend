@@ -97,7 +97,14 @@ export default function ActiveStaffCard({
             const workload = isAdmissionStaff
               ? (workloadByStaff.ticketsIssuedByStaff?.[staffMember.id] ?? workloadByStaff.ticketsIssuedByStaff?.[String(staffMember.id)] ?? 0)
               : (workloadByStaff.patientsAttendedByBoxStaff?.[staffMember.id] ?? workloadByStaff.patientsAttendedByBoxStaff?.[String(staffMember.id)] ?? 0)
-            const workloadLabel = isAdmissionStaff ? 'tickets emitidos' : 'pacientes atendidos'
+            const absentCount = !isAdmissionStaff
+              ? (workloadByStaff.patientsAbsentByBoxStaff?.[staffMember.id] ?? workloadByStaff.patientsAbsentByBoxStaff?.[String(staffMember.id)] ?? 0)
+              : 0
+            const workloadLabel = isAdmissionStaff
+              ? 'tickets emitidos'
+              : absentCount > 0
+                ? `atendidos · ${absentCount} ausente${absentCount === 1 ? '' : 's'}`
+                : 'pacientes atendidos'
             return (
               <li
                 key={staffMember.id}

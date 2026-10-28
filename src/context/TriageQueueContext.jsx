@@ -105,8 +105,8 @@ export const TriageQueueContextProvider = ({ children }) => {
   )
 
   const finishAttention = useCallback(
-    async (boxNumero, motivo = 'Finalizado') => {
-      const result = await cerrarAtencionBoxApi(boxNumero, motivo)
+    async (boxNumero, motivo = 'Finalizado', observaciones = '') => {
+      const result = await cerrarAtencionBoxApi(boxNumero, motivo, observaciones)
       await refreshTickets()
       return result
     },

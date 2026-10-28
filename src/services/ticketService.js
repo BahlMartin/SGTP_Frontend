@@ -43,6 +43,7 @@ export function normalizeTicket(t) {
     personal_box_matricula: t.personal_box_matricula || '',
     fecha_hora_atencion_box: t.fecha_hora_atencion_box || null,
     motivo_cierre_box: t.motivo_cierre_box || '',
+    observaciones_cierre_box: t.observaciones_cierre_box || '',
     paciente_id: t.paciente,
     paciente_dni: paciente.dni ? String(paciente.dni) : (t.paciente_dni || ''),
     paciente_nombre: paciente.nombre || t.paciente_nombre || '',

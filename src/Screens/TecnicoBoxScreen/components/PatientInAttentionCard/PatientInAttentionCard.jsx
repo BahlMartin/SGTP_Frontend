@@ -10,11 +10,13 @@ import {
   AlertCircle,
   Calendar,
   User,
+  UserX,
   Trash2
 } from 'lucide-react'
 import { getTriageInfo } from '../../../../constants/triage.constants'
 import { formatTimeHHMM } from '../../../../utils/formatters'
 import ModalModificarEstudios from '../ModalModificarEstudios/ModalModificarEstudios'
+import ModalCancelarAtencion from '../ModalCancelarAtencion/ModalCancelarAtencion'
 import './PatientInAttentionCard.css'
 
 export default function PatientInAttentionCard({
@@ -28,9 +30,11 @@ export default function PatientInAttentionCard({
   onSelectAllStudies,
   onCallNext,
   onFinishConsultation,
+  onCancelConsultation,
   onModifyStudies
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const studiesList = patientInBox?.estudios || ['Muestra de Sangre', 'Orina']
   const cancelledStudies = patientInBox?.estudios_cancelados || []
 
@@ -65,6 +69,16 @@ export default function PatientInAttentionCard({
           >
             <Bell className="patient-attention-card__btn-icon" />
             Llamar siguiente
+          </button>
+          <button
+            type="button"
+            className="patient-attention-card__btn-cancel-turn"
+            disabled={isProcessing || !patientInBox}
+            onClick={() => setIsCancelModalOpen(true)}
+            title="Cancelar el turno si el paciente convocado no se presenta en el box"
+          >
+            <UserX className="patient-attention-card__btn-icon" />
+            Paciente ausente
           </button>
           <button
             type="button"
@@ -351,6 +365,16 @@ export default function PatientInAttentionCard({
         onClose={() => setIsModalOpen(false)}
         patientInBox={patientInBox}
         onSave={onModifyStudies}
+        isProcessing={isProcessing}
+      />
+
+      {/* Modal de confirmación de paciente ausente / cancelación de turno */}
+      <ModalCancelarAtencion
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        patientInBox={patientInBox}
+        currentBoxKey={currentBoxKey}
+        onConfirm={onCancelConsultation}
         isProcessing={isProcessing}
       />
     </div>

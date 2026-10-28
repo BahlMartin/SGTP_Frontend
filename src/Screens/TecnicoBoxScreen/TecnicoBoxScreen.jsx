@@ -37,6 +37,7 @@ export default function TecnicoBoxScreen() {
     handleStatusChange,
     handleCallNext,
     handleFinishConsultation,
+    handleCancelConsultation,
     handleModifyStudies,
     toggleStudyCheck,
     handleSelectAllStudies,
@@ -248,6 +249,7 @@ export default function TecnicoBoxScreen() {
               onSelectAllStudies={handleSelectAllStudies}
               onCallNext={handleCallNext}
               onFinishConsultation={handleFinishConsultation}
+              onCancelConsultation={handleCancelConsultation}
               onModifyStudies={handleModifyStudies}
             />
 

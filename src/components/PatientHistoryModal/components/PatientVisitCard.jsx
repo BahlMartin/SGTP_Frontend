@@ -87,7 +87,7 @@ export default function PatientVisitCard({
               {visit.num_totem || 'Ticket'}
             </span>
             <span className={`patient-history-modal__badge-state patient-history-modal__badge-state--${stateClass}`}>
-              {visit.estado || 'Atendido'}
+              {visit.estado === 'Cancelado' ? 'Cancelado / Ausente' : (visit.estado || 'Atendido')}
             </span>
             <span className="patient-history-modal__badge-box">
               {boxDisplay}
@@ -133,6 +133,16 @@ export default function PatientVisitCard({
           <div className="patient-history-modal__studies-row">
             <span className="patient-history-modal__studies-caption">Estudios:</span>
             <span className="patient-history-modal__studies-val">{studiesText}</span>
+            {visit.observaciones_cierre_box && (
+              <div style={{ width: '100%', marginTop: 4, color: '#b91c1c' }}>
+                <span className="patient-history-modal__studies-caption" style={{ color: '#991b1b' }}>
+                  Observación Box:{' '}
+                </span>
+                <span className="patient-history-modal__studies-val" style={{ color: '#b91c1c', fontWeight: 600 }}>
+                  {visit.observaciones_cierre_box}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

@@ -19,6 +19,7 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
   })
 
   let atendidos = 0
+  let cancelados = 0
   let enCurso = 0
   let ingresos = 0
   let criticos = 0
@@ -39,6 +40,8 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
       ) {
         criticos++
       }
+    } else if (ticket.estado === 'Cancelado') {
+      cancelados++
     } else if (ticket.estado === 'En atencion' || ticket.estado === 'En Atencion') {
       enCurso++
     } else if (ticket.estado === 'Espera' || ticket.estado === 'Pendiente') {
@@ -48,6 +51,7 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
 
   return {
     atendidos,
+    cancelados,
     enCurso,
     ingresos: dayTickets.length || ingresos,
     criticos,
@@ -137,7 +141,10 @@ export async function fetchMetricasDiariasApi(fechaStr) {
     })
   }
 
-  const enCurso = Math.max(0, (data.total_emitidos || 0) - (data.total_atendidos || 0))
+  const enCurso = Math.max(
+    0,
+    (data.total_emitidos || 0) - (data.total_atendidos || 0) - (data.total_cancelados || 0)
+  )
   return {
     fecha: data.fecha,
     atendidos: data.total_atendidos || 0,
@@ -215,6 +222,7 @@ export function computeTopLabStudies(tickets = []) {
   const studyCounts = new Map()
 
   tickets.forEach((ticketItem) => {
+    if (ticketItem.estado === 'Cancelado') return
     ticketItem.estudios?.forEach((studyName) => {
       const name = String(studyName).trim()
       if (name) studyCounts.set(name, (studyCounts.get(name) || 0) + 1)

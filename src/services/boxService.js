@@ -167,12 +167,13 @@ export async function llamarSiguientePacienteApi(boxIdentifier, ticketId = null)
 }
 
 /**
- * Finaliza la atención del box y lo restituye al estado 'Disponible'.
+ * Finaliza o cancela la atención del box y lo restituye al estado 'Disponible'.
  */
-export async function cerrarAtencionBoxApi(boxIdentifier, motivoCierre = 'Finalizado') {
+export async function cerrarAtencionBoxApi(boxIdentifier, motivoCierre = 'Finalizado', observacionesCierre = '') {
   const boxId = await resolveBoxId(boxIdentifier)
   const response = await apiClient.post(`/boxes/${boxId}/cerrar-atencion/`, {
-    motivo_cierre: motivoCierre
+    motivo_cierre: motivoCierre,
+    observaciones_cierre: observacionesCierre
   })
   return {
     mensaje: response.mensaje,
@@ -213,6 +214,6 @@ export async function assignCallToBoxApi(boxNumero) {
   return await llamarSiguientePacienteApi(boxNumero)
 }
 
-export async function finishAttentionInBoxApi(boxNumero, motivoCierre) {
-  return await cerrarAtencionBoxApi(boxNumero, motivoCierre)
+export async function finishAttentionInBoxApi(boxNumero, motivoCierre, observacionesCierre = '') {
+  return await cerrarAtencionBoxApi(boxNumero, motivoCierre, observacionesCierre)
 }

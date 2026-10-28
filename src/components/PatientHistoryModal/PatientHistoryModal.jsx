@@ -228,9 +228,22 @@ export default function PatientHistoryModal({
                 </div>
 
                 <div className="patient-history-modal__staff-kpi">
-                  <span className="patient-history-modal__kpi-number">{staffTickets.length}</span>
+                  <span className="patient-history-modal__kpi-number">
+                    {isAdmission
+                      ? staffTickets.length
+                      : staffTickets.filter((t) => t.estado !== 'Cancelado' && t.motivo_cierre_box !== 'Cancelado').length}
+                  </span>
                   <span className="patient-history-modal__kpi-label">
-                    {isAdmission ? 'Tickets Emitidos' : 'Pacientes Atendidos'}
+                    {isAdmission
+                      ? 'Tickets Emitidos'
+                      : (() => {
+                          const ausentes = staffTickets.filter(
+                            (t) => t.estado === 'Cancelado' || t.motivo_cierre_box === 'Cancelado'
+                          ).length
+                          return ausentes > 0
+                            ? `Atendidos · ${ausentes} Ausente${ausentes === 1 ? '' : 's'}`
+                            : 'Pacientes Atendidos'
+                        })()}
                   </span>
                 </div>
               </div>

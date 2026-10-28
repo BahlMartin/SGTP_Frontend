@@ -104,6 +104,7 @@ export default function SecretariaScreen() {
 
         <SecretariaKpiGrid
           atendidos={metrics.atendidos}
+          cancelados={metrics.cancelados}
           ingresos={metrics.ingresos}
           enCurso={metrics.enCurso}
           esperaPromedio={metrics.esperaPromedio}
