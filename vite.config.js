@@ -7,11 +7,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: process.env.VITE_BACKEND_URL || 'https://sgtp-backend.onrender.com/app',
+        target: process.env.VITE_BACKEND_URL || 'https://sgtp-backend-1.onrender.com/app',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
+
     }
   }
 })

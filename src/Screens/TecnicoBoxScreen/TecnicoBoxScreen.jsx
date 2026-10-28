@@ -5,10 +5,10 @@ import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useTecnicoBox } from '../../hooks/useTecnicoBox'
 import BoxControlCard from './components/BoxControlCard/BoxControlCard'
 import ActiveBoxesCard from '../../components/ActiveBoxesCard/ActiveBoxesCard'
-import RefreshButton from '../../components/RefreshButton/RefreshButton'
 import PatientInAttentionCard from './components/PatientInAttentionCard/PatientInAttentionCard'
 import MultiboxQueueCard from './components/MultiboxQueueCard/MultiboxQueueCard'
 import './TecnicoBoxScreen.css'
+import { useWebSocket } from '../../hooks/useWebSocket'
 
 const SECONDARY_PANELS = [
   { id: 'control', label: 'Panel de control de box', icon: Tv },
@@ -21,23 +21,29 @@ export default function TecnicoBoxScreen() {
   const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false)
   const {
     boxes,
-    boxesLoading,
-    boxesError,
     refreshBoxes,
+    refreshTickets,
     currentBoxNumber,
-    setCurrentBoxNumber,
     handleSelectBox,
     currentBoxKey,
     activeBoxData,
+    isBoxOutOfService,
     patientInBox,
     waitingQueue,
     completedStudies,
     feedbackMsg,
     isProcessing,
+    isCallingNext,
+    callingTicketId,
+    isFinishing,
+    isCancelling,
+    isModifyingStudies,
+    isChangingStatus,
     matriculaTecnico,
     handleStatusChange,
     handleCallNext,
     handleFinishConsultation,
+    handleCancelConsultation,
     handleModifyStudies,
     toggleStudyCheck,
     handleSelectAllStudies,
@@ -83,6 +89,22 @@ export default function TecnicoBoxScreen() {
   const selectedPanel = SECONDARY_PANELS.find(
     (panel) => panel.id === activeSecondaryPanel
   )
+
+  // Implementación de WebSocket
+  const { lastMessage: wsQueueMessage } = useWebSocket('ws/queue')
+  const { lastMessage: wsBoxMessage } = useWebSocket('ws/boxes')
+
+  useEffect(() => {
+    const qEvt = wsQueueMessage?.event || wsQueueMessage?.action
+    const bEvt = wsBoxMessage?.event || wsBoxMessage?.action
+    if (
+      ['QUEUE_UPDATED', 'TICKET_CREATED', 'NEW_TICKET', 'TICKET_LLAMADO'].includes(qEvt) ||
+      ['BOX_ATTENDING', 'BOX_UPDATED', 'UPDATE_BOX'].includes(bEvt)
+    ) {
+      refreshBoxes()
+      refreshTickets()
+    }
+  }, [wsQueueMessage, wsBoxMessage, refreshBoxes, refreshTickets])
 
   return (
     <div className="box-screen">
@@ -193,7 +215,7 @@ export default function TecnicoBoxScreen() {
                       onSelectBox={handleSelectBox}
                       currentStatus={activeBoxData.estado}
                       onStatusChange={handleStatusChange}
-                      disabled={isProcessing}
+                      disabled={isChangingStatus}
                     />
                   </div>
 
@@ -213,12 +235,6 @@ export default function TecnicoBoxScreen() {
                     <ActiveBoxesCard
                       canToggleStatus={false}
                       onSelectStaff={null}
-                      actionSlot={
-                        <RefreshButton
-                          onRefresh={refreshBoxes}
-                          isLoading={boxesLoading}
-                        />
-                      }
                     />
                   </div>
                 </div>
@@ -233,11 +249,17 @@ export default function TecnicoBoxScreen() {
               currentBoxKey={currentBoxKey}
               matriculaTecnico={matriculaTecnico}
               isProcessing={isProcessing}
+              isCallingNext={isCallingNext}
+              isFinishing={isFinishing}
+              isCancelling={isCancelling}
+              isModifyingStudies={isModifyingStudies}
+              isBoxOutOfService={isBoxOutOfService}
               completedStudies={completedStudies}
               onToggleStudyCheck={toggleStudyCheck}
               onSelectAllStudies={handleSelectAllStudies}
               onCallNext={handleCallNext}
               onFinishConsultation={handleFinishConsultation}
+              onCancelConsultation={handleCancelConsultation}
               onModifyStudies={handleModifyStudies}
             />
 
@@ -245,7 +267,9 @@ export default function TecnicoBoxScreen() {
               waitingQueue={waitingQueue}
               onCallSpecificPatient={handleCallSpecificPatient}
               isProcessing={isProcessing}
+              callingTicketId={callingTicketId}
               hasPatientInBox={Boolean(patientInBox)}
+              isBoxOutOfService={isBoxOutOfService}
               currentBoxNumber={currentBoxNumber}
             />
           </div>

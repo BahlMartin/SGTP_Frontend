@@ -13,9 +13,10 @@ export async function loginApi(email, password) {
   }
 
   const response = await apiClient.post('/auth/login/', payload)
-
+  
   // El backend retorna: { mensaje: "...", usuario: { id_personal, email, matricula, nombre, apellidos, rol, inicio_turno, fin_turno } }
   const usuario = response.usuario || {}
+  
   const normalizedUser = {
     id: usuario.id_personal,
     id_personal: usuario.id_personal,
@@ -26,12 +27,13 @@ export async function loginApi(email, password) {
     rol: usuario.rol,
     inicio_turno: usuario.inicio_turno,
     fin_turno: usuario.fin_turno,
-    dentro_horario: true // Validado dinámicamente por el middleware del backend
+    dentro_horario: true 
   }
 
   return {
     user: normalizedUser,
-    mensaje: response.mensaje
+    mensaje: response.mensaje,
+    token: response.token //  NUEVA LiNEA: Extraemos el token del JSON
   }
 }
 
@@ -43,6 +45,16 @@ export async function logoutApi() {
     return { mensaje: 'Sesión finalizada localmente.' }
   }
 }
+
+export async function fetchCurrentSessionApi() {
+  try {
+    const response = await apiClient.get('/auth/session/')
+    return response
+  } catch (error) {
+    return null
+  }
+}
+
 
 export async function unlockUserApi(idPersonal) {
   const payload = {
@@ -58,4 +70,3 @@ export async function lockUserApi(idPersonal, motivo = '') {
   }
   return await apiClient.patch('/auth/bloquear/', payload)
 }
-

@@ -18,6 +18,39 @@ import { MESES_NOMBRES } from '../../hooks/useMonthlyOvertimePlanning'
 import { DIAS_SEMANA_LETRAS } from '../../../../utils/shiftValidation.utils'
 import './ActiveMonthOvertimesTab.css'
 
+function calcularLimitesSemana(fechaStr) {
+  if (!fechaStr) return null
+  const [y, m, d] = String(fechaStr).slice(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return null
+  const fechaObj = new Date(y, m - 1, d)
+  const diaSemanaNum = fechaObj.getDay() === 0 ? 6 : fechaObj.getDay() - 1 // 0=Lun, 6=Dom
+  const lunesObj = new Date(fechaObj)
+  lunesObj.setDate(fechaObj.getDate() - diaSemanaNum)
+  const domingoObj = new Date(lunesObj)
+  domingoObj.setDate(lunesObj.getDate() + 6)
+
+  const formatStr = (dt) => {
+    const dy = dt.getFullYear()
+    const dm = String(dt.getMonth() + 1).padStart(2, '0')
+    const dd = String(dt.getDate()).padStart(2, '0')
+    return `${dy}-${dm}-${dd}`
+  }
+
+  const formatCorto = (dt) => {
+    const dd = String(dt.getDate()).padStart(2, '0')
+    const dm = String(dt.getMonth() + 1).padStart(2, '0')
+    return `${dd}/${dm}`
+  }
+
+  return {
+    fechaReferencia: String(fechaStr).slice(0, 10),
+    lunesStr: formatStr(lunesObj),
+    domingoStr: formatStr(domingoObj),
+    lunesCorto: formatCorto(lunesObj),
+    domingoCorto: formatCorto(domingoObj)
+  }
+}
+
 export default function ActiveMonthOvertimesTab({
   staffMember,
   onClose,
@@ -33,9 +66,13 @@ export default function ActiveMonthOvertimesTab({
   const [errorMsg, setErrorMsg] = useState('')
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null)
 
-  // Estados para revocación masiva flexible
+  // Estados para revocación masiva e interacción visual en el calendario
+  // modoSeleccion: 'inspeccion' | 'semana' | 'rango'
+  const [modoSeleccion, setModoSeleccion] = useState('inspeccion')
+  const [pasoRango, setPasoRango] = useState('desde') // 'desde' | 'hasta'
+  const [fechaSemanaBase, setFechaSemanaBase] = useState(null)
   const [isRevoking, setIsRevoking] = useState(false)
-  const [mostrarRango, setMostrarRango] = useState(false)
+
   const [modalConfirmacion, setModalConfirmacion] = useState(null)
   const [rangoDesde, setRangoDesde] = useState(() => `${anio}-${String(mes).padStart(2, '0')}-01`)
   const [rangoHasta, setRangoHasta] = useState(() => {
@@ -89,9 +126,11 @@ export default function ActiveMonthOvertimesTab({
     setMes(nuevoMes)
     setAnio(nuevoAnio)
     setFechaSeleccionada(null)
+    setFechaSemanaBase(null)
     setRangoDesde(`${nuevoAnio}-${String(nuevoMes).padStart(2, '0')}-01`)
     const ultimoDia = new Date(nuevoAnio, nuevoMes, 0).getDate()
     setRangoHasta(`${nuevoAnio}-${String(nuevoMes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`)
+    setPasoRango('desde')
   }
 
   // Mapa de habilitaciones agrupadas por fecha ('YYYY-MM-DD')
@@ -174,6 +213,116 @@ export default function ActiveMonthOvertimesTab({
     return celdas
   }, [anio, mes, diasLaborales, habilitacionesPorFecha])
 
+  // Semanas del mes para selección rápida visual
+  const semanasDelMes = useMemo(() => {
+    const mapaSemanas = new Map()
+    celdasCalendario.forEach((celda) => {
+      if (!celda.fechaStr) return
+      const infoSem = calcularLimitesSemana(celda.fechaStr)
+      if (!infoSem) return
+      const key = infoSem.lunesStr
+      if (!mapaSemanas.has(key)) {
+        mapaSemanas.set(key, {
+          ...infoSem,
+          diasEnMes: [],
+          activasCount: 0
+        })
+      }
+      const entry = mapaSemanas.get(key)
+      entry.diasEnMes.push(celda.fechaStr)
+      if (celda.tieneActiva) {
+        entry.activasCount += 1
+      }
+    })
+    return Array.from(mapaSemanas.values()).map((sem, idx) => ({
+      ...sem,
+      numeroSemana: idx + 1,
+      fechaReferencia: sem.diasEnMes[0]
+    }))
+  }, [celdasCalendario])
+
+  // Semana seleccionada actualmente (cuando modoSeleccion === 'semana')
+  const semanaActivaInfo = useMemo(() => {
+    const base =
+      fechaSemanaBase ||
+      fechaSeleccionada ||
+      items.find((it) => it.activa)?.fecha ||
+      `${anio}-${String(mes).padStart(2, '0')}-01`
+    return calcularLimitesSemana(base)
+  }, [fechaSemanaBase, fechaSeleccionada, items, anio, mes])
+
+  // Conteo de días con horas extras activas dentro de la semana seleccionada
+  const diasActivosEnSemana = useMemo(() => {
+    if (!semanaActivaInfo) return 0
+    return celdasCalendario.filter(
+      (c) =>
+        c.fechaStr &&
+        c.tieneActiva &&
+        c.fechaStr >= semanaActivaInfo.lunesStr &&
+        c.fechaStr <= semanaActivaInfo.domingoStr
+    ).length
+  }, [celdasCalendario, semanaActivaInfo])
+
+  // Conteo de días con horas extras activas dentro del rango seleccionado
+  const diasActivosEnRango = useMemo(() => {
+    if (!rangoDesde || !rangoHasta || rangoDesde > rangoHasta) return 0
+    return items.filter((it) => {
+      if (!it.activa) return false
+      const f = String(it.fecha).slice(0, 10)
+      return f >= rangoDesde && f <= rangoHasta
+    }).length
+  }, [items, rangoDesde, rangoHasta])
+
+  // Alternar modos de selección
+  const activarModoSemana = () => {
+    setErrorMsg('')
+    if (modoSeleccion === 'semana') {
+      setModoSeleccion('inspeccion')
+      return
+    }
+    const inicial =
+      fechaSeleccionada ||
+      items.find((it) => it.activa)?.fecha?.slice(0, 10) ||
+      `${anio}-${String(mes).padStart(2, '0')}-01`
+    setFechaSemanaBase(inicial)
+    setModoSeleccion('semana')
+  }
+
+  const activarModoRango = () => {
+    setErrorMsg('')
+    if (modoSeleccion === 'rango') {
+      setModoSeleccion('inspeccion')
+      return
+    }
+    setModoSeleccion('rango')
+    setPasoRango('desde')
+  }
+
+  // Click sobre un día del calendario según el modo activo
+  const handleCellClick = (celda) => {
+    if (!celda?.fechaStr) return
+    setFechaSeleccionada(celda.fechaStr)
+    setErrorMsg('')
+
+    if (modoSeleccion === 'semana') {
+      setFechaSemanaBase(celda.fechaStr)
+    } else if (modoSeleccion === 'rango') {
+      if (pasoRango === 'desde') {
+        setRangoDesde(celda.fechaStr)
+        setRangoHasta(celda.fechaStr)
+        setPasoRango('hasta')
+      } else {
+        if (celda.fechaStr < rangoDesde) {
+          setRangoHasta(rangoDesde)
+          setRangoDesde(celda.fechaStr)
+        } else {
+          setRangoHasta(celda.fechaStr)
+        }
+        setPasoRango('desde')
+      }
+    }
+  }
+
   // Revocar una habilitación puntual
   const handleRevocar = async (habId, fechaStr) => {
     if (!window.confirm(`¿Confirmás la revocación de las horas extras del día ${fechaStr}?`)) {
@@ -216,41 +365,24 @@ export default function ActiveMonthOvertimesTab({
 
   // Solicitud de Revocación de una Semana Completa
   const handlePedirRevocarSemana = () => {
-    const fechaBase = fechaSeleccionada || items.find((it) => it.activa)?.fecha
-    if (!fechaBase) {
-      setErrorMsg('Seleccioná primero un día en el calendario correspondiente a la semana que deseás revocar.')
+    if (!semanaActivaInfo) {
+      setErrorMsg('Seleccioná primero una semana en el calendario.')
       return
     }
 
-    const [y, m, d] = String(fechaBase).slice(0, 10).split('-').map(Number)
-    const fechaObj = new Date(y, m - 1, d)
-    const diaSemanaNum = fechaObj.getDay() === 0 ? 6 : fechaObj.getDay() - 1 // 0=Lun, 6=Dom
-    const lunesObj = new Date(fechaObj)
-    lunesObj.setDate(fechaObj.getDate() - diaSemanaNum)
-    const domingoObj = new Date(lunesObj)
-    domingoObj.setDate(lunesObj.getDate() + 6)
-
-    const formatStr = (dt) => {
-      const dy = dt.getFullYear()
-      const dm = String(dt.getMonth() + 1).padStart(2, '0')
-      const dd = String(dt.getDate()).padStart(2, '0')
-      return `${dy}-${dm}-${dd}`
-    }
-
-    const lunesStr = formatStr(lunesObj)
-    const domingoStr = formatStr(domingoObj)
+    const { lunesStr, domingoStr, fechaReferencia } = semanaActivaInfo
 
     setModalConfirmacion({
       title: 'Revocar Horas Extras de la Semana',
       descripcion: `Se revocarán las autorizaciones activas de la semana comprendida entre el lunes ${lunesStr} y el domingo ${domingoStr} para ${staffMember?.nombre}.`,
-      textoBoton: 'Revocar Semana Asistencial',
+      textoBoton: 'Revocar Semana Seleccionada',
       esPeligroso: true,
       accion: async () => {
         if (onBulkRevoke) {
           await onBulkRevoke({
             personal_id: staffId,
             alcance: 'semana',
-            fecha: String(fechaBase).slice(0, 10)
+            fecha: fechaReferencia
           })
         }
       }
@@ -393,84 +525,153 @@ export default function ActiveMonthOvertimesTab({
             <span>Revocar Todo el Mes ({totalDiasActivos})</span>
           </button>
 
-          {/* 2. Revocar Semana */}
+          {/* 2. Alternar Selector Visual de Semana */}
           <button
             type="button"
-            className="active-overtimes-bulk-bar__btn active-overtimes-bulk-bar__btn--warning"
-            onClick={handlePedirRevocarSemana}
+            className={`active-overtimes-bulk-bar__btn active-overtimes-bulk-bar__btn--warning ${modoSeleccion === 'semana' ? 'active-overtimes-bulk-bar__btn--active-warning' : ''
+              }`}
+            onClick={activarModoSemana}
             disabled={totalDiasActivos === 0 || isRevoking}
-            title={
-              fechaSeleccionada
-                ? `Revocar la semana asistencial de la fecha ${fechaSeleccionada}`
-                : 'Seleccioná un día del calendario para revocar su semana completa'
-            }
+            title="Seleccionar visualmente una semana en el calendario para revocar"
           >
             <Calendar size={13} />
             <span>
-              {fechaSeleccionada ? `Revocar Semana (${fechaSeleccionada.slice(8, 10)})` : 'Revocar Semana'}
+              {modoSeleccion === 'semana' ? 'Ocultar Semana' : 'Revocar por Semana'}
             </span>
           </button>
 
-          {/* 3. Alternar Selector de Rango */}
+          {/* 3. Alternar Selector Visual de Rango */}
           <button
             type="button"
-            className={`active-overtimes-bulk-bar__btn ${
-              mostrarRango ? 'active-overtimes-bulk-bar__btn--active' : ''
-            }`}
-            onClick={() => setMostrarRango((prev) => !prev)}
+            className={`active-overtimes-bulk-bar__btn ${modoSeleccion === 'rango' ? 'active-overtimes-bulk-bar__btn--active' : ''
+              }`}
+            onClick={activarModoRango}
             disabled={totalDiasActivos === 0 || isRevoking}
-            title="Definir un rango de fechas personalizado para revocar"
+            title="Seleccionar un rango Desde / Hasta directamente en el calendario"
           >
             <CalendarDays size={13} />
-            <span>{mostrarRango ? 'Ocultar Rango' : 'Revocar por Rango'}</span>
+            <span>{modoSeleccion === 'rango' ? 'Ocultar Rango' : 'Revocar por Rango'}</span>
           </button>
         </div>
 
-        {/* Panel Desplegable de Rango de Fechas */}
-        {mostrarRango && (
+        {/* Panel Interactivo de Selección de Semana */}
+        {modoSeleccion === 'semana' && semanaActivaInfo && (
+          <div className="active-overtimes-week-panel">
+            <div className="active-overtimes-week-panel__hint">
+              <Info size={13} className="active-overtimes-week-panel__hint-icon" />
+              <span>
+                Hacé clic en cualquier día del calendario o elegí una semana abajo para resaltarla:
+              </span>
+            </div>
+
+            <div className="active-overtimes-week-panel__chips">
+              {semanasDelMes.map((sem) => {
+                const isSelectedWeek = sem.lunesStr === semanaActivaInfo.lunesStr
+                return (
+                  <button
+                    key={sem.lunesStr}
+                    type="button"
+                    className={`active-overtimes-week-panel__chip ${isSelectedWeek ? 'active-overtimes-week-panel__chip--selected' : ''
+                      }`}
+                    onClick={() => {
+                      setFechaSemanaBase(sem.fechaReferencia)
+                      setFechaSeleccionada(sem.fechaReferencia)
+                    }}
+                  >
+                    <span>Sem {sem.numeroSemana} ({sem.lunesCorto} - {sem.domingoCorto})</span>
+                    {sem.activasCount > 0 && (
+                      <span className="active-overtimes-week-panel__chip-badge">
+                        {sem.activasCount}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="active-overtimes-week-panel__footer">
+              <span className="active-overtimes-week-panel__summary">
+                Semana: <strong>{semanaActivaInfo.lunesCorto} al {semanaActivaInfo.domingoCorto}</strong>{' '}
+                ({diasActivosEnSemana} {diasActivosEnSemana === 1 ? 'día activo' : 'días activos'})
+              </span>
+              <button
+                type="button"
+                className="active-overtimes-range-panel__btn-submit"
+                onClick={handlePedirRevocarSemana}
+                disabled={diasActivosEnSemana === 0 || isRevoking}
+              >
+                <Trash2 size={13} />
+                <span>Revocar Semana ({diasActivosEnSemana})</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Panel Interactivo de Selección de Rango de Fechas */}
+        {modoSeleccion === 'rango' && (
           <div className="active-overtimes-range-panel">
-            <div className="active-overtimes-range-panel__field">
-              <label htmlFor="range-desde">Desde:</label>
-              <input
-                id="range-desde"
-                type="date"
-                value={rangoDesde}
-                onChange={(e) => setRangoDesde(e.target.value)}
-                disabled={isRevoking}
-              />
+            <div className="active-overtimes-range-panel__hint">
+              <Info size={13} className="active-overtimes-week-panel__hint-icon" />
+              <span>
+                {pasoRango === 'desde'
+                  ? 'Hacé clic en el calendario para marcar la fecha Desde (o usá los campos):'
+                  : 'Ahora hacé clic en otro día del calendario para marcar la fecha Hasta:'}
+              </span>
             </div>
-            <div className="active-overtimes-range-panel__field">
-              <label htmlFor="range-hasta">Hasta:</label>
-              <input
-                id="range-hasta"
-                type="date"
-                value={rangoHasta}
-                onChange={(e) => setRangoHasta(e.target.value)}
-                disabled={isRevoking}
-              />
+
+            <div className="active-overtimes-range-panel__controls">
+              <div className="active-overtimes-range-panel__field">
+                <label htmlFor="range-desde">Desde:</label>
+                <input
+                  id="range-desde"
+                  type="date"
+                  value={rangoDesde}
+                  onChange={(e) => {
+                    setRangoDesde(e.target.value)
+                    if (rangoHasta && e.target.value > rangoHasta) {
+                      setRangoHasta(e.target.value)
+                    }
+                  }}
+                  disabled={isRevoking}
+                />
+              </div>
+              <div className="active-overtimes-range-panel__field">
+                <label htmlFor="range-hasta">Hasta:</label>
+                <input
+                  id="range-hasta"
+                  type="date"
+                  value={rangoHasta}
+                  onChange={(e) => {
+                    setRangoHasta(e.target.value)
+                    if (rangoDesde && e.target.value < rangoDesde) {
+                      setRangoDesde(e.target.value)
+                    }
+                  }}
+                  disabled={isRevoking}
+                />
+              </div>
+              <button
+                type="button"
+                className="active-overtimes-range-panel__btn-submit"
+                onClick={handlePedirRevocarRango}
+                disabled={!rangoDesde || !rangoHasta || diasActivosEnRango === 0 || isRevoking}
+              >
+                <Trash2 size={13} />
+                <span>Revocar Rango ({diasActivosEnRango})</span>
+              </button>
             </div>
-            <button
-              type="button"
-              className="active-overtimes-range-panel__btn-submit"
-              onClick={handlePedirRevocarRango}
-              disabled={!rangoDesde || !rangoHasta || isRevoking}
-            >
-              <Trash2 size={13} />
-              <span>Ejecutar Revocación de Período</span>
-            </button>
           </div>
         )}
       </div>
 
-      {/* Calendario Mensual Interactivo para Inspección */}
+      {/* Calendario Mensual Interactivo para Inspección, Semana y Rango */}
       <div className="active-overtimes-calendar">
         <div className="active-overtimes-calendar__weekdays">
           {DIAS_SEMANA_LETRAS.map((letra, idx) => (
             <span
               key={idx}
-              className={`active-overtimes-calendar__weekday-head ${
-                idx >= 5 ? 'active-overtimes-calendar__weekday-head--weekend' : ''
-              }`}
+              className={`active-overtimes-calendar__weekday-head ${idx >= 5 ? 'active-overtimes-calendar__weekday-head--weekend' : ''
+                }`}
             >
               {letra}
             </span>
@@ -489,6 +690,21 @@ export default function ActiveMonthOvertimesTab({
             }
 
             const isSelected = fechaSeleccionada === celda.fechaStr
+            const isInSelectedWeek =
+              modoSeleccion === 'semana' &&
+              semanaActivaInfo &&
+              celda.fechaStr >= semanaActivaInfo.lunesStr &&
+              celda.fechaStr <= semanaActivaInfo.domingoStr
+
+            const isInSelectedRange =
+              modoSeleccion === 'rango' &&
+              rangoDesde &&
+              rangoHasta &&
+              celda.fechaStr >= rangoDesde &&
+              celda.fechaStr <= rangoHasta
+            const isRangeStart = modoSeleccion === 'rango' && celda.fechaStr === rangoDesde
+            const isRangeEnd = modoSeleccion === 'rango' && celda.fechaStr === rangoHasta
+
             let cellModifier = ''
             if (celda.tieneActiva) {
               cellModifier = 'active-overtimes-calendar__cell--active'
@@ -498,22 +714,39 @@ export default function ActiveMonthOvertimesTab({
               cellModifier = 'active-overtimes-calendar__cell--weekend'
             }
 
+            const selectionClasses = [
+              isSelected ? 'active-overtimes-calendar__cell--selected' : '',
+              isInSelectedWeek ? 'active-overtimes-calendar__cell--in-week' : '',
+              isInSelectedRange ? 'active-overtimes-calendar__cell--in-range' : '',
+              isRangeStart ? 'active-overtimes-calendar__cell--range-start' : '',
+              isRangeEnd ? 'active-overtimes-calendar__cell--range-end' : ''
+            ]
+              .filter(Boolean)
+              .join(' ')
+
             return (
               <button
                 key={celda.fechaStr}
                 type="button"
-                className={`active-overtimes-calendar__cell ${cellModifier} ${
-                  isSelected ? 'active-overtimes-calendar__cell--selected' : ''
-                }`}
-                onClick={() => setFechaSeleccionada(celda.fechaStr)}
+                className={`active-overtimes-calendar__cell ${cellModifier} ${selectionClasses}`}
+                onClick={() => handleCellClick(celda)}
                 title={
-                  celda.tieneActiva
-                    ? `Día ${celda.dia}: Horas extras activas (+${celda.duracionDia}h). Clic para inspeccionar o revocar.`
-                    : celda.tieneRevocada
-                    ? `Día ${celda.dia}: Horas extras revocadas. Clic para inspeccionar o reactivar.`
-                    : `Día ${celda.dia} (${celda.esLaboral ? 'Turno regular' : 'Franco'}). Clic para inspeccionar.`
+                  modoSeleccion === 'rango'
+                    ? `Clic para definir ${pasoRango === 'desde' ? 'inicio (Desde)' : 'fin (Hasta)'} del rango en ${celda.fechaStr}`
+                    : modoSeleccion === 'semana'
+                      ? `Clic para seleccionar la semana del ${celda.fechaStr}`
+                      : celda.tieneActiva
+                        ? `Día ${celda.dia}: Horas extras activas (+${celda.duracionDia}h). Clic para inspeccionar o revocar.`
+                        : celda.tieneRevocada
+                          ? `Día ${celda.dia}: Horas extras revocadas. Clic para inspeccionar o reactivar.`
+                          : `Día ${celda.dia} (${celda.esLaboral ? 'Turno regular' : 'Franco'}). Clic para inspeccionar.`
                 }
               >
+                {(isRangeStart || isRangeEnd) && (
+                  <span className="active-overtimes-calendar__range-tag">
+                    {isRangeStart && isRangeEnd ? 'Desde/Hasta' : isRangeStart ? 'Desde' : 'Hasta'}
+                  </span>
+                )}
                 <span className="active-overtimes-calendar__day-number">{celda.dia}</span>
                 {celda.tieneActiva ? (
                   <span className="active-overtimes-calendar__day-pill">
@@ -610,11 +843,10 @@ export default function ActiveMonthOvertimesTab({
                           {hIni} a {hFin} ({duracion} hs)
                         </span>
                         <span
-                          className={`active-overtimes-tab__badge ${
-                            hab.activa
+                          className={`active-overtimes-tab__badge ${hab.activa
                               ? 'active-overtimes-tab__badge--active'
                               : 'active-overtimes-tab__badge--inactive'
-                          }`}
+                            }`}
                         >
                           {hab.activa ? 'Activa' : 'Revocada'}
                         </span>
@@ -696,9 +928,8 @@ export default function ActiveMonthOvertimesTab({
               </button>
               <button
                 type="button"
-                className={`active-overtimes-confirm-card__btn-confirm ${
-                  modalConfirmacion.esPeligroso ? 'active-overtimes-confirm-card__btn-confirm--danger' : ''
-                }`}
+                className={`active-overtimes-confirm-card__btn-confirm ${modalConfirmacion.esPeligroso ? 'active-overtimes-confirm-card__btn-confirm--danger' : ''
+                  }`}
                 onClick={ejecutarAccionConfirmada}
                 disabled={isRevoking}
               >

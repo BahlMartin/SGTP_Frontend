@@ -64,7 +64,7 @@ function extractBoxList(response) {
  * Obtiene la lista de todos los boxes de atención asistencial.
  */
 export async function fetchBoxesApi() {
-  const response = await apiClient.get('/boxes/')
+  const response = await apiClient.get(`/boxes/?_t=${Date.now()}`)
   cachedBoxes = extractBoxList(response).map(normalizeBox).filter(Boolean)
   return cachedBoxes
 }
@@ -73,7 +73,7 @@ export async function fetchBoxesApi() {
  * Monitoreo en tiempo real de boxes para pantallas de sala y supervisión.
  */
 export async function fetchBoxesEstadoGeneralApi() {
-  const response = await apiClient.get('/boxes/estado-general/')
+  const response = await apiClient.get(`/boxes/estado-general/?_t=${Date.now()}`)
   return extractBoxList(response).map(normalizeBox).filter(Boolean)
 }
 
@@ -167,12 +167,13 @@ export async function llamarSiguientePacienteApi(boxIdentifier, ticketId = null)
 }
 
 /**
- * Finaliza la atención del box y lo restituye al estado 'Disponible'.
+ * Finaliza o cancela la atención del box y lo restituye al estado 'Disponible'.
  */
-export async function cerrarAtencionBoxApi(boxIdentifier, motivoCierre = 'Finalizado') {
+export async function cerrarAtencionBoxApi(boxIdentifier, motivoCierre = 'Finalizado', observacionesCierre = '') {
   const boxId = await resolveBoxId(boxIdentifier)
   const response = await apiClient.post(`/boxes/${boxId}/cerrar-atencion/`, {
-    motivo_cierre: motivoCierre
+    motivo_cierre: motivoCierre,
+    observaciones_cierre: observacionesCierre
   })
   return {
     mensaje: response.mensaje,
@@ -213,6 +214,6 @@ export async function assignCallToBoxApi(boxNumero) {
   return await llamarSiguientePacienteApi(boxNumero)
 }
 
-export async function finishAttentionInBoxApi(boxNumero, motivoCierre) {
-  return await cerrarAtencionBoxApi(boxNumero, motivoCierre)
+export async function finishAttentionInBoxApi(boxNumero, motivoCierre, observacionesCierre = '') {
+  return await cerrarAtencionBoxApi(boxNumero, motivoCierre, observacionesCierre)
 }

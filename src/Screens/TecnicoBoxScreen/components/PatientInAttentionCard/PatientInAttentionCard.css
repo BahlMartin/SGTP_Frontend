@@ -74,6 +74,36 @@
   background: #16a34a;
 }
 
+.patient-attention-card__btn-cancel-turn {
+  background: #ffffff;
+  color: #dc2626;
+  border: 1.5px solid #fca5a5;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.patient-attention-card__btn-cancel-turn:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+.patient-attention-card__btn-cancel-turn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.patient-attention-card__btn-finish-legacy {
+  background: #16a34a;
+}
+
 .patient-attention-card__btn-call:disabled,
 .patient-attention-card__btn-finish:disabled {
   opacity: 0.5;
@@ -852,6 +882,8 @@
   }
 
   .patient-attention-card__btn-call,
+  .patient-attention-card__btn-call,
+  .patient-attention-card__btn-cancel-turn,
   .patient-attention-card__btn-finish {
     flex: 1;
     justify-content: center;

@@ -49,6 +49,17 @@ export default function TicketReceipt({ ticket }) {
     { label: 'Admisión:', value: formatAdmision() },
     boxIdentificador && { label: 'Box de Atención:', value: boxIdentificador },
     boxOperador && { label: 'Técnico de Box:', value: boxOperador },
+    ticket.estado === 'Cancelado' && {
+      label: 'Estado del Turno:',
+      value: 'Cancelado / Paciente Ausente',
+      isCancelled: true
+    },
+    ticket.observaciones_cierre_box && {
+      label: 'Observación Box:',
+      value: ticket.observaciones_cierre_box,
+      small: true,
+      isCancelled: true
+    },
     ticket.fecha_hora_atencion_box && {
       label: 'Hora Box:',
       value: `${formatDateDDMMAAAA(ticket.fecha_hora_atencion_box)} ${formatTimeHHMM(ticket.fecha_hora_atencion_box)}`

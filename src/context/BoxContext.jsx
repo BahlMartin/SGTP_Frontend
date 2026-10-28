@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './AuthContext'
 import { fetchBoxesApi, updateBoxStateApi, tomarBoxApi } from '../services/boxService'
+import useWebSocket from '../hooks/useWebSocket'
 
 export const BoxContext = createContext({
   boxes: [],
@@ -43,6 +44,15 @@ export const BoxContextProvider = ({ children }) => {
       setBoxesLoading(false)
     }
   }, [isLogged, refreshBoxes])
+
+  useWebSocket('boxes', {
+    onMessage: useCallback((msg) => {
+      const evt = msg?.event || msg?.action
+      if (['BOX_ATTENDING', 'BOX_UPDATED', 'UPDATE_BOX'].includes(evt)) {
+        refreshBoxes()
+      }
+    }, [refreshBoxes])
+  })
 
   const changeBoxStatus = useCallback(async (boxNumero, nuevoEstado) => {
     try {

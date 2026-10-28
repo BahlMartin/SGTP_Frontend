@@ -11,7 +11,7 @@ export const REPORT_KPI_DEFINITIONS = [
     title: 'atendidos',
     getValue: (metricsData) => metricsData?.atendidos ?? 0,
     getSubtext: (metricsData) =>
-      `${metricsData?.ingresos ?? 0} ingresos - ${metricsData?.enCurso ?? 0} en curso`
+      `${metricsData?.ingresos ?? 0} ingresos · ${metricsData?.cancelados ?? 0} ausentes · ${metricsData?.enCurso ?? 0} en curso`
   },
   {
     id: 'kpi-espera',

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import Navbar from '../../components/Navbar/Navbar'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import TicketModal from '../../components/TicketModal/TicketModal'
@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useAdmissionForm } from '../../hooks/useAdmissionForm'
 import { useTodayTickets } from '../../hooks/useTodayTickets'
 import './AdmisionScreen.css'
+import { useWebSocket } from '../../hooks/useWebSocket'
 
 function getTicketNumberKey(ticketNumber) {
   if (!ticketNumber) return ''
@@ -58,6 +59,22 @@ export default function AdmisionScreen() {
   const [issuedTicket, setIssuedTicket] = useState(null)
   const [showOcrModal, setShowOcrModal] = useState(false)
   const [admissionError, setAdmissionError] = useState('')
+
+  // Implementación de WebSocket
+  const { lastMessage: wsTicketMessage } = useWebSocket('tickets')
+
+  useEffect(() => {
+    const isTicketCreated = wsTicketMessage && (
+      wsTicketMessage.event === 'TICKET_CREATED' ||
+      wsTicketMessage.action === 'NEW_TICKET' ||
+      wsTicketMessage.action === 'TICKET_CREATED' ||
+      wsTicketMessage.event === 'NEW_TICKET'
+    )
+    if (isTicketCreated) {
+      refreshTickets()
+    }
+  }, [wsTicketMessage, refreshTickets])
+
 
   // Filtrado de tickets emitidos hoy delegado al hook
   const todayTickets = useTodayTickets(tickets)
@@ -188,7 +205,6 @@ export default function AdmisionScreen() {
               ticketsList={todayTickets}
               scrollAfterSeven
               onTicketClick={handleTicketItemClick}
-              onRefresh={refreshTickets}
               isLoading={loading}
             />
           </aside>

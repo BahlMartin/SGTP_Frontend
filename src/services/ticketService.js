@@ -43,6 +43,7 @@ export function normalizeTicket(t) {
     personal_box_matricula: t.personal_box_matricula || '',
     fecha_hora_atencion_box: t.fecha_hora_atencion_box || null,
     motivo_cierre_box: t.motivo_cierre_box || '',
+    observaciones_cierre_box: t.observaciones_cierre_box || '',
     paciente_id: t.paciente,
     paciente_dni: paciente.dni ? String(paciente.dni) : (t.paciente_dni || ''),
     paciente_nombre: paciente.nombre || t.paciente_nombre || '',
@@ -63,9 +64,17 @@ export function normalizeTicket(t) {
 }
 
 /**
- * Obtiene todos los tickets registrados en el sistema.
+ * Obtiene los tickets registrados en el sistema.
+ * Si porAtender es true, consulta únicamente los tickets pendientes y en atención activa,
+ * evitando recorrer páginas históricas de tickets finalizados.
  */
-export async function fetchTicketsApi() {
+export async function fetchTicketsApi({ porAtender = false } = {}) {
+  if (porAtender) {
+    const response = await apiClient.get(`/tickets/?por_atender=true&_t=${Date.now()}`)
+    const list = Array.isArray(response) ? response : response?.results || []
+    return list.map(normalizeTicket)
+  }
+
   const allTickets = []
   let page = 1
   let hasNextPage = true
@@ -94,7 +103,8 @@ export async function fetchTicketsApi() {
  * Obtiene la cola de espera de tickets pendientes ordenada por prioridad médica (FIFO asistencial).
  */
 export async function fetchColaEsperaApi() {
-  const response = await apiClient.get('/tickets/cola-espera/')
+  // CRÍTICO: Romper el caché agregando el timestamp en la query string
+  const response = await apiClient.get(`/tickets/cola-espera/?_t=${Date.now()}`)
   const list = Array.isArray(response) ? response : response.results || []
   return list.map(normalizeTicket)
 }
@@ -234,8 +244,14 @@ export async function searchPatientsApi(query) {
  * Consulta el rendimiento y carga del personal (tickets emitidos / pacientes atendidos) para una fecha determinada.
  */
 export async function fetchRendimientoPersonalApi(fechaStr) {
-  const query = fechaStr ? `?fecha=${fechaStr}` : ''
-  return await apiClient.get(`/tickets/rendimiento-personal/${query}`)
+  const params = new URLSearchParams()
+  if (fechaStr) params.append('fecha', fechaStr)
+
+  // Romper el caché para que las métricas de carga de personal sean siempre en tiempo real
+  params.append('_t', Date.now())
+
+  const queryString = params.toString() ? `?${params.toString()}` : ''
+  return await apiClient.get(`/tickets/rendimiento-personal/${queryString}`)
 }
 
 /**
@@ -246,6 +262,9 @@ export async function fetchResumenEstudiosApi({ fechaStr, search = '', top = nul
   if (fechaStr) params.append('fecha', fechaStr)
   if (search && search.trim()) params.append('search', search.trim())
   if (top) params.append('top', String(top))
+
+  // Parámetro dinámico para evitar que el navegador cachee la respuesta tras un evento WebSocket
+  params.append('_t', Date.now())
 
   const queryString = params.toString() ? `?${params.toString()}` : ''
   return await apiClient.get(`/tickets/resumen-estudios/${queryString}`)
@@ -260,4 +279,3 @@ export async function fetchTicketsByStaffApi(idPersonal, fechaStr = null) {
   const query = fechaStr ? `?fecha=${fechaStr}` : ''
   return await apiClient.get(`/tickets/personal/${idPersonal}/${query}`)
 }
-

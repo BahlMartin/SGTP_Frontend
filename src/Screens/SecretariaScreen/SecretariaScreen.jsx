@@ -1,15 +1,18 @@
-import React from 'react'
+import React, { useCallback, useRef } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import { useAuth } from '../../context/AuthContext'
 import { useSecretariaReport } from '../../hooks/useSecretariaReport'
 import SecretariaJornadaBar from './components/SecretariaJornadaBar/SecretariaJornadaBar'
 import SecretariaKpiGrid from './components/SecretariaKpiGrid/SecretariaKpiGrid'
-import TriageDistributionCard from './components/TriageDistributionCard/TriageDistributionCard'
-import SecretariaStudySummaryCard from './components/SecretariaStudySummaryCard/SecretariaStudySummaryCard'
+import TriageDistributionCard from '../../components/ReportCharts/TriageDistributionCard'
+import StudiesLollipopCard from '../../components/ReportCharts/StudiesLollipopCard'
+import StudiesSamplesBarsCard from '../../components/ReportCharts/StudiesSamplesBarsCard'
 import StaffSecurityCard from '../JefaScreen/components/StaffSecurityCard/StaffSecurityCard'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
+import { getTodayLocalDateString } from '../../utils/formatters'
 import './SecretariaScreen.css'
+import { useWebSocket } from '../../hooks/useWebSocket'
 
 export default function SecretariaScreen() {
   const { userData } = useAuth()
@@ -27,10 +30,10 @@ export default function SecretariaScreen() {
     notice,
     isSendingEmail,
     metrics,
-    getPercentage,
     handleExportPdf,
     handleSendEmail,
-    showNotice
+    showNotice,
+    refreshMetrics
   } = useSecretariaReport({ userData })
 
   const handleUnlockStaff = (staffMemberId) => {
@@ -40,6 +43,39 @@ export default function SecretariaScreen() {
   const handleLockStaff = (staffMemberId) => {
     lockStaff(staffMemberId, showNotice)
   }
+
+  const lastRefreshRef = useRef(0)
+
+  const handleWsEvent = useCallback(
+    (msg) => {
+      const evt = msg?.event || msg?.action || msg?.tipo_evento
+      const isRelevant = [
+        'REALTIME_METRICS_UPDATED',
+        'REFRESH_REPORTS',
+        'TICKET_CREATED',
+        'NEW_TICKET',
+        'TICKET_UPDATED',
+        'TICKET_LLAMADO',
+        'reporte_actualizado'
+      ].includes(evt)
+
+      if (!isRelevant) return
+
+      const today = getTodayLocalDateString()
+      if (jornadaDate === today) {
+        const now = Date.now()
+        if (now - lastRefreshRef.current > 400) {
+          lastRefreshRef.current = now
+          refreshMetrics()
+        }
+      }
+    },
+    [jornadaDate, refreshMetrics]
+  )
+
+  // Implementación de WebSocket para actualización de métricas en tiempo real
+  useWebSocket('reportes', { onMessage: handleWsEvent })
+  useWebSocket('tickets', { onMessage: handleWsEvent })
 
   return (
     <div className="secretaria-screen">
@@ -68,6 +104,7 @@ export default function SecretariaScreen() {
 
         <SecretariaKpiGrid
           atendidos={metrics.atendidos}
+          cancelados={metrics.cancelados}
           ingresos={metrics.ingresos}
           enCurso={metrics.enCurso}
           esperaPromedio={metrics.esperaPromedio}
@@ -76,25 +113,17 @@ export default function SecretariaScreen() {
         />
 
         <div className="secretaria-screen__study-summaries">
-          <SecretariaStudySummaryCard
-            title="Estudios realizados por sección"
-            items={metrics.resumenEstudiosRealizadosPorSeccion}
-            labelKey="nombre_seccion"
-            keyKey="seccion_key"
-            scrollable
+          <StudiesLollipopCard
+            items={metrics.resumenEstudiosRealizadosPorSeccion ?? []}
+            error={!Array.isArray(metrics.resumenEstudiosRealizadosPorSeccion)}
           />
-          <SecretariaStudySummaryCard
-            title="Estudios realizados por muestra"
-            items={metrics.resumenEstudiosRealizadosPorMuestra}
-            labelKey="nombre_muestra"
-            keyKey="muestra_key"
+          <StudiesSamplesBarsCard
+            items={metrics.resumenEstudiosRealizadosPorMuestra ?? []}
+            error={!Array.isArray(metrics.resumenEstudiosRealizadosPorMuestra)}
           />
         </div>
 
-        <TriageDistributionCard
-          triageDistribution={metrics.triageDistribution}
-          calculatePercentage={getPercentage}
-        />
+        <TriageDistributionCard triageDistribution={metrics.triageDistribution} />
 
         <section className="secretaria-screen__security-section" aria-labelledby="secretaria-security-title">
           <h2 id="secretaria-security-title" className="secretaria-screen__section-title">

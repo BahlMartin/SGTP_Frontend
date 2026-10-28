@@ -10,11 +10,13 @@ import {
   AlertCircle,
   Calendar,
   User,
+  UserX,
   Trash2
 } from 'lucide-react'
 import { getTriageInfo } from '../../../../constants/triage.constants'
 import { formatTimeHHMM } from '../../../../utils/formatters'
 import ModalModificarEstudios from '../ModalModificarEstudios/ModalModificarEstudios'
+import ModalCancelarAtencion from '../ModalCancelarAtencion/ModalCancelarAtencion'
 import './PatientInAttentionCard.css'
 
 export default function PatientInAttentionCard({
@@ -22,14 +24,21 @@ export default function PatientInAttentionCard({
   currentBoxKey,
   matriculaTecnico,
   isProcessing = false,
+  isCallingNext = false,
+  isFinishing = false,
+  isCancelling = false,
+  isModifyingStudies = false,
+  isBoxOutOfService = false,
   completedStudies = {},
   onToggleStudyCheck,
   onSelectAllStudies,
   onCallNext,
   onFinishConsultation,
+  onCancelConsultation,
   onModifyStudies
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const studiesList = patientInBox?.estudios || ['Muestra de Sangre', 'Orina']
   const cancelledStudies = patientInBox?.estudios_cancelados || []
 
@@ -54,20 +63,35 @@ export default function PatientInAttentionCard({
           <button
             type="button"
             className="patient-attention-card__btn-call"
-            disabled={isProcessing || Boolean(patientInBox)}
+            disabled={isCallingNext || Boolean(patientInBox) || isBoxOutOfService}
             onClick={onCallNext}
+            title={
+              isBoxOutOfService
+                ? 'El box está fuera de servicio. Solicite a la Jefa su habilitación para llamar pacientes.'
+                : undefined
+            }
           >
             <Bell className="patient-attention-card__btn-icon" />
-            Llamar siguiente
+            {isCallingNext ? 'Llamando...' : 'Llamar siguiente'}
+          </button>
+          <button
+            type="button"
+            className="patient-attention-card__btn-cancel-turn"
+            disabled={isCancelling || !patientInBox}
+            onClick={() => setIsCancelModalOpen(true)}
+            title="Cancelar el turno si el paciente convocado no se presenta en el box"
+          >
+            <UserX className="patient-attention-card__btn-icon" />
+            Paciente ausente
           </button>
           <button
             type="button"
             className="patient-attention-card__btn-finish"
-            disabled={isProcessing || !patientInBox}
+            disabled={isFinishing || !patientInBox}
             onClick={onFinishConsultation}
           >
             <CheckCircle2 className="patient-attention-card__btn-icon" />
-            Finalizar consulta
+            {isFinishing ? 'Finalizando...' : 'Finalizar consulta'}
           </button>
         </div>
       </div>
@@ -321,11 +345,20 @@ export default function PatientInAttentionCard({
       ) : (
         <div className="patient-attention-card__empty-state">
           <p className="patient-attention-card__empty-title">
-            No hay paciente en atención en este puesto.
+            {isBoxOutOfService
+              ? 'Este box se encuentra fuera de servicio.'
+              : 'No hay paciente en atención en este puesto.'}
           </p>
           <span className="patient-attention-card__empty-hint">
-            Presione <strong>"Llamar siguiente"</strong> para convocar al paciente más crítico de la
-            cola multibox.
+            {isBoxOutOfService ? (
+              <>
+                Solicite a la <strong>Jefa de Laboratorio</strong> la habilitación del box para poder convocar pacientes de la cola multibox.
+              </>
+            ) : (
+              <>
+                Presione <strong>"Llamar siguiente"</strong> para convocar al paciente más crítico de la cola multibox.
+              </>
+            )}
           </span>
         </div>
       )}
@@ -336,7 +369,17 @@ export default function PatientInAttentionCard({
         onClose={() => setIsModalOpen(false)}
         patientInBox={patientInBox}
         onSave={onModifyStudies}
-        isProcessing={isProcessing}
+        isProcessing={isModifyingStudies}
+      />
+
+      {/* Modal de confirmación de paciente ausente / cancelación de turno */}
+      <ModalCancelarAtencion
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        patientInBox={patientInBox}
+        currentBoxKey={currentBoxKey}
+        onConfirm={onCancelConsultation}
+        isProcessing={isCancelling}
       />
     </div>
   )

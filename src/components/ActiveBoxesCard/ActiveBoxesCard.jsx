@@ -31,7 +31,8 @@ export default function ActiveBoxesCard({
   const [isUpdatingBox, setIsUpdatingBox] = useState(null)
   const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'disponible' | 'en atencion' | 'fuera de servicio'
 
-  // Auto-refresco periódico cada 12 segundos (sondeo en tiempo real)
+  // Auto-refresco periódico desactivado para probar WebSocket en tiempo real
+  /*
   useEffect(() => {
     const timer = setInterval(() => {
       refreshBoxes().catch((err) => {
@@ -41,6 +42,7 @@ export default function ActiveBoxesCard({
 
     return () => clearInterval(timer)
   }, [refreshBoxes])
+  */
 
   const normalizeStatus = (estadoValue) => {
     return String(estadoValue || '')
@@ -308,7 +310,7 @@ export default function ActiveBoxesCard({
                     )}
                   </div>
 
-                  {/* Botones de control operativo: SOLO SE RENDERIZAN SI canToggleStatus=true */}
+                  {/* Botón minimalista de acción rápida: SOLO SE RENDERIZA SI canToggleStatus=true */}
                   {canToggleStatus && (
                     <div className="active-boxes-card__actions">
                       {isFuera ? (
@@ -320,7 +322,7 @@ export default function ActiveBoxesCard({
                           title="Habilitar box y dejarlo en estado Disponible"
                         >
                           <Power size={11} aria-hidden="true" />
-                          {isBusy ? 'Habilitando...' : 'Habilitar'}
+                          <span>{isBusy ? 'Habilitando...' : 'Habilitar'}</span>
                         </button>
                       ) : (
                         <button
@@ -334,8 +336,8 @@ export default function ActiveBoxesCard({
                               : 'Poner fuera de servicio por mantenimiento o receso'
                           }
                         >
-                          <AlertTriangle size={11} aria-hidden="true" />
-                          {isBusy ? 'Cerrando...' : 'Fuera de serv.'}
+                          <Power size={11} aria-hidden="true" />
+                          <span>{isBusy ? 'Cerrando...' : 'Inhabilitar'}</span>
                         </button>
                       )}
                     </div>

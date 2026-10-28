@@ -1,17 +1,24 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { computeDailyReportMetrics, fetchMetricasDiariasApi } from '../services/reportService'
 import { getTodayLocalDateString } from '../utils/formatters'
 import { useExportReportPdf } from './useExportReportPdf'
 import { useSendReportEmail } from './useSendReportEmail'
 import { useFeedbackNotice } from './useFeedbackNotice'
 
+const EMPTY_TICKETS = []
+
 /**
  * Hook personalizado para orquestar el estado de Secretaría, el cómputo de métricas
  * reales desde el backend y delegar la exportación en PDF y el despacho de correos.
  */
-export function useSecretariaReport({ tickets = [], userData = null }) {
+export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }) {
   const [jornadaDate, setJornadaDate] = useState(() => getTodayLocalDateString())
   const { notice, showNotice } = useFeedbackNotice(4000)
+  const ticketsRef = useRef(tickets)
+
+  useEffect(() => {
+    ticketsRef.current = tickets
+  }, [tickets])
 
   // Asegurar fecha por defecto si el usuario limpia el input
   useEffect(() => {
@@ -22,7 +29,20 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
 
   const [metrics, setMetrics] = useState(() => computeDailyReportMetrics(tickets, jornadaDate))
 
-  // Sincronizar métricas consolidadas con el backend
+  const refreshMetrics = useCallback(async () => {
+    if (!jornadaDate) return
+    try {
+      const backendMetrics = await fetchMetricasDiariasApi(jornadaDate)
+      if (backendMetrics) {
+        setMetrics(backendMetrics)
+      }
+    } catch (err) {
+      console.warn('Utilizando cómputo asistencial de métricas:', err)
+      setMetrics(computeDailyReportMetrics(ticketsRef.current, jornadaDate))
+    }
+  }, [jornadaDate])
+
+  // Sincronizar métricas consolidadas con el backend al cambiar la fecha
   useEffect(() => {
     let cancelled = false
     async function loadBackendMetrics() {
@@ -34,7 +54,7 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
       } catch (err) {
         console.warn('Utilizando cómputo asistencial de métricas:', err)
         if (!cancelled) {
-          setMetrics(computeDailyReportMetrics(tickets, jornadaDate))
+          setMetrics(computeDailyReportMetrics(ticketsRef.current, jornadaDate))
         }
       }
     }
@@ -69,8 +89,6 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
   // Hook reutilizable para exportación de PDF (conectado con backend)
   const { handleExportPdf } = useExportReportPdf({
     jornadaDate,
-    metrics,
-    userData,
     onSuccessNotice: showNotice
   })
 
@@ -91,6 +109,7 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
     getPercentage,
     handleExportPdf,
     handleSendEmail,
-    showNotice
+    showNotice,
+    refreshMetrics
   }
 }

@@ -1,0 +1,31 @@
+.chart-state {
+  flex: 1;
+  min-height: 200px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  color: #64748b; /* AA sobre #f8fafc */
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+}
+
+.chart-state--error {
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.chart-state__icon {
+  flex: none;
+}
+
+.chart-state__text {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from './AuthContext'
+import useWebSocket from '../hooks/useWebSocket'
 import {
   fetchTicketsApi,
   fetchColaEsperaApi,
@@ -25,7 +26,7 @@ export const TriageQueueContext = createContext({
 })
 
 export const TriageQueueContextProvider = ({ children }) => {
-  const { isLogged } = useAuth()
+  const { isLogged, role } = useAuth()
   const [tickets, setTickets] = useState([])
   const [waitingQueue, setWaitingQueue] = useState([])
   const [loading, setLoading] = useState(false)
@@ -33,8 +34,9 @@ export const TriageQueueContextProvider = ({ children }) => {
   const refreshTickets = useCallback(async () => {
     setLoading(true)
     try {
+      const soloPorAtender = role === 'Box'
       const [allTickets, colaEspera] = await Promise.all([
-        fetchTicketsApi(),
+        fetchTicketsApi({ porAtender: soloPorAtender }),
         fetchColaEsperaApi()
       ])
       setTickets(allTickets)
@@ -44,7 +46,23 @@ export const TriageQueueContextProvider = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [role])
+
+  useWebSocket('queue', {
+    onMessage: useCallback((msg) => {
+      if (msg?.event === 'QUEUE_UPDATED') {
+        refreshTickets()
+      }
+    }, [refreshTickets])
+  })
+
+  useWebSocket('tickets', {
+    onMessage: useCallback((msg) => {
+      if (['TICKET_CREATED', 'TICKET_UPDATED', 'TICKET_LLAMADO'].includes(msg?.event)) {
+        refreshTickets()
+      }
+    }, [refreshTickets])
+  })
 
   useEffect(() => {
     if (isLogged) {
@@ -87,8 +105,8 @@ export const TriageQueueContextProvider = ({ children }) => {
   )
 
   const finishAttention = useCallback(
-    async (boxNumero, motivo = 'Finalizado') => {
-      const result = await cerrarAtencionBoxApi(boxNumero, motivo)
+    async (boxNumero, motivo = 'Finalizado', observaciones = '') => {
+      const result = await cerrarAtencionBoxApi(boxNumero, motivo, observaciones)
       await refreshTickets()
       return result
     },
