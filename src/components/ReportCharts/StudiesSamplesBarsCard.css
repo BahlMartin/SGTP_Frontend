@@ -1,0 +1,141 @@
+.studies-samples-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px 22px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.studies-samples-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.studies-samples-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+/* Total destacado */
+.studies-samples-card__total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.studies-samples-card__total strong {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #0f766e;
+}
+
+/* Zona de barras */
+.studies-samples-card__plot {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  height: 210px;
+  padding: 0 6px;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.studies-samples-card__column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  height: 100%;
+  min-width: 0;
+}
+
+.studies-samples-card__value {
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.studies-samples-card__bar {
+  width: 60%;
+  max-width: 64px;
+  /* 150px = altura máxima de la barra más alta. --ratio va de 0 a 1. */
+  height: max(3px, calc(150px * var(--ratio)));
+  background: var(--color);
+  border-radius: 8px 8px 2px 2px;
+}
+
+/* Etiquetas: mismas columnas que las barras */
+.studies-samples-card__labels {
+  display: flex;
+  gap: 18px;
+  margin: 0;
+  padding: 0 6px;
+  list-style: none;
+}
+
+.studies-samples-card__label {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  text-align: center;
+}
+
+.studies-samples-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--color);
+  background: var(--tint);
+  border-radius: 50%;
+}
+
+.studies-samples-card__name {
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.studies-samples-card__percent {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+@media (max-width: 480px) {
+  .studies-samples-card__plot,
+  .studies-samples-card__labels {
+    gap: 8px;
+  }
+}
+
+@media print {
+  .studies-samples-card {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+
+  .studies-samples-card,
+  .studies-samples-card * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

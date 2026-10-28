@@ -1,0 +1,135 @@
+.studies-lollipop-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px 22px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.studies-lollipop-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.studies-lollipop-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+/* Total destacado */
+.studies-lollipop-card__total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.studies-lollipop-card__total strong {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #0f766e;
+}
+
+.studies-lollipop-card__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Cada fila mide 26px + 4px de gap = 30px */
+.studies-lollipop-card__list--scroll {
+  max-height: calc(var(--visible-rows) * 30px);
+  padding-right: 6px;
+  overflow-y: auto;
+}
+
+.studies-lollipop-card__list--scroll:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
+}
+
+.studies-lollipop-card__row {
+  display: grid;
+  grid-template-columns: minmax(110px, 200px) minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 12px;
+  height: 26px;
+}
+
+.studies-lollipop-card__name {
+  overflow: hidden;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Riel con guía fina de fondo */
+.studies-lollipop-card__track {
+  position: relative;
+  height: 26px;
+  margin-right: 8px; /* deja lugar al punto cuando vale el máximo */
+  background: linear-gradient(#e2e8f0, #e2e8f0) center / 100% 1px no-repeat;
+}
+
+.studies-lollipop-card__stem {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  width: var(--size);
+  height: 2px;
+  background: #5eead4;
+  border-radius: 1px;
+}
+
+.studies-lollipop-card__dot {
+  position: absolute;
+  top: 6px;
+  left: var(--size);
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background: #0f766e;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.studies-lollipop-card__count {
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+@media print {
+  .studies-lollipop-card {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+
+  .studies-lollipop-card__list--scroll {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .studies-lollipop-card,
+  .studies-lollipop-card * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -5,8 +5,9 @@ import { useAuth } from '../../context/AuthContext'
 import { useSecretariaReport } from '../../hooks/useSecretariaReport'
 import SecretariaJornadaBar from './components/SecretariaJornadaBar/SecretariaJornadaBar'
 import SecretariaKpiGrid from './components/SecretariaKpiGrid/SecretariaKpiGrid'
-import TriageDistributionCard from './components/TriageDistributionCard/TriageDistributionCard'
-import SecretariaStudySummaryCard from './components/SecretariaStudySummaryCard/SecretariaStudySummaryCard'
+import TriageDistributionCard from '../../components/ReportCharts/TriageDistributionCard'
+import StudiesLollipopCard from '../../components/ReportCharts/StudiesLollipopCard'
+import StudiesSamplesBarsCard from '../../components/ReportCharts/StudiesSamplesBarsCard'
 import StaffSecurityCard from '../JefaScreen/components/StaffSecurityCard/StaffSecurityCard'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
 import { getTodayLocalDateString } from '../../utils/formatters'
@@ -29,7 +30,6 @@ export default function SecretariaScreen() {
     notice,
     isSendingEmail,
     metrics,
-    getPercentage,
     handleExportPdf,
     handleSendEmail,
     showNotice,
@@ -113,25 +113,17 @@ export default function SecretariaScreen() {
         />
 
         <div className="secretaria-screen__study-summaries">
-          <SecretariaStudySummaryCard
-            title="Estudios realizados por sección"
-            items={metrics.resumenEstudiosRealizadosPorSeccion}
-            labelKey="nombre_seccion"
-            keyKey="seccion_key"
-            scrollable
+          <StudiesLollipopCard
+            items={metrics.resumenEstudiosRealizadosPorSeccion ?? []}
+            error={!Array.isArray(metrics.resumenEstudiosRealizadosPorSeccion)}
           />
-          <SecretariaStudySummaryCard
-            title="Estudios realizados por muestra"
-            items={metrics.resumenEstudiosRealizadosPorMuestra}
-            labelKey="nombre_muestra"
-            keyKey="muestra_key"
+          <StudiesSamplesBarsCard
+            items={metrics.resumenEstudiosRealizadosPorMuestra ?? []}
+            error={!Array.isArray(metrics.resumenEstudiosRealizadosPorMuestra)}
           />
         </div>
 
-        <TriageDistributionCard
-          triageDistribution={metrics.triageDistribution}
-          calculatePercentage={getPercentage}
-        />
+        <TriageDistributionCard triageDistribution={metrics.triageDistribution} />
 
         <section className="secretaria-screen__security-section" aria-labelledby="secretaria-security-title">
           <h2 id="secretaria-security-title" className="secretaria-screen__section-title">

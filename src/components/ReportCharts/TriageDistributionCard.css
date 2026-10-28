@@ -1,0 +1,145 @@
+.triage-distribution-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px 22px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.triage-distribution-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.triage-distribution-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* Total destacado */
+.triage-distribution-card__total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.triage-distribution-card__total strong {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #0f172a;
+}
+
+.triage-distribution-card__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.triage-distribution-card__row {
+  display: grid;
+  grid-template-columns: minmax(180px, 250px) minmax(0, 1fr) 44px 64px;
+  align-items: center;
+  gap: 16px;
+}
+
+.triage-distribution-card__who {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.triage-distribution-card__dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  background: var(--color);
+  border-radius: 50%;
+}
+
+.triage-distribution-card__name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.triage-distribution-card__hint {
+  font-size: 0.75rem;
+  color: #64748b; /* AA sobre blanco (#94a3b8 no llega a 4.5:1) */
+}
+
+.triage-distribution-card__track {
+  height: 14px;
+  overflow: hidden;
+  background: #f1f5f9;
+  border-radius: 7px;
+}
+
+.triage-distribution-card__fill {
+  width: var(--size);
+  height: 100%;
+  background: var(--color);
+  border-radius: 7px;
+}
+
+.triage-distribution-card__count {
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.triage-distribution-card__percent {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #475569;
+  text-align: right;
+}
+
+.triage-distribution-card__note {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+@media (max-width: 640px) {
+  .triage-distribution-card__row {
+    grid-template-columns: minmax(0, 1fr) 44px 56px;
+  }
+
+  .triage-distribution-card__track {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}
+
+@media print {
+  .triage-distribution-card {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+
+  .triage-distribution-card,
+  .triage-distribution-card * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
