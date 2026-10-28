@@ -31,7 +31,8 @@ export default function ActiveBoxesCard({
   const [isUpdatingBox, setIsUpdatingBox] = useState(null)
   const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'disponible' | 'en atencion' | 'fuera de servicio'
 
-  // Auto-refresco periódico cada 12 segundos (sondeo en tiempo real)
+  // Auto-refresco periódico desactivado para probar WebSocket en tiempo real
+  /*
   useEffect(() => {
     const timer = setInterval(() => {
       refreshBoxes().catch((err) => {
@@ -41,6 +42,7 @@ export default function ActiveBoxesCard({
 
     return () => clearInterval(timer)
   }, [refreshBoxes])
+  */
 
   const normalizeStatus = (estadoValue) => {
     return String(estadoValue || '')

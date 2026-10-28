@@ -17,6 +17,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useBox } from '../../context/BoxContext'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
 import { useFeedbackNotice } from '../../hooks/useFeedbackNotice'
+import { useWebSocket } from '../../hooks/useWebSocket'
 import {
   fetchRendimientoPersonalApi,
   fetchResumenEstudiosApi
@@ -55,6 +56,9 @@ export default function JefaScreen() {
     showNotice(message)
   }
 
+  // --- Conexión WebSocket Única Centralizada (Monitor Operativo para Jefatura) ---
+  const { lastMessage: wsMessage } = useWebSocket('monitor-operativo')
+
   const handleSelectStaffForTickets = (staffMember) => {
     const roleNorm = String(staffMember?.rol || '').trim().toLowerCase()
     if (roleNorm === 'jefa' || roleNorm === 'secretaria') return
@@ -69,7 +73,7 @@ export default function JefaScreen() {
   })
   const [loadingStaffWorkload, setLoadingStaffWorkload] = useState(false)
 
-  // Estado para estudios de laboratorio (búsqueda y filtro Top 5 / Todos por fecha)
+  // Estado para estudios de laboratorio
   const [studiesDate, setStudiesDate] = useState(() => getTodayLocalDateString())
   const [studiesSearch, setStudiesSearch] = useState('')
   const [studiesFilter, setStudiesFilter] = useState('all') // 'all' | 'top5'
@@ -79,6 +83,83 @@ export default function JefaScreen() {
   const [lastRefreshedAt, setLastRefreshedAt] = useState(() => new Date())
 
   const isGlobalRefreshing = isRefreshingAll || loadingStaffWorkload || loadingStudies || boxesLoading
+
+  // 1. PANEL "PERSONAL Y CARGA": Reaccionar a cambios en Tickets, Reportes, Cola o Boxes
+  useEffect(() => {
+    if (!wsMessage) return
+    const eventName = wsMessage.event || wsMessage.action
+
+    if (
+      [
+        'TICKET_CREATED',
+        'NEW_TICKET',
+        'REALTIME_METRICS_UPDATED',
+        'REFRESH_REPORTS',
+        'QUEUE_UPDATED',
+        'TICKET_LLAMADO',
+        'STAFF_UPDATED',
+        'BOX_UPDATED',
+        'BOX_ATTENDING',
+        'LAB_STUDIES_UPDATED'
+      ].includes(eventName)
+    ) {
+      // Re-consultamos métricas de carga de personal
+      fetchRendimientoPersonalApi(staffDate)
+        .then((data) => {
+          setWorkloadByStaff({
+            ticketsIssuedByStaff: data.tickets_por_personal || {},
+            patientsAttendedByBoxStaff: data.atenciones_por_personal || {}
+          })
+        })
+        .catch((err) => console.error('Error al actualizar carga por WS:', err))
+
+      // Actualizamos el personal activo (quién está en turno)
+      loadStaff().catch(err => console.error('Error al recargar personal:', err))
+      
+      setLastRefreshedAt(new Date())
+    }
+  }, [wsMessage, staffDate, loadStaff])
+
+  // 2. PANEL "BOXES DE ATENCIÓN": Reaccionar a cambios de estado o atención en Boxes
+  useEffect(() => {
+    if (!wsMessage) return
+    const eventName = wsMessage.event || wsMessage.action
+
+    if (['BOX_ATTENDING', 'BOX_UPDATED', 'UPDATE_BOX', 'TICKET_LLAMADO'].includes(eventName)) {
+      refreshBoxes().catch(err => console.error('Error al actualizar boxes por WS:', err))
+      setLastRefreshedAt(new Date())
+    }
+  }, [wsMessage, refreshBoxes])
+
+  // 3. PANEL "ESTUDIOS DE LABORATORIO": Reaccionar al cierre de atención en Box
+  useEffect(() => {
+    if (!wsMessage) return
+    const eventName = wsMessage.event || wsMessage.action
+
+    if (
+      [
+        'LAB_STUDIES_UPDATED',
+        'ESTUDIOS_ACTUALIZADOS',
+        'REFRESH_LAB_STUDIES',
+        'LAB_RESULT_READY'
+      ].includes(eventName)
+    ) {
+      fetchResumenEstudiosApi({
+        fechaStr: studiesDate,
+        search: studiesSearch,
+        top: null
+      })
+        .then((data) => {
+          // Soporta tanto si la API retorna una lista directa [...] como si retorna { estudios: [...] }
+          const listaEstudios = Array.isArray(data) ? data : (data?.estudios || data?.results || [])
+          setLabStudies(listaEstudios)
+        })
+        .catch((err) => console.error('Error al actualizar laboratorio por WS:', err))
+
+      setLastRefreshedAt(new Date())
+    }
+  }, [wsMessage, studiesDate, studiesSearch])
+
 
   const handleRefreshAll = async () => {
     setIsRefreshingAll(true)
@@ -155,7 +236,7 @@ export default function JefaScreen() {
     }
   }, [staffDate, showNotice])
 
-  // Carga reactiva de estudios de laboratorio al cambiar fecha o término de búsqueda (con debounce sutil)
+  // Carga reactiva de estudios de laboratorio
   useEffect(() => {
     let isMounted = true
     setLoadingStudies(true)
@@ -289,6 +370,8 @@ export default function JefaScreen() {
                   Personal, boxes y laboratorio
                 </span>
               </div>
+              {/* Botón de actualizar desactivado temporalmente para validar actualizaciones automáticas vía WebSocket */}
+              {/*
               <button
                 type="button"
                 className="jefa-screen__overview-refresh-btn"
@@ -304,6 +387,7 @@ export default function JefaScreen() {
                 <span>Actualizar</span>
                 <span className="jefa-screen__overview-refresh-time">{formattedRefreshTime}</span>
               </button>
+              */}
             </div>
 
             <div className="jefa-screen__overview-grid">

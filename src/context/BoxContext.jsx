@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { useAuth } from './AuthContext'
 import { fetchBoxesApi, updateBoxStateApi, tomarBoxApi } from '../services/boxService'
 
+import useWebSocket from '../hooks/useWebSocket' // [NUEVO]
+
 export const BoxContext = createContext({
   boxes: [],
   boxesLoading: false,
@@ -43,6 +45,27 @@ export const BoxContextProvider = ({ children }) => {
       setBoxesLoading(false)
     }
   }, [isLogged, refreshBoxes])
+
+  useWebSocket('boxes', {
+    onMessage: useCallback((msg) => {
+    // Escuchar el evento exacto que envía el backend
+      const isBoxUpdate = (msg?.action === 'BOX_ATTENDING' || msg?.event === 'BOX_ATTENDING')
+      if (isBoxUpdate && msg?.data) {
+        setBoxes((previousBoxes) => {
+        // Usar box_id en lugar de numero
+          const matchingBoxIndex = previousBoxes.findIndex(
+            (currentBox) => Number(currentBox.id) === Number(msg.data.box_id)
+          )
+          if (matchingBoxIndex < 0) return [...previousBoxes, msg.data]
+
+          return previousBoxes.map((currentBox, index) =>
+            index === matchingBoxIndex ? { ...currentBox, ...msg.data } : currentBox
+          )
+        })
+      }
+    }, [])
+  })
+
 
   const changeBoxStatus = useCallback(async (boxNumero, nuevoEstado) => {
     try {

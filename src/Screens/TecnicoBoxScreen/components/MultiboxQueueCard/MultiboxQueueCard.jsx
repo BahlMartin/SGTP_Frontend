@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { Radio, Clock, Search, X, Bell } from 'lucide-react'
 import TriageBadge from '../../../../components/TriageBadge/TriageBadge'
-import RefreshButton from '../../../../components/RefreshButton/RefreshButton'
 import { useTriageQueue } from '../../../../context/TriageQueueContext'
 import { calculateMinutesDiff } from '../../../../utils/formatters'
 import './MultiboxQueueCard.css'
@@ -13,7 +12,7 @@ export default function MultiboxQueueCard({
   hasPatientInBox = false,
   currentBoxNumber = 1
 }) {
-  const { waitingQueue: queueFromContext, refreshTickets, loading } = useTriageQueue()
+  const { waitingQueue: queueFromContext } = useTriageQueue()
   const waitingQueue = waitingQueueProp !== undefined ? waitingQueueProp : queueFromContext
 
   const [searchTerm, setSearchTerm] = useState('')
@@ -66,10 +65,6 @@ export default function MultiboxQueueCard({
               {waitingQueue.length === 1 ? 'paciente en espera' : 'pacientes en espera'}
             </span>
           </span>
-          <RefreshButton
-            onRefresh={refreshTickets}
-            isLoading={loading}
-          />
         </div>
       </div>
 

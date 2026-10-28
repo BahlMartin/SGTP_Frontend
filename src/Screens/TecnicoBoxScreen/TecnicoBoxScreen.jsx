@@ -5,10 +5,10 @@ import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import { useTecnicoBox } from '../../hooks/useTecnicoBox'
 import BoxControlCard from './components/BoxControlCard/BoxControlCard'
 import ActiveBoxesCard from '../../components/ActiveBoxesCard/ActiveBoxesCard'
-import RefreshButton from '../../components/RefreshButton/RefreshButton'
 import PatientInAttentionCard from './components/PatientInAttentionCard/PatientInAttentionCard'
 import MultiboxQueueCard from './components/MultiboxQueueCard/MultiboxQueueCard'
 import './TecnicoBoxScreen.css'
+import { useWebSocket } from '../../hooks/useWebSocket'
 
 const SECONDARY_PANELS = [
   { id: 'control', label: 'Panel de control de box', icon: Tv },
@@ -21,9 +21,8 @@ export default function TecnicoBoxScreen() {
   const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false)
   const {
     boxes,
-    boxesLoading,
-    boxesError,
     refreshBoxes,
+    refreshTickets,
     currentBoxNumber,
     setCurrentBoxNumber,
     handleSelectBox,
@@ -83,6 +82,18 @@ export default function TecnicoBoxScreen() {
   const selectedPanel = SECONDARY_PANELS.find(
     (panel) => panel.id === activeSecondaryPanel
   )
+
+  // Implementación de WebSocket
+  const { lastMessage: wsQueueMessage } = useWebSocket('ws/queue')
+  const { lastMessage: wsBoxMessage } = useWebSocket('ws/boxes')
+
+  useEffect(() => {
+    // Si la cola se actualiza o un compañero libera un box, recargamos la vista de boxes (que incluye la cola)
+    if (wsQueueMessage?.event === 'QUEUE_UPDATED' || wsBoxMessage?.event === 'BOX_ATTENDING' || wsBoxMessage?.event === 'BOX_UPDATED') {
+      refreshBoxes()
+      refreshTickets() 
+    }
+  }, [wsQueueMessage, wsBoxMessage, refreshBoxes, refreshTickets])
 
   return (
     <div className="box-screen">
@@ -197,6 +208,7 @@ export default function TecnicoBoxScreen() {
                     />
                   </div>
 
+<<<<<<< HEAD
                   <div
                     className={`box-screen__secondary-item ${
                       activeSecondaryPanel === 'search' ? 'box-screen__secondary-item--active' : ''
@@ -225,6 +237,13 @@ export default function TecnicoBoxScreen() {
               </div>
             </div>
           </section>
+=======
+            <ActiveBoxesCard
+              canToggleStatus={false}
+              onSelectStaff={null}
+            />
+          </div>
+>>>>>>> develop
 
           {/* Columna Derecha: Paciente en atención y Cola Multibox Centralizada */}
           <div className="box-screen__right-column">
