@@ -33,6 +33,12 @@ export default function TecnicoBoxScreen() {
     completedStudies,
     feedbackMsg,
     isProcessing,
+    isCallingNext,
+    callingTicketId,
+    isFinishing,
+    isCancelling,
+    isModifyingStudies,
+    isChangingStatus,
     matriculaTecnico,
     handleStatusChange,
     handleCallNext,
@@ -209,7 +215,7 @@ export default function TecnicoBoxScreen() {
                       onSelectBox={handleSelectBox}
                       currentStatus={activeBoxData.estado}
                       onStatusChange={handleStatusChange}
-                      disabled={isProcessing}
+                      disabled={isChangingStatus}
                     />
                   </div>
 
@@ -243,6 +249,10 @@ export default function TecnicoBoxScreen() {
               currentBoxKey={currentBoxKey}
               matriculaTecnico={matriculaTecnico}
               isProcessing={isProcessing}
+              isCallingNext={isCallingNext}
+              isFinishing={isFinishing}
+              isCancelling={isCancelling}
+              isModifyingStudies={isModifyingStudies}
               isBoxOutOfService={isBoxOutOfService}
               completedStudies={completedStudies}
               onToggleStudyCheck={toggleStudyCheck}
@@ -257,6 +267,7 @@ export default function TecnicoBoxScreen() {
               waitingQueue={waitingQueue}
               onCallSpecificPatient={handleCallSpecificPatient}
               isProcessing={isProcessing}
+              callingTicketId={callingTicketId}
               hasPatientInBox={Boolean(patientInBox)}
               isBoxOutOfService={isBoxOutOfService}
               currentBoxNumber={currentBoxNumber}

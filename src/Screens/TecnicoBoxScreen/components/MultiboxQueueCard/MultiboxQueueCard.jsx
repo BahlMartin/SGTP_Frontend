@@ -2,13 +2,14 @@ import React, { useState, useMemo } from 'react'
 import { Radio, Clock, Search, X, Bell } from 'lucide-react'
 import TriageBadge from '../../../../components/TriageBadge/TriageBadge'
 import { useTriageQueue } from '../../../../context/TriageQueueContext'
-import { calculateMinutesDiff } from '../../../../utils/formatters'
+import { calculateMinutesDiff, formatWaitTime } from '../../../../utils/formatters'
 import './MultiboxQueueCard.css'
 
 export default function MultiboxQueueCard({
   waitingQueue: waitingQueueProp,
   onCallSpecificPatient,
   isProcessing = false,
+  callingTicketId = null,
   hasPatientInBox = false,
   isBoxOutOfService = false,
   currentBoxNumber = 1
@@ -182,7 +183,7 @@ export default function MultiboxQueueCard({
                     <td className="multibox-queue-card__td">
                       <span className="multibox-queue-card__wait-time">
                         <Clock className="multibox-queue-card__wait-icon" />
-                        {waitMinutes || 0} min
+                        {formatWaitTime(waitMinutes)}
                       </span>
                     </td>
                     <td className="multibox-queue-card__td">
@@ -195,7 +196,7 @@ export default function MultiboxQueueCard({
                         type="button"
                         className="multibox-queue-card__btn-call-direct"
                         onClick={() => onCallSpecificPatient?.(ticketItem.id)}
-                        disabled={isProcessing || hasPatientInBox || isBoxOutOfService}
+                        disabled={callingTicketId === ticketItem.id || hasPatientInBox || isBoxOutOfService}
                         title={
                           isBoxOutOfService
                             ? 'El box se encuentra fuera de servicio. Solicite a la Jefa su habilitación.'
@@ -206,7 +207,7 @@ export default function MultiboxQueueCard({
                         aria-label={`Llamar paciente ${ticketItem.paciente_nombre} ${ticketItem.paciente_apellido} al Box ${currentBoxNumber}`}
                       >
                         <Bell size={13} className="multibox-queue-card__btn-call-icon" />
-                        <span>Llamar a box</span>
+                        <span>{callingTicketId === ticketItem.id ? 'Llamando...' : 'Llamar a box'}</span>
                       </button>
                     </td>
                   </tr>

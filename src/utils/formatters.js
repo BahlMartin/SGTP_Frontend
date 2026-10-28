@@ -72,7 +72,20 @@ export function formatDurationHuman(minutes) {
   if (minutes < 60) return `${minutes} min`
   const hours = Math.floor(minutes / 60)
   const remainingMinutes = minutes % 60
-  return `${hours}h ${remainingMinutes}m`
+  const hoursLabel = hours === 1 ? '1 hora' : `${hours} horas`
+  return remainingMinutes > 0 ? `${hoursLabel} ${remainingMinutes} min` : hoursLabel
+}
+
+/**
+ * Formatea minutos de espera en cola (ej: "0 min", "45 min", "1 hora 30 min")
+ */
+export function formatWaitTime(minutes) {
+  const safeMinutes = Math.max(0, Number(minutes) || 0)
+  if (safeMinutes < 60) return `${safeMinutes} min`
+  const hours = Math.floor(safeMinutes / 60)
+  const remainingMinutes = safeMinutes % 60
+  const hoursLabel = hours === 1 ? '1 hora' : `${hours} horas`
+  return remainingMinutes > 0 ? `${hoursLabel} ${remainingMinutes} min` : hoursLabel
 }
 
 /**
