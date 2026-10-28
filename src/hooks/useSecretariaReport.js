@@ -89,8 +89,6 @@ export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }
   // Hook reutilizable para exportación de PDF (conectado con backend)
   const { handleExportPdf } = useExportReportPdf({
     jornadaDate,
-    metrics,
-    userData,
     onSuccessNotice: showNotice
   })
 

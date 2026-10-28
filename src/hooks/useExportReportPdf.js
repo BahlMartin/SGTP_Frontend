@@ -1,18 +1,13 @@
 import { useCallback } from 'react'
 import { downloadReportePdfApi } from '../services/reportService'
-import { generateDailyReportPdf } from '../utils/pdfGenerator'
 import { getArgentinaDateString } from '../utils/formatters'
 
 /**
  * Hook reutilizable para la exportación y descarga del reporte diario en formato PDF.
- * Conecta con el endpoint /app/reports/descargar-pdf/ del backend.
+ * Conecta con el endpoint /app/reports/descargar-pdf/ del backend, que es la única
+ * fuente del documento oficial (no existe generador local de respaldo).
  */
-export function useExportReportPdf({
-  jornadaDate,
-  metrics,
-  userData,
-  onSuccessNotice
-}) {
+export function useExportReportPdf({ jornadaDate, onSuccessNotice }) {
   const handleExportPdf = useCallback(async () => {
     let dateStr = ''
     if (jornadaDate instanceof Date) {
@@ -24,44 +19,15 @@ export function useExportReportPdf({
     try {
       await downloadReportePdfApi(dateStr)
       if (onSuccessNotice) {
-        onSuccessNotice('Reporte oficial en formato PDF descargado del backend exitosamente.')
+        onSuccessNotice('Informe en formato PDF descargado exitosamente.')
       }
     } catch (err) {
-      console.warn('Fallback a generador PDF local:', err)
-      const roleLabel = userData?.rol ? `(${userData.rol})` : '(Secretaría)'
-      const generatedBy = userData?.nombre
-        ? `${userData.nombre} ${roleLabel}`
-        : 'Personal SGTP'
-
-      const safeTargetDate = jornadaDate instanceof Date ? jornadaDate : new Date(jornadaDate)
-
-      generateDailyReportPdf({
-        jornadaDate: safeTargetDate,
-        stats: {
-          atendidos: metrics?.atendidos ?? 0,
-          ingresos: metrics?.ingresos ?? 0,
-          cancelados: metrics?.cancelados ?? 0,
-          enCurso: metrics?.enCurso ?? 0,
-          esperaPromedio: metrics?.esperaPromedio ?? '—',
-          atencionPromedio: metrics?.atencionPromedio ?? '—',
-          criticos: metrics?.criticos ?? 0,
-          totalEstudios: metrics?.totalEstudios ?? 0
-        },
-        triageDistribution: metrics?.triageDistribution ?? {},
-        tickets: metrics?.tickets ?? [],
-        franjasHorarias: metrics?.franjasHorarias ?? [],
-        resumenSecciones: metrics?.resumenSecciones ?? [],
-        insumosTubos: metrics?.insumosTubos ?? [],
-        rendimientoAdmision: metrics?.rendimientoAdmision ?? [],
-        rendimientoBox: metrics?.rendimientoBox ?? [],
-        generatedBy
-      })
-
+      console.error('Error al descargar el informe PDF:', err)
       if (onSuccessNotice) {
-        onSuccessNotice('Reporte diario en formato PDF exportado exitosamente.')
+        onSuccessNotice('No se pudo generar el informe PDF. Intente nuevamente en unos instantes.')
       }
     }
-  }, [jornadaDate, metrics, userData, onSuccessNotice])
+  }, [jornadaDate, onSuccessNotice])
 
   return {
     handleExportPdf
