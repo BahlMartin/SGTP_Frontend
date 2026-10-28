@@ -86,7 +86,7 @@
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -112,7 +112,7 @@
 }
 
 .overtime-modal__overnight-badge {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.82rem;
   color: #1e40af;
 }

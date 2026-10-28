@@ -23,7 +23,7 @@
 .triage-distribution-card__title {
   margin: 0;
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #0f172a;
 }
 
@@ -39,7 +39,7 @@
 
 .triage-distribution-card__total strong {
   font-size: 2rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   color: #0f172a;
 }
@@ -103,7 +103,7 @@
 
 .triage-distribution-card__count {
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   text-align: right;
 }
 

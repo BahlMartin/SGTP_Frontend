@@ -59,7 +59,7 @@
 .modal-cancelar-atencion__title {
   margin: 0;
   font-size: 1.1rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #991b1b;
 }
 
@@ -128,7 +128,7 @@
 
 .modal-cancelar-atencion__patient-label {
   font-size: 0.65rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.05em;
   color: #64748b;
   text-transform: uppercase;
@@ -136,7 +136,7 @@
 
 .modal-cancelar-atencion__patient-name {
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #0f172a;
 }
 
@@ -160,14 +160,14 @@
 
 .modal-cancelar-atencion__ticket-label {
   font-size: 0.62rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.08em;
   opacity: 0.9;
 }
 
 .modal-cancelar-atencion__ticket-num {
   font-size: 1.15rem;
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1.1;
 }
 
@@ -202,7 +202,7 @@
 
 .modal-cancelar-atencion__label {
   font-size: 0.84rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #1e293b;
 }
 
@@ -302,7 +302,7 @@
 .modal-cancelar-atencion__btn-danger {
   padding: 9px 18px;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #ffffff;
   background: #dc2626;
   border: none;

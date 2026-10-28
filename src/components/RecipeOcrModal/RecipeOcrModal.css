@@ -136,7 +136,7 @@
   display: inline-block;
   padding: 2px 6px;
   font-size: 0.78rem;
-  font-family: monospace;
+  font-family: var(--font-family);
   font-weight: 700;
   color: #1e293b;
   background: #e2e8f0;
@@ -448,7 +448,7 @@
 .ocr-modal__study-code {
   font-size: 0.74rem;
   color: #64748b;
-  font-family: monospace;
+  font-family: var(--font-family);
 }
 
 .ocr-modal__study-score {
@@ -540,7 +540,7 @@
   background: #9333ea;
   color: #ffffff;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 2px 8px;
   border-radius: 6px;
   letter-spacing: 0.3px;
@@ -564,7 +564,7 @@
 /* Badges de Procedencia Inteligente */
 .ocr-modal__origin-badge {
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 2px 7px;
   border-radius: 4px;
   display: inline-flex;
@@ -644,7 +644,7 @@
 /* Badges de Motor por Estudio */
 .ocr-modal__motor-badge {
   font-size: 0.68rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 2px 7px;
   border-radius: 4px;
   display: inline-flex;
@@ -677,4 +677,3 @@
   gap: 8px;
   margin: 10px 0;
 }
-
