@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback, useRef } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import { useAuth } from '../../context/AuthContext'
@@ -44,38 +44,38 @@ export default function SecretariaScreen() {
     lockStaff(staffMemberId, showNotice)
   }
 
-  // Implementación de WebSocket para actualización de métricas en tiempo real
-  const { lastMessage: wsReportMessage } = useWebSocket('reportes')
-  const { lastMessage: wsTicketMessage } = useWebSocket('tickets')
+  const lastRefreshRef = useRef(0)
 
-  React.useEffect(() => {
-    if (!wsReportMessage && !wsTicketMessage) return
+  const handleWsEvent = useCallback(
+    (msg) => {
+      const evt = msg?.event || msg?.action || msg?.tipo_evento
+      const isRelevant = [
+        'REALTIME_METRICS_UPDATED',
+        'REFRESH_REPORTS',
+        'TICKET_CREATED',
+        'NEW_TICKET',
+        'TICKET_UPDATED',
+        'TICKET_LLAMADO',
+        'reporte_actualizado'
+      ].includes(evt)
 
-    const rEvt = wsReportMessage?.event || wsReportMessage?.action || wsReportMessage?.tipo_evento
-    const tEvt = wsTicketMessage?.event || wsTicketMessage?.action || wsTicketMessage?.tipo_evento
+      if (!isRelevant) return
 
-    const isReportChange = [
-      'REALTIME_METRICS_UPDATED',
-      'REFRESH_REPORTS',
-      'TICKET_CREATED',
-      'NEW_TICKET',
-      'TICKET_LLAMADO',
-      'reporte_actualizado'
-    ].includes(rEvt)
-    const isTicketChange = [
-      'TICKET_CREATED',
-      'NEW_TICKET',
-      'TICKET_UPDATED',
-      'TICKET_LLAMADO'
-    ].includes(tEvt)
-
-    if (isReportChange || isTicketChange) {
       const today = getTodayLocalDateString()
       if (jornadaDate === today) {
-        refreshMetrics()
+        const now = Date.now()
+        if (now - lastRefreshRef.current > 400) {
+          lastRefreshRef.current = now
+          refreshMetrics()
+        }
       }
-    }
-  }, [wsReportMessage, wsTicketMessage, jornadaDate, refreshMetrics])
+    },
+    [jornadaDate, refreshMetrics]
+  )
+
+  // Implementación de WebSocket para actualización de métricas en tiempo real
+  useWebSocket('reportes', { onMessage: handleWsEvent })
+  useWebSocket('tickets', { onMessage: handleWsEvent })
 
   return (
     <div className="secretaria-screen">
