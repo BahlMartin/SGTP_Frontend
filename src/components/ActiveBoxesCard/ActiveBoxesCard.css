@@ -363,52 +363,57 @@
   color: var(--medical-primary, #0284c7);
 }
 
-/* Botón de acción para la Jefa */
+/* Botón minimalista de acción rápida para la Jefa */
 .active-boxes-card__actions {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .active-boxes-card__action-btn {
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm, 6px);
-  padding: 4px 10px;
-  font-size: 0.7rem;
-  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--border-card, rgba(148, 163, 184, 0.28));
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.1px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  transition: all 0.2s ease;
+  gap: 4px;
+  transition: all 0.18s ease;
   flex-shrink: 0;
+  color: var(--text-muted);
 }
 
 .active-boxes-card__action-btn--toggle-fuera {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.28);
+  color: var(--text-muted);
+  border-color: var(--border-card, rgba(148, 163, 184, 0.25));
 }
 
 .active-boxes-card__action-btn--toggle-fuera:hover:not(:disabled) {
-  background: #ef4444;
-  color: #ffffff;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.35);
 }
 
 .active-boxes-card__action-btn--toggle-disponible {
-  background: rgba(34, 197, 94, 0.1);
   color: #16a34a;
-  border-color: rgba(34, 197, 94, 0.28);
+  border-color: rgba(22, 163, 74, 0.3);
+  background: rgba(22, 163, 74, 0.04);
 }
 
 .active-boxes-card__action-btn--toggle-disponible:hover:not(:disabled) {
-  background: #16a34a;
-  color: #ffffff;
+  background: rgba(22, 163, 74, 0.12);
+  color: #15803d;
+  border-color: rgba(22, 163, 74, 0.5);
 }
 
 .active-boxes-card__action-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 

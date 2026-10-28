@@ -9,6 +9,7 @@ import TriageDistributionCard from './components/TriageDistributionCard/TriageDi
 import SecretariaStudySummaryCard from './components/SecretariaStudySummaryCard/SecretariaStudySummaryCard'
 import StaffSecurityCard from '../JefaScreen/components/StaffSecurityCard/StaffSecurityCard'
 import { useStaffManagement } from '../../hooks/useStaffManagement'
+import { getTodayLocalDateString } from '../../utils/formatters'
 import './SecretariaScreen.css'
 import { useWebSocket } from '../../hooks/useWebSocket'
 
@@ -31,7 +32,8 @@ export default function SecretariaScreen() {
     getPercentage,
     handleExportPdf,
     handleSendEmail,
-    showNotice
+    showNotice,
+    refreshMetrics
   } = useSecretariaReport({ userData })
 
   const handleUnlockStaff = (staffMemberId) => {
@@ -42,27 +44,38 @@ export default function SecretariaScreen() {
     lockStaff(staffMemberId, showNotice)
   }
 
-  // Implementación de WebSocket
+  // Implementación de WebSocket para actualización de métricas en tiempo real
   const { lastMessage: wsReportMessage } = useWebSocket('reportes')
   const { lastMessage: wsTicketMessage } = useWebSocket('tickets')
 
   React.useEffect(() => {
-    const rEvt = wsReportMessage?.event || wsReportMessage?.action
-    const tEvt = wsTicketMessage?.event || wsTicketMessage?.action
+    if (!wsReportMessage && !wsTicketMessage) return
 
-    const isReportChange = ['REALTIME_METRICS_UPDATED', 'REFRESH_REPORTS'].includes(rEvt)
-    const isTicketChange = ['TICKET_CREATED', 'NEW_TICKET'].includes(tEvt)
+    const rEvt = wsReportMessage?.event || wsReportMessage?.action || wsReportMessage?.tipo_evento
+    const tEvt = wsTicketMessage?.event || wsTicketMessage?.action || wsTicketMessage?.tipo_evento
+
+    const isReportChange = [
+      'REALTIME_METRICS_UPDATED',
+      'REFRESH_REPORTS',
+      'TICKET_CREATED',
+      'NEW_TICKET',
+      'TICKET_LLAMADO',
+      'reporte_actualizado'
+    ].includes(rEvt)
+    const isTicketChange = [
+      'TICKET_CREATED',
+      'NEW_TICKET',
+      'TICKET_UPDATED',
+      'TICKET_LLAMADO'
+    ].includes(tEvt)
 
     if (isReportChange || isTicketChange) {
-      // Como el hook recarga los datos al cambiar la fecha, forzamos un re-render suave 
-      // si estás mirando el día de HOY. Si estás viendo reportes del mes pasado, no hacemos nada.
-      const today = new Date().toISOString().split('T')[0]
+      const today = getTodayLocalDateString()
       if (jornadaDate === today) {
-         // Este truco dispara el useEffect del hook useSecretariaReport
-         setJornadaDate(prev => prev) 
+        refreshMetrics()
       }
     }
-  }, [wsReportMessage, wsTicketMessage, jornadaDate, setJornadaDate])
+  }, [wsReportMessage, wsTicketMessage, jornadaDate, refreshMetrics])
 
   return (
     <div className="secretaria-screen">

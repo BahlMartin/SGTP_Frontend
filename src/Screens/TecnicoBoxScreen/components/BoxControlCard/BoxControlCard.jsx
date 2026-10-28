@@ -12,6 +12,7 @@ export default function BoxControlCard({
 }) {
   const [isBoxListOpen, setIsBoxListOpen] = useState(false)
   const selectorRef = useRef(null)
+  const isOutOfService = currentStatus === 'Fuera de servicio'
 
   const availableBoxes = useMemo(() => {
     const boxesByNumber = new Map(
@@ -93,6 +94,7 @@ export default function BoxControlCard({
               {availableBoxes.map((box) => {
                 const boxNumber = Number(box.numero)
                 const isSelected = boxNumber === Number(currentBoxNumber)
+                const boxFuera = box.estado === 'Fuera de servicio'
 
                 return (
                   <li key={boxNumber} role="presentation">
@@ -108,7 +110,12 @@ export default function BoxControlCard({
                         setIsBoxListOpen(false)
                       }}
                     >
-                      {box.nombre || `Box ${boxNumber}`}
+                      <span>{box.nombre || `Box ${boxNumber}`}</span>
+                      {boxFuera && (
+                        <span className="box-control-card__option-tag-fuera">
+                          Fuera de serv.
+                        </span>
+                      )}
                     </button>
                   </li>
                 )
@@ -125,7 +132,12 @@ export default function BoxControlCard({
             currentStatus === 'Disponible' ? 'box-control-card__status-btn--disponible-active' : ''
           }`}
           onClick={() => onStatusChange('Disponible')}
-          disabled={disabled}
+          disabled={disabled || isOutOfService}
+          title={
+            isOutOfService
+              ? 'Solo la Jefa de Laboratorio puede habilitar un box fuera de servicio'
+              : undefined
+          }
         >
           Disponible
         </button>
@@ -135,7 +147,12 @@ export default function BoxControlCard({
             currentStatus === 'En atencion' ? 'box-control-card__status-btn--atencion-active' : ''
           }`}
           onClick={() => onStatusChange('En atencion')}
-          disabled={disabled}
+          disabled={disabled || isOutOfService}
+          title={
+            isOutOfService
+              ? 'No se puede pasar a atención mientras el box está fuera de servicio'
+              : undefined
+          }
         >
           En atencion
         </button>
@@ -145,11 +162,18 @@ export default function BoxControlCard({
             currentStatus === 'Fuera de servicio' ? 'box-control-card__status-btn--fuera-active' : ''
           }`}
           onClick={() => onStatusChange('Fuera de servicio')}
-          disabled={disabled}
+          disabled
+          title="Solo la Jefa de Laboratorio puede poner fuera de servicio o habilitar un box"
         >
           Fuera de servicio
         </button>
       </div>
+
+      {isOutOfService && (
+        <p className="box-control-card__out-of-service-hint" role="status">
+          Este box está fuera de servicio. Solo la Jefa de Laboratorio puede habilitarlo.
+        </p>
+      )}
     </div>
   )
 }

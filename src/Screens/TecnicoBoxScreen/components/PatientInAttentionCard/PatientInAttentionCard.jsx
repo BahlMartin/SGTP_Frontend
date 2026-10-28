@@ -22,6 +22,7 @@ export default function PatientInAttentionCard({
   currentBoxKey,
   matriculaTecnico,
   isProcessing = false,
+  isBoxOutOfService = false,
   completedStudies = {},
   onToggleStudyCheck,
   onSelectAllStudies,
@@ -54,8 +55,13 @@ export default function PatientInAttentionCard({
           <button
             type="button"
             className="patient-attention-card__btn-call"
-            disabled={isProcessing || Boolean(patientInBox)}
+            disabled={isProcessing || Boolean(patientInBox) || isBoxOutOfService}
             onClick={onCallNext}
+            title={
+              isBoxOutOfService
+                ? 'El box está fuera de servicio. Solicite a la Jefa su habilitación para llamar pacientes.'
+                : undefined
+            }
           >
             <Bell className="patient-attention-card__btn-icon" />
             Llamar siguiente
@@ -321,11 +327,20 @@ export default function PatientInAttentionCard({
       ) : (
         <div className="patient-attention-card__empty-state">
           <p className="patient-attention-card__empty-title">
-            No hay paciente en atención en este puesto.
+            {isBoxOutOfService
+              ? 'Este box se encuentra fuera de servicio.'
+              : 'No hay paciente en atención en este puesto.'}
           </p>
           <span className="patient-attention-card__empty-hint">
-            Presione <strong>"Llamar siguiente"</strong> para convocar al paciente más crítico de la
-            cola multibox.
+            {isBoxOutOfService ? (
+              <>
+                Solicite a la <strong>Jefa de Laboratorio</strong> la habilitación del box para poder convocar pacientes de la cola multibox.
+              </>
+            ) : (
+              <>
+                Presione <strong>"Llamar siguiente"</strong> para convocar al paciente más crítico de la cola multibox.
+              </>
+            )}
           </span>
         </div>
       )}

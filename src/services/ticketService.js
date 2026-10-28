@@ -63,15 +63,20 @@ export function normalizeTicket(t) {
 }
 
 /**
- * Obtiene todos los tickets registrados en el sistema.
+ * Obtiene los tickets registrados en el sistema.
+ * Si porAtender es true, consulta únicamente los tickets pendientes y en atención activa,
+ * evitando recorrer páginas históricas de tickets finalizados.
  */
-export async function fetchTicketsApi() {
+export async function fetchTicketsApi({ porAtender = false } = {}) {
+  if (porAtender) {
+    const response = await apiClient.get(`/tickets/?por_atender=true&_t=${Date.now()}`)
+    const list = Array.isArray(response) ? response : response?.results || []
+    return list.map(normalizeTicket)
+  }
+
   const allTickets = []
   let page = 1
   let hasNextPage = true
-
-  // Generamos un único timestamp para toda la paginación de esta llamada
-  const t = Date.now()
 
   while (hasNextPage) {
     const response = await apiClient.get(page === 1 ? '/tickets/' : `/tickets/?page=${page}`)
@@ -240,7 +245,7 @@ export async function searchPatientsApi(query) {
 export async function fetchRendimientoPersonalApi(fechaStr) {
   const params = new URLSearchParams()
   if (fechaStr) params.append('fecha', fechaStr)
-  
+
   // Romper el caché para que las métricas de carga de personal sean siempre en tiempo real
   params.append('_t', Date.now())
 

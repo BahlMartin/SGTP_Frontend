@@ -205,7 +205,6 @@ export default function AdmisionScreen() {
               ticketsList={todayTickets}
               scrollAfterSeven
               onTicketClick={handleTicketItemClick}
-              onRefresh={refreshTickets}
               isLoading={loading}
             />
           </aside>

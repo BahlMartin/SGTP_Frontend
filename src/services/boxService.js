@@ -64,7 +64,7 @@ function extractBoxList(response) {
  * Obtiene la lista de todos los boxes de atención asistencial.
  */
 export async function fetchBoxesApi() {
-  const response = await apiClient.get('/boxes/')
+  const response = await apiClient.get(`/boxes/?_t=${Date.now()}`)
   cachedBoxes = extractBoxList(response).map(normalizeBox).filter(Boolean)
   return cachedBoxes
 }
@@ -73,7 +73,7 @@ export async function fetchBoxesApi() {
  * Monitoreo en tiempo real de boxes para pantallas de sala y supervisión.
  */
 export async function fetchBoxesEstadoGeneralApi() {
-  const response = await apiClient.get('/boxes/estado-general/')
+  const response = await apiClient.get(`/boxes/estado-general/?_t=${Date.now()}`)
   return extractBoxList(response).map(normalizeBox).filter(Boolean)
 }
 

@@ -64,7 +64,7 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
  * Consulta las métricas consolidadas del reporte diario en el backend.
  */
 export async function fetchMetricasDiariasApi(fechaStr) {
-  const query = `?fecha=${fechaStr || getTodayLocalDateString()}`
+  const query = `?fecha=${fechaStr || getTodayLocalDateString()}&_t=${Date.now()}`
   const data = await apiClient.get(`/reports/metricas-diarias/${query}`)
 
   const resumenEstudiosRealizadosPorSeccion = Array.isArray(data.resumen_estudios_realizados_por_seccion)

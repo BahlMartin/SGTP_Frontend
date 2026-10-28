@@ -310,7 +310,7 @@ export default function ActiveBoxesCard({
                     )}
                   </div>
 
-                  {/* Botones de control operativo: SOLO SE RENDERIZAN SI canToggleStatus=true */}
+                  {/* Botón minimalista de acción rápida: SOLO SE RENDERIZA SI canToggleStatus=true */}
                   {canToggleStatus && (
                     <div className="active-boxes-card__actions">
                       {isFuera ? (
@@ -322,7 +322,7 @@ export default function ActiveBoxesCard({
                           title="Habilitar box y dejarlo en estado Disponible"
                         >
                           <Power size={11} aria-hidden="true" />
-                          {isBusy ? 'Habilitando...' : 'Habilitar'}
+                          <span>{isBusy ? 'Habilitando...' : 'Habilitar'}</span>
                         </button>
                       ) : (
                         <button
@@ -336,8 +336,8 @@ export default function ActiveBoxesCard({
                               : 'Poner fuera de servicio por mantenimiento o receso'
                           }
                         >
-                          <AlertTriangle size={11} aria-hidden="true" />
-                          {isBusy ? 'Cerrando...' : 'Fuera de serv.'}
+                          <Power size={11} aria-hidden="true" />
+                          <span>{isBusy ? 'Cerrando...' : 'Inhabilitar'}</span>
                         </button>
                       )}
                     </div>

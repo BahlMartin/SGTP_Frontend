@@ -10,6 +10,7 @@ export default function MultiboxQueueCard({
   onCallSpecificPatient,
   isProcessing = false,
   hasPatientInBox = false,
+  isBoxOutOfService = false,
   currentBoxNumber = 1
 }) {
   const { waitingQueue: queueFromContext } = useTriageQueue()
@@ -194,11 +195,13 @@ export default function MultiboxQueueCard({
                         type="button"
                         className="multibox-queue-card__btn-call-direct"
                         onClick={() => onCallSpecificPatient?.(ticketItem.id)}
-                        disabled={isProcessing || hasPatientInBox}
+                        disabled={isProcessing || hasPatientInBox || isBoxOutOfService}
                         title={
-                          hasPatientInBox
-                            ? 'Finalice la atención actual antes de convocar a otro paciente'
-                            : `Llamar inmediatamente al Box ${currentBoxNumber} ignorando orden de triage`
+                          isBoxOutOfService
+                            ? 'El box se encuentra fuera de servicio. Solicite a la Jefa su habilitación.'
+                            : hasPatientInBox
+                              ? 'Finalice la atención actual antes de convocar a otro paciente'
+                              : `Llamar inmediatamente al Box ${currentBoxNumber} ignorando orden de triage`
                         }
                         aria-label={`Llamar paciente ${ticketItem.paciente_nombre} ${ticketItem.paciente_apellido} al Box ${currentBoxNumber}`}
                       >

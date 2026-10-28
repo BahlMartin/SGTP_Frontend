@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useBox } from '../context/BoxContext'
 import { useTriageQueue } from '../context/TriageQueueContext'
 import { useAuth } from '../context/AuthContext'
-
 import { useFeedbackNotice } from './useFeedbackNotice'
 
 export function useTecnicoBox() {
@@ -39,6 +38,7 @@ export function useTecnicoBox() {
     estado: 'Disponible'
   }
 
+  const isBoxOutOfService = activeBoxData?.estado === 'Fuera de servicio'
   const patientInBox = activeInBoxes[currentBoxKey]
   const matriculaTecnico = userData?.matricula || 'TEC-3391'
 
@@ -61,18 +61,27 @@ export function useTecnicoBox() {
     }
   }, [userData?.rol])
 
-
   const handleSelectBox = async (newBoxNumber) => {
     setCurrentBoxNumber(newBoxNumber)
     try {
-      await tomarBox(newBoxNumber)
-      showNotification(`Posicionado en Box ${newBoxNumber}`)
+      const updatedBox = await tomarBox(newBoxNumber)
+      if (updatedBox?.estado === 'Fuera de servicio') {
+        showNotification(
+          `Posicionado en Box ${newBoxNumber} (Fuera de servicio — solo la Jefa puede habilitarlo)`
+        )
+      } else {
+        showNotification(`Posicionado en Box ${newBoxNumber}`)
+      }
     } catch (error) {
       console.error('Error al tomar box:', error)
     }
   }
 
   const handleStatusChange = async (newStatus) => {
+    if (isBoxOutOfService || newStatus === 'Fuera de servicio') {
+      showNotification('Solo la Jefa de Laboratorio puede habilitar o poner fuera de servicio un box.')
+      return
+    }
     try {
       await changeBoxStatus(currentBoxNumber, newStatus)
       showNotification(`Estado de ${currentBoxKey} actualizado a: ${newStatus}`)
@@ -82,10 +91,15 @@ export function useTecnicoBox() {
   }
 
   const handleCallNext = async () => {
+    if (isBoxOutOfService) {
+      alert('El box se encuentra fuera de servicio. Solicite a la Jefa de Laboratorio su habilitación para llamar pacientes.')
+      return
+    }
+
     setIsProcessing(true)
     try {
       const calledTicket = await callNextPatient(currentBoxNumber)
-      await changeBoxStatus(currentBoxNumber, 'En atencion')
+      await refreshBoxes()
       showNotification(
         `Paciente ${calledTicket.paciente_nombre} ${calledTicket.paciente_apellido} (Llamado N° ${calledTicket.num_llamado}) convocado al ${currentBoxKey}`
       )
@@ -105,7 +119,7 @@ export function useTecnicoBox() {
     setIsProcessing(true)
     try {
       await finishAttention(currentBoxNumber)
-      await changeBoxStatus(currentBoxNumber, 'Disponible')
+      await refreshBoxes()
       showNotification(
         `Consulta finalizada con éxito para el paciente ${patientInBox.paciente_nombre}. Box disponible.`
       )
@@ -157,6 +171,11 @@ export function useTecnicoBox() {
   }
 
   const handleCallSpecificPatient = async (ticketId) => {
+    if (isBoxOutOfService) {
+      alert('El box se encuentra fuera de servicio. Solicite a la Jefa de Laboratorio su habilitación para llamar pacientes.')
+      return
+    }
+
     if (patientInBox) {
       alert(`El ${currentBoxKey} ya tiene un paciente en atención (${patientInBox.paciente_nombre} ${patientInBox.paciente_apellido}). Finalice la consulta actual antes de llamar a otro paciente.`)
       return
@@ -165,7 +184,7 @@ export function useTecnicoBox() {
     setIsProcessing(true)
     try {
       const calledTicket = await callNextPatient(currentBoxNumber, ticketId)
-      await changeBoxStatus(currentBoxNumber, 'En atencion')
+      await refreshBoxes()
       showNotification(
         `Paciente ${calledTicket.paciente_nombre} ${calledTicket.paciente_apellido} convocado directamente a ${currentBoxKey}`
       )
@@ -186,6 +205,7 @@ export function useTecnicoBox() {
     handleSelectBox,
     currentBoxKey,
     activeBoxData,
+    isBoxOutOfService,
     patientInBox,
     waitingQueue,
     refreshTickets,

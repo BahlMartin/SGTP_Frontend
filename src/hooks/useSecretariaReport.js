@@ -22,7 +22,20 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
 
   const [metrics, setMetrics] = useState(() => computeDailyReportMetrics(tickets, jornadaDate))
 
-  // Sincronizar métricas consolidadas con el backend
+  const refreshMetrics = useCallback(async () => {
+    if (!jornadaDate) return
+    try {
+      const backendMetrics = await fetchMetricasDiariasApi(jornadaDate)
+      if (backendMetrics) {
+        setMetrics(backendMetrics)
+      }
+    } catch (err) {
+      console.warn('Utilizando cómputo asistencial de métricas:', err)
+      setMetrics(computeDailyReportMetrics(tickets, jornadaDate))
+    }
+  }, [jornadaDate, tickets])
+
+  // Sincronizar métricas consolidadas con el backend al cambiar la fecha
   useEffect(() => {
     let cancelled = false
     async function loadBackendMetrics() {
@@ -91,6 +104,7 @@ export function useSecretariaReport({ tickets = [], userData = null }) {
     getPercentage,
     handleExportPdf,
     handleSendEmail,
-    showNotice
+    showNotice,
+    refreshMetrics
   }
 }

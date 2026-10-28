@@ -105,6 +105,8 @@
 .box-control-card__option {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   width: 100%;
   min-height: 40px;
   padding: 0 10px;
@@ -127,6 +129,17 @@
 .box-control-card__option--selected {
   background: var(--surface-hover);
   color: var(--text-primary);
+}
+
+.box-control-card__option-tag-fuera {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 999px;
+  padding: 1px 7px;
+  flex-shrink: 0;
 }
 
 .box-control-card__status-buttons {
@@ -175,4 +188,21 @@
   color: #ffffff;
   border-color: #dc2626;
   box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+.box-control-card__Status-btn--fuera-active:disabled,
+.box-control-card__status-btn--fuera-active:disabled {
+  opacity: 0.9;
+}
+
+.box-control-card__out-of-service-hint {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #dc2626;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
 }

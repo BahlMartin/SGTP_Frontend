@@ -24,10 +24,10 @@ export default function TecnicoBoxScreen() {
     refreshBoxes,
     refreshTickets,
     currentBoxNumber,
-    setCurrentBoxNumber,
     handleSelectBox,
     currentBoxKey,
     activeBoxData,
+    isBoxOutOfService,
     patientInBox,
     waitingQueue,
     completedStudies,
@@ -88,10 +88,14 @@ export default function TecnicoBoxScreen() {
   const { lastMessage: wsBoxMessage } = useWebSocket('ws/boxes')
 
   useEffect(() => {
-    // Si la cola se actualiza o un compañero libera un box, recargamos la vista de boxes (que incluye la cola)
-    if (wsQueueMessage?.event === 'QUEUE_UPDATED' || wsBoxMessage?.event === 'BOX_ATTENDING' || wsBoxMessage?.event === 'BOX_UPDATED') {
+    const qEvt = wsQueueMessage?.event || wsQueueMessage?.action
+    const bEvt = wsBoxMessage?.event || wsBoxMessage?.action
+    if (
+      ['QUEUE_UPDATED', 'TICKET_CREATED', 'NEW_TICKET', 'TICKET_LLAMADO'].includes(qEvt) ||
+      ['BOX_ATTENDING', 'BOX_UPDATED', 'UPDATE_BOX'].includes(bEvt)
+    ) {
       refreshBoxes()
-      refreshTickets() 
+      refreshTickets()
     }
   }, [wsQueueMessage, wsBoxMessage, refreshBoxes, refreshTickets])
 
@@ -238,6 +242,7 @@ export default function TecnicoBoxScreen() {
               currentBoxKey={currentBoxKey}
               matriculaTecnico={matriculaTecnico}
               isProcessing={isProcessing}
+              isBoxOutOfService={isBoxOutOfService}
               completedStudies={completedStudies}
               onToggleStudyCheck={toggleStudyCheck}
               onSelectAllStudies={handleSelectAllStudies}
@@ -251,6 +256,7 @@ export default function TecnicoBoxScreen() {
               onCallSpecificPatient={handleCallSpecificPatient}
               isProcessing={isProcessing}
               hasPatientInBox={Boolean(patientInBox)}
+              isBoxOutOfService={isBoxOutOfService}
               currentBoxNumber={currentBoxNumber}
             />
           </div>
