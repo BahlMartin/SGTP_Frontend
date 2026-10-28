@@ -7,8 +7,8 @@ export const TRIAGE_CATEGORIES = [
   { key: 'guardia', label: 'Guardia', hint: 'Máxima urgencia', color: '#ef4444' },
   { key: 'medicos', label: 'Médicos', hint: 'Urgente', color: '#f97316' },
   { key: 'discapacidad', label: 'Discapacidad', hint: 'Prioritario', color: '#eab308' },
-  { key: 'oncologia', label: 'Oncología', hint: 'Programado', color: '#0284c7' },
-  { key: 'extraccion_con_turno', label: 'Extracción con turno', hint: 'Demanda espontánea', color: '#22c55e' },
+  { key: 'oncologia', label: 'Oncología', hint: 'Programado / Demanda espontánea', color: '#0284c7' },
+  { key: 'extraccion_con_turno', label: 'Extracción con turno', hint: 'Programado', color: '#22c55e' },
   { key: 'extraccion_sin_turno', label: 'Extracción sin turno', hint: 'Demanda espontánea', color: '#a855f7' },
   { key: 'otro', label: 'Otro', hint: 'Requiere justificación', color: '#64748b' },
 ];
