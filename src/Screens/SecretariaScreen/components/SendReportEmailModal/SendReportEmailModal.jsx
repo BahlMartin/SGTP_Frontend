@@ -152,7 +152,7 @@ export default function SendReportEmailModal({
                     ?
                   </p>
                   <p className="send-report-email-modal__confirm-hint">
-                    Se enviará el reporte diario asistencial adjunto en formato PDF a la dirección indicada.
+                    Se enviará el reporte diario asistencial adjunto en formatos PDF y Excel (.xlsx) a la dirección indicada.
                   </p>
                 </div>
               </div>
