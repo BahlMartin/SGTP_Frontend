@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { UserPlus, UserCheck, RotateCcw, AlertTriangle } from 'lucide-react'
+import { UserPlus, UserCheck, RotateCcw, AlertTriangle, Bell } from 'lucide-react'
 import TriageSelector from '../TriageSelector/TriageSelector'
 import StudiesSelector from '../../../../components/StudiesSelector/StudiesSelector'
 import PatientDropdown from '../../../../components/PatientDropdown/PatientDropdown'
@@ -17,6 +17,10 @@ export default function AdmissionForm({
   admissionError = '',
   existingPatient = null,
   unregisteredPatientAlert = '',
+  onCallNextPatient = () => {},
+  hasPendingTurnos = false,
+  pendingTurnosCount = 0,
+  isCallingTurno = false,
   onLoadPatient = () => {},
   onFieldChange = () => {},
   onToggleStudy = () => {},
@@ -96,17 +100,38 @@ export default function AdmissionForm({
           <UserPlus size={24} className="admission-form-card__icon" />
           <h2 className="admission-form-card__title">Ingreso y clasificacion de pacientes</h2>
         </div>
-        <button
-          type="button"
-          className="admission-form__reset-btn admission-form__reset-btn--header"
-          onClick={handleResetForm}
-          title="Borrar todos los datos y volver a empezar"
-          aria-label="Limpiar formulario"
-          disabled={isSubmitting}
-        >
-          <RotateCcw size={15} />
-          <span>Limpiar formulario</span>
-        </button>
+        <div className="admission-form-card__header-actions">
+          <button
+            type="button"
+            className="admission-form__call-next-btn"
+            onClick={onCallNextPatient}
+            disabled={isSubmitting || isCallingTurno || !hasPendingTurnos}
+            title={
+              hasPendingTurnos
+                ? `Llamar al siguiente paciente en espera (${pendingTurnosCount} pendientes)`
+                : 'No hay pacientes en cola de espera de recepción'
+            }
+            aria-label="Llamar al siguiente paciente en espera"
+          >
+            <Bell size={15} className={hasPendingTurnos ? 'admission-form__call-next-icon--pulse' : ''} />
+            <span>{isCallingTurno ? 'Llamando...' : 'Llamar al siguiente'}</span>
+            {pendingTurnosCount > 0 && (
+              <span className="admission-form__call-next-badge">{pendingTurnosCount}</span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className="admission-form__reset-btn admission-form__reset-btn--header"
+            onClick={handleResetForm}
+            title="Borrar todos los datos y volver a empezar"
+            aria-label="Limpiar formulario"
+            disabled={isSubmitting}
+          >
+            <RotateCcw size={15} />
+            <span>Limpiar formulario</span>
+          </button>
+        </div>
       </div>
 
       <form onSubmit={onSubmitForm} className="admission-form" noValidate>

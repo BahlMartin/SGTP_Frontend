@@ -68,6 +68,7 @@ export default function AdmisionScreen() {
   const [activeSideTab, setActiveSideTab] = useState('recepcion') // 'recepcion' | 'ingresos'
   const [receptionQueue, setReceptionQueue] = useState([])
   const [callingTurnoId, setCallingTurnoId] = useState(null)
+  const [activeReceptionTurnoId, setActiveReceptionTurnoId] = useState(null)
   const [selectedTurnoForCancel, setSelectedTurnoForCancel] = useState(null)
   const [isCancelProcessing, setIsCancelProcessing] = useState(false)
   const [unregisteredPatientAlert, setUnregisteredPatientAlert] = useState('')
@@ -133,51 +134,65 @@ export default function AdmisionScreen() {
   /**
    * Llamar a un paciente desde la cola de recepción del Tótem.
    */
-  const handleCallReceptionTurno = async (turno) => {
-    if (!turno) return
-    setCallingTurnoId(turno.id)
-    setAdmissionError('')
-    setUnregisteredPatientAlert('')
+  const handleCallReceptionTurno = useCallback(
+    async (turno) => {
+      if (!turno) return
+      setCallingTurnoId(turno.id)
+      setActiveReceptionTurnoId(turno.id)
+      setAdmissionError('')
+      setUnregisteredPatientAlert('')
 
-    try {
-      // 1. Notificar al backend que se está atendiendo
-      await receptionService.llamarTurno(turno.id)
-      fetchReceptionQueue()
+      // Quitarlo inmediatamente de la cola de espera local (feedback inmediato en UI)
+      setReceptionQueue((prev) => prev.filter((item) => item.id !== turno.id))
 
-      // 2. Precargar número de llamado en el formulario
-      const match = String(turno.numero_llamado || '').match(/^([A-Z]+)[-\s]?(\d+)$/i)
-      const prefijo = match ? match[1] : turno.prefijo || 'Ext'
-      const secuencia = match ? match[2] : ''
+      try {
+        // 1. Notificar al backend que se convocó (pasa a En Atención)
+        await receptionService.llamarTurno(turno.id).catch((e) => console.warn(e))
 
-      handleFieldChange('prefijoLlamado', prefijo)
-      handleFieldChange('numeroLlamado', secuencia)
-      handleFieldChange('dni', String(turno.dni || '').trim())
+        // 2. Precargar número de llamado en el formulario
+        const match = String(turno.numero_llamado || '').match(/^([A-Z]+)[-\s]?(\d+)$/i)
+        const prefijo = match ? match[1] : turno.prefijo || 'Ext'
+        const secuencia = match ? match[2] : ''
 
-      // 3. Buscar si el paciente está registrado en el padrón
-      const pacienteEncontrado = await searchPatientByDniApi(turno.dni)
+        handleFieldChange('prefijoLlamado', prefijo)
+        handleFieldChange('numeroLlamado', secuencia)
+        handleFieldChange('dni', String(turno.dni || '').trim())
 
-      if (pacienteEncontrado) {
-        // Paciente REGISTRADO: autocompletar todos sus datos
-        handleLoadPatient(pacienteEncontrado)
-        setUnregisteredPatientAlert('')
-      } else {
-        // Paciente NO REGISTRADO: mostrar alerta visible
-        setUnregisteredPatientAlert(
-          `El DNI ${turno.dni} no figura en el padrón de pacientes. Complete Nombre, Apellido y Obra Social antes de cargar los estudios.`
-        )
-        // Enfocar el input de nombre
-        setTimeout(() => {
-          const inputNombre = document.getElementById('admission-patient-name')
-          if (inputNombre) inputNombre.focus()
-        }, 150)
+        // 3. Buscar si el paciente está registrado en el padrón
+        const pacienteEncontrado = await searchPatientByDniApi(turno.dni)
+
+        if (pacienteEncontrado) {
+          // Paciente REGISTRADO: autocompletar todos sus datos
+          handleLoadPatient(pacienteEncontrado)
+          setUnregisteredPatientAlert('')
+        } else {
+          // Paciente NO REGISTRADO: mostrar alerta visible
+          setUnregisteredPatientAlert(
+            `El DNI ${turno.dni} no figura en el padrón de pacientes. Complete Nombre, Apellido y Obra Social antes de cargar los estudios.`
+          )
+          // Enfocar el input de nombre
+          setTimeout(() => {
+            const inputNombre = document.getElementById('admission-patient-name')
+            if (inputNombre) inputNombre.focus()
+          }, 150)
+        }
+      } catch (err) {
+        console.error('Error al llamar turno de recepción:', err)
+        setAdmissionError(err.message || 'Error al convocar al turno de recepción.')
+      } finally {
+        setCallingTurnoId(null)
       }
-    } catch (err) {
-      console.error('Error al llamar turno de recepción:', err)
-      setAdmissionError(err.message || 'Error al convocar al turno de recepción.')
-    } finally {
-      setCallingTurnoId(null)
-    }
-  }
+    },
+    [handleFieldChange, handleLoadPatient]
+  )
+
+  /**
+   * Llamar al siguiente paciente disponible en la cola de espera.
+   */
+  const handleCallNextReceptionPatient = useCallback(() => {
+    if (!receptionQueue || receptionQueue.length === 0) return
+    handleCallReceptionTurno(receptionQueue[0])
+  }, [receptionQueue, handleCallReceptionTurno])
 
   /**
    * Abrir modal para cancelar turno de recepción
@@ -195,6 +210,9 @@ export default function AdmisionScreen() {
     try {
       await receptionService.cancelarTurno(selectedTurnoForCancel.id, motivo)
       fetchReceptionQueue()
+      if (activeReceptionTurnoId === selectedTurnoForCancel.id) {
+        setActiveReceptionTurnoId(null)
+      }
       setSelectedTurnoForCancel(null)
     } catch (err) {
       console.error('Error al cancelar turno:', err)
@@ -257,6 +275,13 @@ export default function AdmisionScreen() {
       }
 
       const generatedTicket = await createTicket(payload)
+
+      // Finalizar explícitamente el turno de recepción convocado si existe
+      if (activeReceptionTurnoId) {
+        await receptionService.finalizarTurno(activeReceptionTurnoId).catch(() => {})
+        setActiveReceptionTurnoId(null)
+      }
+
       setIssuedTicket(generatedTicket)
       setUnregisteredPatientAlert('')
       resetAdmissionForm()
@@ -296,6 +321,10 @@ export default function AdmisionScreen() {
             admissionError={admissionError}
             existingPatient={existingPatient}
             unregisteredPatientAlert={unregisteredPatientAlert}
+            onCallNextPatient={handleCallNextReceptionPatient}
+            hasPendingTurnos={receptionQueue.length > 0}
+            pendingTurnosCount={receptionQueue.length}
+            isCallingTurno={Boolean(callingTurnoId)}
             onLoadPatient={(patient) => {
               handleLoadPatient(patient)
               setUnregisteredPatientAlert('')
@@ -310,7 +339,9 @@ export default function AdmisionScreen() {
             onResetForm={() => {
               setAdmissionError('')
               setUnregisteredPatientAlert('')
+              setActiveReceptionTurnoId(null)
               resetAdmissionForm()
+              fetchReceptionQueue()
             }}
             isSubmitting={isSubmitting}
           />

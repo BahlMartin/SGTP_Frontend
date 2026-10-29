@@ -16,18 +16,26 @@ export const receptionService = {
   },
 
   /**
-   * Obtiene la lista de turnos pendientes y en atención en recepción para el día de hoy.
+   * Obtiene la lista de turnos en espera activa en recepción para el día de hoy.
    */
   async getTurnosPendientes() {
     return apiClient.get('/turnos-recepcion/pendientes/')
   },
 
   /**
-   * Convoca a un paciente desde la cola de recepción.
+   * Convoca a un paciente desde la cola de recepción a mostrador.
    * @param {string} id UUID del turno
    */
   async llamarTurno(id) {
     return apiClient.post(`/turnos-recepcion/${id}/llamar/`)
+  },
+
+  /**
+   * Marca un turno de recepción como finalizado cuando el paciente es admitido.
+   * @param {string} id UUID del turno
+   */
+  async finalizarTurno(id) {
+    return apiClient.post(`/turnos-recepcion/${id}/finalizar/`)
   },
 
   /**
@@ -43,4 +51,3 @@ export const receptionService = {
 }
 
 export default receptionService
-
