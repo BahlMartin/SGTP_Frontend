@@ -1,9 +1,10 @@
-import React, { useCallback, useRef } from 'react'
-import { CheckCircle2 } from 'lucide-react'
+import React, { useCallback, useRef, useState } from 'react'
+import { CheckCircle2, AlertCircle } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import { useAuth } from '../../context/AuthContext'
 import { useSecretariaReport } from '../../hooks/useSecretariaReport'
 import SecretariaJornadaBar from './components/SecretariaJornadaBar/SecretariaJornadaBar'
+import SendReportEmailModal from './components/SendReportEmailModal/SendReportEmailModal'
 import SecretariaKpiGrid from './components/SecretariaKpiGrid/SecretariaKpiGrid'
 import TriageDistributionCard from '../../components/ReportCharts/TriageDistributionCard'
 import TimeSlotsCard from '../../components/ReportCharts/TimeSlotsCard'
@@ -25,10 +26,15 @@ export default function SecretariaScreen() {
     lockStaff
   } = useStaffManagement()
 
+  const [isThirdPartyEmailModalOpen, setIsThirdPartyEmailModalOpen] = useState(false)
+
   const {
     jornadaDate,
     setJornadaDate,
     notice,
+    errorNotice,
+    emailError,
+    clearEmailError,
     isSendingEmail,
     metrics,
     handleExportPdf,
@@ -96,13 +102,31 @@ export default function SecretariaScreen() {
           </div>
         )}
 
+        {errorNotice && !isThirdPartyEmailModalOpen && (
+          <div className="secretaria-screen__notice secretaria-screen__notice--error" role="alert">
+            <AlertCircle className="secretaria-screen__notice-icon" />
+            <span className="secretaria-screen__notice-text">{errorNotice}</span>
+          </div>
+        )}
+
         <SecretariaJornadaBar
           jornadaDate={jornadaDate}
           onDateChange={(selectedDateValue) => setJornadaDate(selectedDateValue)}
           onExportPdf={handleExportPdf}
           onExportExcel={handleExportExcel}
-          onSendEmail={handleSendEmail}
+          onSendEmail={() => handleSendEmail()}
+          onOpenThirdPartyEmailModal={() => setIsThirdPartyEmailModalOpen(true)}
+          userEmail={userData?.email || ''}
           isSendingEmail={isSendingEmail}
+        />
+
+        <SendReportEmailModal
+          isOpen={isThirdPartyEmailModalOpen}
+          onClose={() => setIsThirdPartyEmailModalOpen(false)}
+          onConfirmSend={(customEmail) => handleSendEmail(customEmail)}
+          isSending={isSendingEmail}
+          backendError={emailError}
+          onClearError={clearEmailError}
         />
 
         <SecretariaKpiGrid

@@ -15,6 +15,7 @@ const EMPTY_TICKETS = []
 export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }) {
   const [jornadaDate, setJornadaDate] = useState(() => getTodayLocalDateString())
   const { notice, showNotice } = useFeedbackNotice(4000)
+  const { notice: errorNotice, showNotice: showErrorNotice, clearNotice: clearErrorNotice } = useFeedbackNotice(6000)
   const ticketsRef = useRef(tickets)
 
   useEffect(() => {
@@ -100,16 +101,26 @@ export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }
   })
 
   // Hook reutilizable para despacho por correo SMTP (conectado con backend)
-  const { handleSendEmail, isSendingEmail } = useSendReportEmail({
+  const { handleSendEmail, isSendingEmail, emailError, clearEmailError } = useSendReportEmail({
     jornadaDate,
     recipientEmail: userData?.email,
-    onSuccessNotice: showNotice
+    onSuccessNotice: (msg) => {
+      clearErrorNotice()
+      showNotice(msg)
+    },
+    onErrorNotice: (errMsg) => {
+      showErrorNotice(errMsg)
+    }
   })
 
   return {
     jornadaDate,
     setJornadaDate,
     notice,
+    errorNotice,
+    clearErrorNotice,
+    emailError,
+    clearEmailError,
     isSendingEmail,
     metrics,
     totalPacientes,
@@ -118,6 +129,7 @@ export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }
     handleExportExcel,
     handleSendEmail,
     showNotice,
+    showErrorNotice,
     refreshMetrics
   }
 }

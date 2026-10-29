@@ -3,35 +3,67 @@ import { sendDailyReportEmailApi } from '../services/reportService'
 
 /**
  * Hook reutilizable para el despacho y notificación del reporte diario por correo electrónico.
- * Diseñado para ser consumido tanto en JefaScreen como en SecretariaScreen.
+ * Soporta envío al propio usuario autenticado o al correo manual de un tercero.
  */
 export function useSendReportEmail({
   jornadaDate,
   recipientEmail,
-  onSuccessNotice
+  onSuccessNotice,
+  onErrorNotice
 }) {
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [emailError, setEmailError] = useState(null)
 
-  const handleSendEmail = useCallback(async () => {
-    if (isSendingEmail) return
+  const clearEmailError = useCallback(() => {
+    setEmailError(null)
+  }, [])
 
-    try {
-      setIsSendingEmail(true)
-      const targetEmailAddress = recipientEmail || 'jefa@sgtp.hospital.gob.ar'
-      const responsePayload = await sendDailyReportEmailApi(jornadaDate, targetEmailAddress)
+  const handleSendEmail = useCallback(
+    async (customRecipientEmail = null) => {
+      if (isSendingEmail) return { success: false }
 
-      if (onSuccessNotice) {
-        onSuccessNotice(responsePayload.message)
+      setEmailError(null)
+      try {
+        setIsSendingEmail(true)
+        const targetEmailAddress =
+          typeof customRecipientEmail === 'string'
+            ? customRecipientEmail.trim()
+            : recipientEmail || undefined
+
+        const responsePayload = await sendDailyReportEmailApi(jornadaDate, targetEmailAddress)
+
+        if (onSuccessNotice) {
+          onSuccessNotice(responsePayload.message)
+        }
+        return {
+          success: true,
+          message: responsePayload.message
+        }
+      } catch (errorInstance) {
+        const errorMessage =
+          errorInstance?.data?.detail ||
+          errorInstance?.data?.detalle ||
+          errorInstance?.message ||
+          'Error al enviar el reporte diario por correo.'
+        setEmailError(errorMessage)
+        if (onErrorNotice) {
+          onErrorNotice(errorMessage)
+        }
+        return {
+          success: false,
+          error: errorMessage
+        }
+      } finally {
+        setIsSendingEmail(false)
       }
-    } catch (errorInstance) {
-      alert(errorInstance.message || 'Error al enviar el reporte diario por correo.')
-    } finally {
-      setIsSendingEmail(false)
-    }
-  }, [isSendingEmail, jornadaDate, recipientEmail, onSuccessNotice])
+    },
+    [isSendingEmail, jornadaDate, recipientEmail, onSuccessNotice, onErrorNotice]
+  )
 
   return {
     handleSendEmail,
-    isSendingEmail
+    isSendingEmail,
+    emailError,
+    clearEmailError
   }
 }

@@ -250,15 +250,20 @@ export async function downloadReporteExcelApi(fechaStr) {
 /**
  * Dispara el despacho manual del reporte diario vía correo institucional SMTP.
  */
-export async function dispararEnvioReporteApi(fechaStr) {
-  return await apiClient.post('/reports/disparar-envio/', { fecha: fechaStr })
+export async function dispararEnvioReporteApi(fechaStr, emailDestinatario) {
+  const payload = { fecha: fechaStr }
+  if (emailDestinatario !== undefined && emailDestinatario !== null) {
+    payload.email_destinatario = emailDestinatario
+  }
+  return await apiClient.post('/reports/disparar-envio/', payload)
 }
 
-export async function sendDailyReportEmailApi(fechaStr) {
-  const response = await dispararEnvioReporteApi(fechaStr)
+export async function sendDailyReportEmailApi(fechaStr, emailDestinatario) {
+  const response = await dispararEnvioReporteApi(fechaStr, emailDestinatario)
   return {
     success: true,
-    message: response.mensaje || 'Reporte asistencial despachado exitosamente por correo institucional.'
+    message: response.mensaje || 'Reporte asistencial despachado exitosamente por correo institucional.',
+    resultado: response.resultado
   }
 }
 
