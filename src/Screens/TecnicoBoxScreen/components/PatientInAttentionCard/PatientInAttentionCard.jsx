@@ -36,7 +36,8 @@ export default function PatientInAttentionCard({
   onCallNext,
   onFinishConsultation,
   onCancelConsultation,
-  onModifyStudies
+  onModifyStudies,
+  onConsultationFinished
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
@@ -393,6 +394,7 @@ export default function PatientInAttentionCard({
         completedCount={completedCount}
         totalStudiesCount={studiesList.length}
         onConfirm={onFinishConsultation}
+        onSuccess={onConsultationFinished}
         isProcessing={isFinishing}
       />
     </div>

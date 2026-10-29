@@ -419,6 +419,7 @@ export default function JefaScreen() {
                 isLoading={loadingStudies}
                 filterMode={studiesFilter}
                 onFilterChange={setStudiesFilter}
+                onNotice={showNotice}
               />
             </div>
           </div>

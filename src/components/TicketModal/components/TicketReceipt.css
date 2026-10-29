@@ -190,3 +190,38 @@ body.ticket-printing #printable-ticket {
     visibility: visible;
   }
 }
+
+/* Banner de fecha de retiro estimada */
+.ticket-modal__delivery-banner {
+  background: #f0fdf4;
+  border: 1.5px dashed #86efac;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.ticket-modal__delivery-banner-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #166534;
+  text-transform: uppercase;
+}
+
+.ticket-modal__delivery-banner-date {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #14532d;
+  margin: 2px 0;
+  font-family: var(--font-family);
+}
+
+.ticket-modal__delivery-banner-sub {
+  display: block;
+  font-size: 0.65rem;
+  color: #15803d;
+  font-weight: 500;
+}

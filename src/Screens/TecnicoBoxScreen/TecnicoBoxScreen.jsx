@@ -7,6 +7,7 @@ import BoxControlCard from './components/BoxControlCard/BoxControlCard'
 import ActiveBoxesCard from '../../components/ActiveBoxesCard/ActiveBoxesCard'
 import PatientInAttentionCard from './components/PatientInAttentionCard/PatientInAttentionCard'
 import MultiboxQueueCard from './components/MultiboxQueueCard/MultiboxQueueCard'
+import TicketModal from '../../components/TicketModal/TicketModal'
 import './TecnicoBoxScreen.css'
 import { useWebSocket } from '../../hooks/useWebSocket'
 
@@ -19,6 +20,7 @@ const SECONDARY_PANELS = [
 export default function TecnicoBoxScreen() {
   const [activeSecondaryPanel, setActiveSecondaryPanel] = useState(null)
   const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false)
+  const [ticketToPrint, setTicketToPrint] = useState(null)
   const {
     boxes,
     refreshBoxes,
@@ -259,6 +261,7 @@ export default function TecnicoBoxScreen() {
               onSelectAllStudies={handleSelectAllStudies}
               onCallNext={handleCallNext}
               onFinishConsultation={handleFinishConsultation}
+              onConsultationFinished={(finishedTicket) => setTicketToPrint(finishedTicket)}
               onCancelConsultation={handleCancelConsultation}
               onModifyStudies={handleModifyStudies}
             />
@@ -275,6 +278,13 @@ export default function TecnicoBoxScreen() {
           </div>
         </div>
       </main>
+      {ticketToPrint && (
+        <TicketModal
+          ticket={ticketToPrint}
+          onClose={() => setTicketToPrint(null)}
+          title="Comprobante de Retiro de Estudios"
+        />
+      )}
     </div>
   )
 }

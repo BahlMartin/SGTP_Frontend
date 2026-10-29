@@ -31,6 +31,8 @@ export default function TicketReceipt({ ticket }) {
     ? `Box ${ticket.box_numero}`
     : (ticket.box_asignado || (ticket.estado === 'Atendido' || ticket.estado === 'Finalizado' ? 'Box asignado' : ''))
 
+  const isAtendido = ticket.estado === 'Atendido' || ticket.estado === 'Finalizado'
+
   const detailRows = [
     { label: 'Paciente:', value: `${ticket.paciente_nombre} ${ticket.paciente_apellido}` },
     { label: 'DNI:', value: ticket.paciente_dni },
@@ -63,6 +65,12 @@ export default function TicketReceipt({ ticket }) {
     ticket.fecha_hora_atencion_box && {
       label: 'Hora Box:',
       value: `${formatDateDDMMAAAA(ticket.fecha_hora_atencion_box)} ${formatTimeHHMM(ticket.fecha_hora_atencion_box)}`
+    },
+    ticket.fecha_estimada_entrega && {
+      id: 'fecha_retiro_row',
+      label: 'Retiro estimado:',
+      value: `${formatDateDDMMAAAA(ticket.fecha_estimada_entrega)} ${formatTimeHHMM(ticket.fecha_estimada_entrega)} hs`,
+      isEffective: true
     },
     ...(() => {
       const rawEstudios = Array.isArray(ticket.estudios_raw) ? ticket.estudios_raw : []
@@ -163,6 +171,20 @@ export default function TicketReceipt({ ticket }) {
         <span className="ticket-modal__totem-id">Identificador: {ticket.num_totem}</span>
       </div>
 
+      {/* Banner destacado de fecha y hora estimada de retiro */}
+      {ticket.fecha_estimada_entrega && (
+        <div className="ticket-modal__delivery-banner">
+          <span className="ticket-modal__delivery-banner-label">DISPONIBLE PARA RETIRO A PARTIR DE</span>
+          <strong className="ticket-modal__delivery-banner-date">
+            {formatDateDDMMAAAA(ticket.fecha_estimada_entrega)} • {formatTimeHHMM(ticket.fecha_estimada_entrega)} hs
+          </strong>
+          <span className="ticket-modal__delivery-banner-sub">
+            (Días hábiles de lunes a viernes{ticket.demora_horas_max ? ` • Demora máx.: ${ticket.demora_horas_max} hs` : ''}
+            {ticket.estudio_mayor_demora ? ` por ${ticket.estudio_mayor_demora}` : ''})
+          </span>
+        </div>
+      )}
+
       <div className="ticket-modal__details">
         {detailRows.map((row, index) => (
           <div
@@ -180,7 +202,11 @@ export default function TicketReceipt({ ticket }) {
       </div>
 
       <div className="ticket-modal__receipt-footer">
-        <p>Por favor aguarde su turno en la sala de espera frente a la pantalla multibox.</p>
+        <p>
+          {isAtendido
+            ? 'Conserve este comprobante para retirar sus análisis en ventanilla de Secretaría.'
+            : 'Por favor aguarde su turno en la sala de espera frente a la pantalla multibox.'}
+        </p>
         <span className="ticket-modal__uuid">UUID: {ticket.id}</span>
       </div>
     </div>

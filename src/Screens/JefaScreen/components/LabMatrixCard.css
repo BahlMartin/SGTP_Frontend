@@ -272,3 +272,147 @@
   color: var(--text-muted);
   font-size: 0.85rem;
 }
+
+/* Pestañas de modo Actividad vs Demoras */
+.jefa-screen__matrix-mode-tabs {
+  display: inline-flex;
+  background: var(--bg-surface, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-md, 6px);
+  padding: 2px;
+  gap: 2px;
+}
+
+.jefa-screen__matrix-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #64748b);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.jefa-screen__matrix-mode-btn:hover {
+  color: var(--text-primary, #f1f5f9);
+}
+
+.jefa-screen__matrix-mode-btn--active {
+  background: var(--medical-primary, #3b82f6);
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.jefa-screen__matrix-cat-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jefa-screen__matrix-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.jefa-screen__matrix-btn-edit-delay {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.jefa-screen__matrix-btn-edit-delay:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.jefa-screen__matrix-delay-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: #0284c7;
+  background: rgba(2, 132, 199, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.jefa-screen__matrix-cat-section {
+  font-size: 0.66rem;
+  color: #64748b;
+  background: rgba(100, 116, 139, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.jefa-screen__matrix-row--interactive {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.jefa-screen__matrix-row--interactive:hover {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.jefa-screen__matrix-delay-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.jefa-screen__matrix-delay-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.jefa-screen__matrix-delay-hours {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+}
+
+.jefa-screen__matrix-delay-days {
+  font-size: 0.68rem;
+  color: var(--text-muted, #64748b);
+}
+
+.jefa-screen__matrix-edit-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 6px;
+  color: #2563eb;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.jefa-screen__matrix-edit-pill-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.jefa-screen__matrix-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted, #64748b);
+}

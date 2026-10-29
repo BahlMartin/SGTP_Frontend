@@ -10,6 +10,7 @@ export default function ModalFinalizarAtencion({
   completedCount = 0,
   totalStudiesCount = 0,
   onConfirm = async () => {},
+  onSuccess = null,
   isProcessing = false
 }) {
   const [errorMessage, setErrorMessage] = useState('')
@@ -40,8 +41,11 @@ export default function ModalFinalizarAtencion({
   const handleConfirm = async () => {
     setErrorMessage('')
     try {
-      await onConfirm()
+      const finishedTicket = await onConfirm()
       onClose()
+      if (onSuccess) {
+        onSuccess(finishedTicket)
+      }
     } catch (error) {
       setErrorMessage(error.message || 'No se pudo finalizar la consulta.')
     }
@@ -98,45 +102,59 @@ export default function ModalFinalizarAtencion({
                 {patientInBox.paciente_obra_social || 'Particular'}
               </span>
             </div>
-            <div className="modal-finalizar-atencion__ticket-pill">
-              <span className="modal-finalizar-atencion__ticket-label">TURNO</span>
-              <strong className="modal-finalizar-atencion__ticket-num">{turnoDisplay}</strong>
+            <div className="modal-finalizar-atencion__turn-badge">
+              <span className="modal-finalizar-atencion__turn-label">TURNO</span>
+              <span className="modal-finalizar-atencion__turn-value">{turnoDisplay}</span>
             </div>
           </div>
 
-          <div className="modal-finalizar-atencion__confirm-box" role="alert">
-            <ClipboardCheck size={20} className="modal-finalizar-atencion__confirm-icon" />
-            <div className="modal-finalizar-atencion__confirm-content">
-              <p className="modal-finalizar-atencion__confirm-question">
-                ¿Está seguro de que desea terminar la consulta de{' '}
-                <strong>{nombreCompleto || 'este paciente'}</strong>?
-              </p>
-              <p className="modal-finalizar-atencion__confirm-text">
-                Al confirmar, el turno se registrará como <strong>Finalizado</strong> y el{' '}
-                <strong>{currentBoxKey}</strong> quedará disponible para llamar al siguiente paciente.
+          {/* Estado de muestras tomadas */}
+          <div
+            className={`modal-finalizar-atencion__status-box ${
+              pendingCount > 0
+                ? 'modal-finalizar-atencion__status-box--warning'
+                : 'modal-finalizar-atencion__status-box--success'
+            }`}
+          >
+            <div className="modal-finalizar-atencion__status-icon-wrap">
+              {pendingCount > 0 ? (
+                <AlertTriangle size={20} className="modal-finalizar-atencion__status-icon--warn" />
+              ) : (
+                <ClipboardCheck size={20} className="modal-finalizar-atencion__status-icon--check" />
+              )}
+            </div>
+            <div className="modal-finalizar-atencion__status-text">
+              <strong>
+                {pendingCount > 0
+                  ? `Atención: Quedan ${pendingCount} de ${totalStudiesCount} estudios sin marcar como tomada`
+                  : `Todas las muestras tomadas (${completedCount}/${totalStudiesCount})`}
+              </strong>
+              <p>
+                {pendingCount > 0
+                  ? 'Puede finalizar la consulta de todas formas si las muestras físicas ya fueron recolectadas.'
+                  : 'Todas las determinaciones clínicas fueron registradas correctamente.'}
               </p>
             </div>
           </div>
 
-          {totalStudiesCount > 0 && pendingCount > 0 && (
-            <div className="modal-finalizar-atencion__pending-warning">
-              <AlertTriangle size={17} className="modal-finalizar-atencion__pending-icon" />
-              <span>
-                Hay <strong>{pendingCount}</strong> de <strong>{totalStudiesCount}</strong> muestra(s) sin
-                tildar en la lista de control ({completedCount}/{totalStudiesCount} marcadas como tomadas).
-              </span>
-            </div>
-          )}
+          <div className="modal-finalizar-atencion__prompt">
+            <p>
+              ¿Está seguro de que desea finalizar la consulta en el <strong>{currentBoxKey}</strong>?
+            </p>
+            <span className="modal-finalizar-atencion__prompt-hint">
+              El turno pasará al estado <strong>Atendido</strong>, se calculará la fecha estimada de retiro y se emitirá el comprobante.
+            </span>
+          </div>
         </div>
 
         <footer className="modal-finalizar-atencion__footer">
           <button
             type="button"
-            className="modal-finalizar-atencion__btn-secondary"
+            className="modal-finalizar-atencion__btn-cancel"
             onClick={onClose}
             disabled={isProcessing}
           >
-            Volver al box
+            Volver
           </button>
           <button
             type="button"
@@ -145,11 +163,10 @@ export default function ModalFinalizarAtencion({
             disabled={isProcessing}
           >
             <CheckCircle2 size={16} />
-            <span>{isProcessing ? 'Finalizando consulta...' : 'Sí, finalizar consulta'}</span>
+            {isProcessing ? 'Finalizando...' : 'Sí, finalizar consulta'}
           </button>
         </footer>
       </div>
     </div>
   )
 }
-
