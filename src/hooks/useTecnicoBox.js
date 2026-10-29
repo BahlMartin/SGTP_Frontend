@@ -134,6 +134,7 @@ export function useTecnicoBox() {
       )
     } catch (error) {
       alert(error.message || 'Error al finalizar consulta.')
+      throw error
     } finally {
       setIsFinishing(false)
     }

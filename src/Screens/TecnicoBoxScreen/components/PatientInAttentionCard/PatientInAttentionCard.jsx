@@ -17,6 +17,7 @@ import { getTriageInfo } from '../../../../constants/triage.constants'
 import { formatTimeHHMM } from '../../../../utils/formatters'
 import ModalModificarEstudios from '../ModalModificarEstudios/ModalModificarEstudios'
 import ModalCancelarAtencion from '../ModalCancelarAtencion/ModalCancelarAtencion'
+import ModalFinalizarAtencion from '../ModalFinalizarAtencion/ModalFinalizarAtencion'
 import './PatientInAttentionCard.css'
 
 export default function PatientInAttentionCard({
@@ -39,6 +40,7 @@ export default function PatientInAttentionCard({
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
+  const [isFinishModalOpen, setIsFinishModalOpen] = useState(false)
   const studiesList = patientInBox?.estudios || ['Muestra de Sangre', 'Orina']
   const cancelledStudies = patientInBox?.estudios_cancelados || []
 
@@ -88,7 +90,7 @@ export default function PatientInAttentionCard({
             type="button"
             className="patient-attention-card__btn-finish"
             disabled={isFinishing || !patientInBox}
-            onClick={onFinishConsultation}
+            onClick={() => setIsFinishModalOpen(true)}
           >
             <CheckCircle2 className="patient-attention-card__btn-icon" />
             {isFinishing ? 'Finalizando...' : 'Finalizar consulta'}
@@ -380,6 +382,18 @@ export default function PatientInAttentionCard({
         currentBoxKey={currentBoxKey}
         onConfirm={onCancelConsultation}
         isProcessing={isCancelling}
+      />
+
+      {/* Modal de confirmación de finalización de consulta */}
+      <ModalFinalizarAtencion
+        isOpen={isFinishModalOpen}
+        onClose={() => setIsFinishModalOpen(false)}
+        patientInBox={patientInBox}
+        currentBoxKey={currentBoxKey}
+        completedCount={completedCount}
+        totalStudiesCount={studiesList.length}
+        onConfirm={onFinishConsultation}
+        isProcessing={isFinishing}
       />
     </div>
   )
