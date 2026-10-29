@@ -22,6 +22,7 @@ export default function SecretariaScreen() {
     staffList,
     loadingStaff,
     staffError,
+    loadStaff,
     unlockStaff,
     lockStaff
   } = useStaffManagement()
@@ -60,6 +61,12 @@ export default function SecretariaScreen() {
   const handleWsEvent = useCallback(
     (msg) => {
       const evt = msg?.event || msg?.action || msg?.tipo_evento
+
+      if (evt === 'STAFF_UPDATED') {
+        loadStaff().catch((err) => console.error('Error al actualizar personal por WS:', err))
+        return
+      }
+
       const isRelevant = [
         'REALTIME_METRICS_UPDATED',
         'REFRESH_REPORTS',
@@ -82,7 +89,7 @@ export default function SecretariaScreen() {
         }
       }
     },
-    [jornadaDate, jornadaEndDate, refreshMetrics]
+    [jornadaDate, jornadaEndDate, refreshMetrics, loadStaff]
   )
 
   // Implementación de WebSocket para actualización de métricas en tiempo real
