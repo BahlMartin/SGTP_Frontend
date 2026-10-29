@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { UserPlus, UserCheck, RotateCcw } from 'lucide-react'
+import { UserPlus, UserCheck, RotateCcw, AlertTriangle } from 'lucide-react'
 import TriageSelector from '../TriageSelector/TriageSelector'
 import StudiesSelector from '../../../../components/StudiesSelector/StudiesSelector'
 import PatientDropdown from '../../../../components/PatientDropdown/PatientDropdown'
@@ -16,6 +16,7 @@ export default function AdmissionForm({
   ticketNumberError = '',
   admissionError = '',
   existingPatient = null,
+  unregisteredPatientAlert = '',
   onLoadPatient = () => {},
   onFieldChange = () => {},
   onToggleStudy = () => {},
@@ -109,6 +110,14 @@ export default function AdmissionForm({
       </div>
 
       <form onSubmit={onSubmitForm} className="admission-form" noValidate>
+        {unregisteredPatientAlert && (
+          <div className="admission-form__unregistered-alert" role="alert">
+            <AlertTriangle size={20} className="admission-form__unregistered-alert-icon" />
+            <div className="admission-form__unregistered-alert-text">
+              <strong>Paciente no registrado:</strong> {unregisteredPatientAlert}
+            </div>
+          </div>
+        )}
         {/* Fila 1: DNI y Número de Llamado (sistema externo) */}
         <div className="admission-form__row">
           <div className="admission-form__field admission-form__field--relative" ref={dropdownRef}>

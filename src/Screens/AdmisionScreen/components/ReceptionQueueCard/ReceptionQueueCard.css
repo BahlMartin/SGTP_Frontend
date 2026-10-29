@@ -1,0 +1,280 @@
+/* Estilos para ReceptionQueueCard (reutilizando el diseño de MultiboxQueueCard) */
+
+.reception-queue-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.reception-queue-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface-subtle, #f8fafc);
+}
+
+.reception-queue-card__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reception-queue-card__live-icon {
+  color: #3b82f6;
+  animation: pulseLive 2s infinite;
+}
+
+@keyframes pulseLive {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.92); }
+}
+
+.reception-queue-card__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #0f172a);
+  margin: 0;
+}
+
+.reception-queue-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.reception-queue-card__badge--active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.reception-queue-card__badge--empty {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.reception-queue-card__badge-count {
+  font-weight: 800;
+}
+
+.reception-queue-card__search-toolbar {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #ffffff);
+}
+
+.reception-queue-card__search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+}
+
+.reception-queue-card__search-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.reception-queue-card__search-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 0.85rem;
+  color: var(--color-text-primary, #0f172a);
+  outline: none;
+}
+
+.reception-queue-card__search-clear-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.reception-queue-card__empty-state {
+  padding: 2.5rem 1rem;
+  text-align: center;
+}
+
+.reception-queue-card__empty-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #64748b);
+  margin: 0 0 0.35rem 0;
+}
+
+.reception-queue-card__empty-subtext {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.reception-queue-card__table-wrap {
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.reception-queue-card__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.reception-queue-card__table th {
+  background: #f8fafc;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+
+.reception-queue-card__th--actions {
+  text-align: right;
+}
+
+.reception-queue-card__tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+}
+
+.reception-queue-card__tr:hover {
+  background: #f8fafc;
+}
+
+.reception-queue-card__tr--in-attention {
+  background: #f0fdf4;
+}
+
+.reception-queue-card__table td {
+  padding: 0.65rem 0.8rem;
+  vertical-align: middle;
+}
+
+.reception-queue-card__turno-pill {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  font-family: monospace;
+}
+
+.reception-badge--extraccion {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.reception-badge--guardia {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.reception-badge--medicos {
+  background: #d1fae5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.reception-badge--consulta {
+  background: #fae8ff;
+  color: #86198f;
+  border: 1px solid #f5d0fe;
+}
+
+.reception-badge--default {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.reception-queue-card__td-dni strong {
+  font-family: monospace;
+  color: #1e293b;
+  font-size: 0.85rem;
+}
+
+.reception-queue-card__td-cat {
+  color: #475569;
+  font-size: 0.8rem;
+}
+
+.reception-queue-card__wait-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.reception-queue-card__actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.reception-queue-card__btn-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.reception-queue-card__btn-call:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.reception-queue-card__btn-call:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reception-queue-card__btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.reception-queue-card__btn-cancel:hover:not(:disabled) {
+  background: #fca5a5;
+  color: #991b1b;
+}
+
+.reception-queue-card__btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

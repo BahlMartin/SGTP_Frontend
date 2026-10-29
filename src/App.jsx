@@ -16,6 +16,7 @@ import JefaScreen from './Screens/JefaScreen/JefaScreen'
 import SecretariaScreen from './Screens/SecretariaScreen/SecretariaScreen'
 import ActividadScreen from './Screens/ActividadScreen/ActividadScreen'
 import NotFoundScreen from './Screens/NotFoundScreen/NotFoundScreen'
+import TotemScreen from './Screens/TotemScreen/TotemScreen'
 
 function TriageQueueWrapper() {
   return (
@@ -30,6 +31,10 @@ export default function App() {
     <AuthContextProvider>
       <BoxContextProvider>
         <Routes>
+          {/* Pantalla pública Tótem Kiosco (Autoservicio para pacientes) */}
+          <Route path="/totem" element={<TotemScreen />} />
+          <Route path="/kiosco" element={<Navigate to="/totem" replace />} />
+
           {/* Rutas no autenticadas (Redirige al dashboard si ya está autenticado) */}
           <Route element={<AlreadyAuthMiddleware />}>
             <Route path="/login" element={<LoginScreen />} />

@@ -1,16 +1,21 @@
 import React, { useState, useCallback, useEffect } from 'react'
+import { Radio, Clock } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import TicketModal from '../../components/TicketModal/TicketModal'
 import RecipeOcrModal from '../../components/RecipeOcrModal/RecipeOcrModal'
 import RecentTicketsList from '../../components/RecentTicketsList/RecentTicketsList'
 import AdmissionForm from './components/AdmissionForm/AdmissionForm'
+import ReceptionQueueCard from './components/ReceptionQueueCard/ReceptionQueueCard'
+import ModalCancelarTurnoRecepcion from './components/ModalCancelarTurnoRecepcion/ModalCancelarTurnoRecepcion'
 import { useTriageQueue } from '../../context/TriageQueueContext'
 import { useAuth } from '../../context/AuthContext'
 import { useAdmissionForm } from '../../hooks/useAdmissionForm'
 import { useTodayTickets } from '../../hooks/useTodayTickets'
-import './AdmisionScreen.css'
 import { useWebSocket } from '../../hooks/useWebSocket'
+import receptionService from '../../services/receptionService'
+import { searchPatientByDniApi } from '../../services/patientService'
+import './AdmisionScreen.css'
 
 function getTicketNumberKey(ticketNumber) {
   if (!ticketNumber) return ''
@@ -33,11 +38,10 @@ function isTicketNumberAlreadyUsed(ticketNumber, existingTickets) {
   })
 }
 
-
 /**
  * Pantalla principal de Admisión (Orquestador).
- * Coordina el formulario de admisión, la búsqueda rápida de pacientes,
- * el historial de últimos ingresos y los modales de asistencia (OCR / Ticket).
+ * Coordina el formulario de admisión, la cola de espera del Tótem de autoservicio,
+ * la búsqueda rápida de pacientes, el historial de últimos ingresos y los modales de asistencia.
  */
 export default function AdmisionScreen() {
   const { createTicket, tickets, refreshTickets, loading } = useTriageQueue()
@@ -60,37 +64,145 @@ export default function AdmisionScreen() {
   const [showOcrModal, setShowOcrModal] = useState(false)
   const [admissionError, setAdmissionError] = useState('')
 
-  // Implementación de WebSocket
+  // Estado para la gestión del Tótem y Cola de Recepción
+  const [activeSideTab, setActiveSideTab] = useState('recepcion') // 'recepcion' | 'ingresos'
+  const [receptionQueue, setReceptionQueue] = useState([])
+  const [callingTurnoId, setCallingTurnoId] = useState(null)
+  const [selectedTurnoForCancel, setSelectedTurnoForCancel] = useState(null)
+  const [isCancelProcessing, setIsCancelProcessing] = useState(false)
+  const [unregisteredPatientAlert, setUnregisteredPatientAlert] = useState('')
+
+  // Carga de la cola de recepción
+  const fetchReceptionQueue = useCallback(async () => {
+    try {
+      const data = await receptionService.getTurnosPendientes()
+      setReceptionQueue(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.warn('Error al obtener cola de recepción:', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchReceptionQueue()
+  }, [fetchReceptionQueue])
+
+  // Implementación de WebSocket para actualización reactiva
   const { lastMessage: wsTicketMessage } = useWebSocket('tickets')
 
   useEffect(() => {
-    const isTicketCreated = wsTicketMessage && (
+    if (!wsTicketMessage) return
+
+    const isTicketCreated =
       wsTicketMessage.event === 'TICKET_CREATED' ||
       wsTicketMessage.action === 'NEW_TICKET' ||
       wsTicketMessage.action === 'TICKET_CREATED' ||
       wsTicketMessage.event === 'NEW_TICKET'
-    )
+
+    const isReceptionEvent =
+      wsTicketMessage.event === 'RECEPTION_UPDATED' ||
+      ['TURNO_CREATED', 'TURNO_CALLED', 'TURNO_CANCELLED', 'TURNO_FINALIZED'].includes(
+        wsTicketMessage.action
+      )
+
     if (isTicketCreated) {
       refreshTickets()
+      fetchReceptionQueue()
+    } else if (isReceptionEvent) {
+      fetchReceptionQueue()
     }
-  }, [wsTicketMessage, refreshTickets])
-
+  }, [wsTicketMessage, refreshTickets, fetchReceptionQueue])
 
   // Filtrado de tickets emitidos hoy delegado al hook
   const todayTickets = useTodayTickets(tickets)
-  const formattedSequence = formData.numeroLlamado && formData.numeroLlamado.trim()
-    ? String(parseInt(formData.numeroLlamado.trim(), 10)).padStart(2, '0')
-    : ''
+  const formattedSequence =
+    formData.numeroLlamado && formData.numeroLlamado.trim()
+      ? String(parseInt(formData.numeroLlamado.trim(), 10)).padStart(2, '0')
+      : ''
   const enteredCallNumber = formattedSequence
     ? `${formData.prefijoLlamado || 'Ext'}-${formattedSequence}`
     : ''
-  const ticketNumberError = enteredCallNumber && isTicketNumberAlreadyUsed(enteredCallNumber, todayTickets)
-    ? `El número de llamado ${enteredCallNumber} ya fue utilizado hoy. Ingrese otro número para evitar duplicar el ticket.`
-    : ''
+  const ticketNumberError =
+    enteredCallNumber && isTicketNumberAlreadyUsed(enteredCallNumber, todayTickets)
+      ? `El número de llamado ${enteredCallNumber} ya fue utilizado hoy. Ingrese otro número para evitar duplicar el ticket.`
+      : ''
 
   const handleTicketItemClick = useCallback((selectedTicket) => {
     setIssuedTicket(selectedTicket)
   }, [])
+
+  /**
+   * Llamar a un paciente desde la cola de recepción del Tótem.
+   */
+  const handleCallReceptionTurno = async (turno) => {
+    if (!turno) return
+    setCallingTurnoId(turno.id)
+    setAdmissionError('')
+    setUnregisteredPatientAlert('')
+
+    try {
+      // 1. Notificar al backend que se está atendiendo
+      await receptionService.llamarTurno(turno.id)
+      fetchReceptionQueue()
+
+      // 2. Precargar número de llamado en el formulario
+      const match = String(turno.numero_llamado || '').match(/^([A-Z]+)[-\s]?(\d+)$/i)
+      const prefijo = match ? match[1] : turno.prefijo || 'Ext'
+      const secuencia = match ? match[2] : ''
+
+      handleFieldChange('prefijoLlamado', prefijo)
+      handleFieldChange('numeroLlamado', secuencia)
+      handleFieldChange('dni', String(turno.dni || '').trim())
+
+      // 3. Buscar si el paciente está registrado en el padrón
+      const pacienteEncontrado = await searchPatientByDniApi(turno.dni)
+
+      if (pacienteEncontrado) {
+        // Paciente REGISTRADO: autocompletar todos sus datos
+        handleLoadPatient(pacienteEncontrado)
+        setUnregisteredPatientAlert('')
+      } else {
+        // Paciente NO REGISTRADO: mostrar alerta visible
+        setUnregisteredPatientAlert(
+          `El DNI ${turno.dni} no figura en el padrón de pacientes. Complete Nombre, Apellido y Obra Social antes de cargar los estudios.`
+        )
+        // Enfocar el input de nombre
+        setTimeout(() => {
+          const inputNombre = document.getElementById('admission-patient-name')
+          if (inputNombre) inputNombre.focus()
+        }, 150)
+      }
+    } catch (err) {
+      console.error('Error al llamar turno de recepción:', err)
+      setAdmissionError(err.message || 'Error al convocar al turno de recepción.')
+    } finally {
+      setCallingTurnoId(null)
+    }
+  }
+
+  /**
+   * Abrir modal para cancelar turno de recepción
+   */
+  const handleOpenCancelModal = (turno) => {
+    setSelectedTurnoForCancel(turno)
+  }
+
+  /**
+   * Confirmar cancelación de turno de recepción
+   */
+  const handleConfirmCancelTurno = async (motivo) => {
+    if (!selectedTurnoForCancel) return
+    setIsCancelProcessing(true)
+    try {
+      await receptionService.cancelarTurno(selectedTurnoForCancel.id, motivo)
+      fetchReceptionQueue()
+      setSelectedTurnoForCancel(null)
+    } catch (err) {
+      console.error('Error al cancelar turno:', err)
+      throw err
+    } finally {
+      setIsCancelProcessing(false)
+    }
+  }
 
   const handleSubmitAdmission = async (event) => {
     event.preventDefault()
@@ -127,9 +239,10 @@ export default function AdmisionScreen() {
         estudios_ids: formData.selectedStudies.map((study) => study.id),
         mat_admision: userData?.matricula || '',
         personal_admision_matricula: userData?.matricula || '',
-        personal_admision_nombre: userData?.nombre && userData?.apellidos
-          ? `${userData.apellidos}, ${userData.nombre}`
-          : userData?.nombre || ''
+        personal_admision_nombre:
+          userData?.nombre && userData?.apellidos
+            ? `${userData.apellidos}, ${userData.nombre}`
+            : userData?.nombre || ''
       }
 
       if (
@@ -145,7 +258,9 @@ export default function AdmisionScreen() {
 
       const generatedTicket = await createTicket(payload)
       setIssuedTicket(generatedTicket)
+      setUnregisteredPatientAlert('')
       resetAdmissionForm()
+      fetchReceptionQueue()
     } catch (submissionError) {
       console.error(submissionError)
       const serverMessage = submissionError.message || 'Error al emitir el ticket.'
@@ -180,7 +295,11 @@ export default function AdmisionScreen() {
             ticketNumberError={ticketNumberError}
             admissionError={admissionError}
             existingPatient={existingPatient}
-            onLoadPatient={handleLoadPatient}
+            unregisteredPatientAlert={unregisteredPatientAlert}
+            onLoadPatient={(patient) => {
+              handleLoadPatient(patient)
+              setUnregisteredPatientAlert('')
+            }}
             onFieldChange={(fieldName, fieldValue) => {
               setAdmissionError('')
               handleFieldChange(fieldName, fieldValue)
@@ -190,23 +309,76 @@ export default function AdmisionScreen() {
             onSubmitForm={handleSubmitAdmission}
             onResetForm={() => {
               setAdmissionError('')
+              setUnregisteredPatientAlert('')
               resetAdmissionForm()
             }}
             isSubmitting={isSubmitting}
           />
 
-          {/* Columna Derecha: Búsqueda rápida de paciente y Últimos ingresos de hoy */}
+          {/* Columna Derecha: Búsqueda rápida y Vista Dual (Cola Tótem Recepción ⇄ Últimos Ingresos) */}
           <aside className="admision-screen__side-column">
-            <PatientSearch onSelectPatient={handleLoadPatient} />
-
-            <RecentTicketsList
-              title="Últimos ingresos de hoy"
-              emptyMessage="No hubo ningun ingreso"
-              ticketsList={todayTickets}
-              scrollAfterSeven
-              onTicketClick={handleTicketItemClick}
-              isLoading={loading}
+            <PatientSearch
+              onSelectPatient={(patient) => {
+                handleLoadPatient(patient)
+                setUnregisteredPatientAlert('')
+              }}
             />
+
+            {/* Selector de Pestañas entre Cola Tótem y Últimos Ingresos */}
+            <div className="admision-screen__tabs">
+              <button
+                type="button"
+                className={`admision-screen__tab-btn ${
+                  activeSideTab === 'recepcion' ? 'admision-screen__tab-btn--active' : ''
+                }`}
+                onClick={() => setActiveSideTab('recepcion')}
+              >
+                <Radio
+                  size={14}
+                  className={receptionQueue.length > 0 ? 'admision-tab__live-icon' : ''}
+                />
+                <span>Cola Tótem Recepción</span>
+                {receptionQueue.length > 0 && (
+                  <span className="admision-screen__tab-badge">{receptionQueue.length}</span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className={`admision-screen__tab-btn ${
+                  activeSideTab === 'ingresos' ? 'admision-screen__tab-btn--active' : ''
+                }`}
+                onClick={() => setActiveSideTab('ingresos')}
+              >
+                <Clock size={14} />
+                <span>Últimos ingresos</span>
+                {todayTickets.length > 0 && (
+                  <span className="admision-screen__tab-badge admision-screen__tab-badge--muted">
+                    {todayTickets.length}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Contenido condicional según la pestaña activa */}
+            {activeSideTab === 'recepcion' ? (
+              <ReceptionQueueCard
+                waitingQueue={receptionQueue}
+                onCallPatient={handleCallReceptionTurno}
+                onCancelTurno={handleOpenCancelModal}
+                callingTurnoId={callingTurnoId}
+                isProcessing={isSubmitting}
+              />
+            ) : (
+              <RecentTicketsList
+                title="Últimos ingresos de hoy"
+                emptyMessage="No hubo ningun ingreso"
+                ticketsList={todayTickets}
+                scrollAfterSeven
+                onTicketClick={handleTicketItemClick}
+                isLoading={loading}
+              />
+            )}
           </aside>
         </div>
       </main>
@@ -223,6 +395,15 @@ export default function AdmisionScreen() {
           onConfirmStudies={(extractedStudies) => handleSetStudies(extractedStudies)}
         />
       )}
+
+      {/* Modal de Cancelación de Turno de Recepción */}
+      <ModalCancelarTurnoRecepcion
+        isOpen={Boolean(selectedTurnoForCancel)}
+        onClose={() => setSelectedTurnoForCancel(null)}
+        turno={selectedTurnoForCancel}
+        onConfirm={handleConfirmCancelTurno}
+        isProcessing={isCancelProcessing}
+      />
     </div>
   )
 }

@@ -1,0 +1,578 @@
+/* Estilos dedicados para la Pantalla del Tótem Kiosco */
+
+.totem-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f8fafc;
+  font-family: inherit;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.totem-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 3rem;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.totem-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.totem-header__titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.totem-header__title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.totem-header__subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #94a3b8;
+}
+
+.totem-header__clock {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.6rem 1.2rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #38bdf8;
+}
+
+.totem-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+}
+
+.totem-step {
+  width: 100%;
+  max-width: 820px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: totemFadeIn 0.3s ease-out;
+}
+
+@keyframes totemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.totem-step__instructions {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.totem-step__title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.totem-step__description {
+  font-size: 1.2rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.totem-error-banner {
+  width: 100%;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+  padding: 0.85rem 1.25rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Display de DNI */
+.totem-dni-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 480px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid #38bdf8;
+  border-radius: 16px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.8rem;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
+}
+
+.totem-dni-display__icon {
+  color: #38bdf8;
+}
+
+.totem-dni-display__number {
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  font-family: monospace;
+}
+
+.totem-dni-display__placeholder {
+  color: #64748b;
+  font-size: 1.5rem;
+  font-weight: 500;
+  font-family: inherit;
+  letter-spacing: normal;
+}
+
+.totem-dni-display__clear-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.totem-dni-display__clear-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Teclado numérico táctil */
+.totem-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 2rem;
+}
+
+.totem-keypad__btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 700;
+  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 72px;
+}
+
+.totem-keypad__btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.totem-keypad__btn:active {
+  transform: translateY(2px);
+  background: #38bdf8;
+  color: #0f172a;
+}
+
+.totem-keypad__btn--action {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.totem-keypad__btn--clear {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.totem-keypad__btn--delete {
+  color: #fed7aa;
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+.totem-keypad__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Botón Continuar */
+.totem-btn-continue {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 16px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  padding: 1.1rem 2.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.4);
+}
+
+.totem-btn-continue:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -5px rgba(2, 132, 199, 0.6);
+}
+
+.totem-btn-continue:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Chip de DNI */
+.totem-patient-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.5rem 1.2rem;
+  border-radius: 9999px;
+  font-size: 1.15rem;
+  color: #94a3b8;
+  margin-bottom: 1.2rem;
+}
+
+.totem-patient-chip strong {
+  color: #38bdf8;
+  font-family: monospace;
+  font-size: 1.3rem;
+}
+
+.totem-patient-chip__change-btn {
+  background: none;
+  border: none;
+  color: #f87171;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+/* Grid de Categorías (4 opciones) */
+.totem-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.totem-category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 2rem;
+  border-radius: 20px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 190px;
+  position: relative;
+  overflow: hidden;
+}
+
+.totem-category-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.5);
+}
+
+.totem-category-card__icon-wrap {
+  margin-bottom: 1rem;
+}
+
+.totem-category-card__badge-prefix {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.totem-category-card__title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.totem-category-card__desc {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.4;
+}
+
+/* Variantes de color */
+.totem-card--extraccion {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  border-color: #3b82f6;
+}
+.totem-card--extraccion:hover {
+  box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4);
+}
+
+.totem-card--guardia {
+  background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%);
+  border-color: #ef4444;
+}
+.totem-card--guardia:hover {
+  box-shadow: 0 15px 35px rgba(239, 68, 68, 0.4);
+}
+
+.totem-card--medicos {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  border-color: #10b981;
+}
+.totem-card--medicos:hover {
+  box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4);
+}
+
+.totem-card--consulta {
+  background: linear-gradient(135deg, #701a75 0%, #86198f 100%);
+  border-color: #d946ef;
+}
+.totem-card--consulta:hover {
+  box-shadow: 0 15px 35px rgba(217, 70, 239, 0.4);
+}
+
+.totem-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 0.9rem 2rem;
+  border-radius: 14px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.totem-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* Pantalla de Confirmación de Ticket */
+.totem-ticket-card {
+  background: #1e293b;
+  border: 2px solid #22c55e;
+  border-radius: 28px;
+  padding: 3rem;
+  width: 100%;
+  max-width: 650px;
+  text-align: center;
+  box-shadow: 0 25px 60px -15px rgba(34, 197, 94, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.totem-ticket-card__header {
+  margin-bottom: 1.5rem;
+}
+
+.totem-ticket-card__check-icon {
+  color: #22c55e;
+  margin-bottom: 0.8rem;
+}
+
+.totem-ticket-card__title {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 0.4rem 0;
+}
+
+.totem-ticket-card__subtitle {
+  font-size: 1.15rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.totem-ticket-card__body {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.totem-ticket-card__category-badge {
+  background: rgba(56, 189, 248, 0.2);
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+  padding: 0.4rem 1.2rem;
+  border-radius: 9999px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.totem-ticket-card__number-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.totem-ticket-card__number-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #94a3b8;
+  margin-bottom: 0.2rem;
+}
+
+.totem-ticket-card__big-number {
+  font-size: 5rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: #22c55e;
+  font-family: monospace;
+  line-height: 1;
+}
+
+.totem-ticket-card__details {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1rem 0;
+  margin-bottom: 1.5rem;
+}
+
+.totem-ticket-card__detail-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 1rem;
+  color: #94a3b8;
+}
+
+.totem-ticket-card__detail-item strong {
+  font-size: 1.3rem;
+  color: #ffffff;
+  margin-top: 0.2rem;
+}
+
+.totem-ticket-card__instruction {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 1rem 1.4rem;
+  border-radius: 14px;
+  text-align: left;
+  color: #bbf7d0;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.totem-ticket-card__instruction-icon {
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.totem-ticket-card__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  width: 100%;
+}
+
+.totem-countdown-bar {
+  font-size: 0.95rem;
+  color: #94a3b8;
+}
+
+.totem-countdown-bar strong {
+  color: #38bdf8;
+  font-size: 1.15rem;
+}
+
+.totem-btn-finish {
+  background: #22c55e;
+  color: #052e16;
+  border: none;
+  border-radius: 14px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  padding: 1rem 2.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 10px 25px -5px rgba(34, 197, 94, 0.4);
+}
+
+.totem-btn-finish:hover {
+  background: #16a34a;
+  transform: translateY(-2px);
+}
+
+.totem-footer {
+  padding: 1.2rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 768px) {
+  .totem-categories-grid {
+    grid-template-columns: 1fr;
+  }
+  .totem-header {
+    padding: 1rem 1.5rem;
+  }
+  .totem-ticket-card__big-number {
+    font-size: 3.8rem;
+  }
+}
+
