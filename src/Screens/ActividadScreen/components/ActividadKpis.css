@@ -1,0 +1,75 @@
+.actividad-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.actividad-kpi-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--auditoria-bg-card, #ffffff);
+  border: 1px solid var(--auditoria-border-card, #d9e5ea);
+  border-radius: var(--radius-md, 10px);
+  padding: 14px 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  box-shadow: var(--auditoria-shadow-sm, 0 1px 3px rgba(24, 59, 74, 0.06));
+}
+
+.actividad-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--auditoria-shadow-md, 0 4px 10px rgba(24, 59, 74, 0.08));
+  border-color: var(--auditoria-primary, #1687c9);
+}
+
+.actividad-kpi-card--selected {
+  outline: 2px solid var(--auditoria-primary, #1687c9);
+  background-color: var(--auditoria-surface-selected, #eff8fc);
+  border-color: var(--auditoria-primary, #1687c9);
+}
+
+.actividad-kpi-card--alert .actividad-kpi-card__value {
+  color: #b91c1c;
+}
+
+.actividad-kpi-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.actividad-kpi-card__title {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--auditoria-text-secondary, #647a85);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.actividad-kpi-card__icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm, 6px);
+  flex-shrink: 0;
+}
+
+.actividad-kpi-card__value {
+  font-size: 26px;
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--auditoria-text-primary, #275369);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+
+.actividad-kpi-card__subtitle {
+  font-size: 11px;
+  color: var(--auditoria-text-light, #94a3a8);
+}
+

@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, Eye, EyeOff, Loader2, User } from 'lucide-react'
+import { AlertCircle, Eye, EyeOff, Loader2, User, ShieldAlert } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { getHomePathByRole } from '../../utils/navigation'
+import { reportarUbicacionNavegadorApi } from '../../services/auditService'
 import './LoginScreen.css'
 
 export default function LoginScreen() {
@@ -42,6 +43,27 @@ export default function LoginScreen() {
 
     try {
       const authenticatedUser = await login(sanitizedEmail, password)
+
+      // Captura no bloqueante de geolocalización del navegador post-login
+      if (typeof navigator !== 'undefined' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            reportarUbicacionNavegadorApi({
+              lat: pos.coords.latitude,
+              lon: pos.coords.longitude,
+              precision_m: pos.coords.accuracy,
+              denegada: false
+            }).catch(() => {})
+          },
+          (err) => {
+            reportarUbicacionNavegadorApi({
+              denegada: err.code === 1 // PERMISSION_DENIED
+            }).catch(() => {})
+          },
+          { timeout: 8000, maximumAge: 60000, enableHighAccuracy: false }
+        )
+      }
+
       navigate(getHomePathByRole(authenticatedUser.rol))
     } catch (error) {
       setErrorMsg(error.message || 'Error al iniciar sesión.')
@@ -130,6 +152,14 @@ export default function LoginScreen() {
               'Iniciar Sesión'
             )}
           </button>
+
+          {/* Aviso Legal de Auditoría y Trazabilidad */}
+          <div className="login-screen__audit-disclosure">
+            <ShieldAlert size={14} className="login-screen__audit-icon" aria-hidden="true" />
+            <span>
+              Acceso restringido al personal autorizado. Por motivos de seguridad clínica y auditoría, los inicios de sesión, dirección IP y acciones operativas son registrados.
+            </span>
+          </div>
         </form>
       </div>
     </div>

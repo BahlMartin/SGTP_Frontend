@@ -1,0 +1,255 @@
+.empleado-jornada-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.empleado-jornada__controls-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--auditoria-bg-card, #ffffff);
+  border: 1px solid var(--auditoria-border-card, #d9e5ea);
+  border-radius: var(--radius-md, 10px);
+  padding: 14px 18px;
+  box-shadow: var(--auditoria-shadow-sm, 0 1px 3px rgba(24, 59, 74, 0.06));
+  flex-wrap: wrap;
+}
+
+.empleado-jornada__field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--auditoria-text-primary, #275369);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+.empleado-jornada__field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.empleado-jornada__select,
+.empleado-jornada__date-input {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid var(--auditoria-border-card, #d9e5ea);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--auditoria-text-primary, #275369);
+  background: #ffffff;
+}
+
+.empleado-jornada__kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.empleado-jornada__kpi-card {
+  background: var(--auditoria-bg-card, #ffffff);
+  border: 1px solid var(--auditoria-border-card, #d9e5ea);
+  border-radius: var(--radius-md, 10px);
+  padding: 12px 14px;
+  box-shadow: var(--auditoria-shadow-sm, 0 1px 3px rgba(24, 59, 74, 0.06));
+}
+
+.empleado-jornada__kpi-title {
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--auditoria-text-secondary, #647a85);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.empleado-jornada__kpi-val {
+  font-size: 22px;
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--auditoria-text-primary, #275369);
+  margin: 4px 0 2px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.empleado-jornada__kpi-sub {
+  font-size: 11px;
+  color: var(--auditoria-text-light, #94a3a8);
+}
+
+.empleado-jornada__chart-card,
+.empleado-jornada__timeline-card {
+  background: var(--auditoria-bg-card, #ffffff);
+  border: 1px solid var(--auditoria-border-card, #d9e5ea);
+  border-radius: var(--radius-md, 10px);
+  padding: 16px 20px;
+  box-shadow: var(--auditoria-shadow-sm, 0 1px 3px rgba(24, 59, 74, 0.06));
+}
+
+.empleado-jornada__section-title {
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--auditoria-text-primary, #275369);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.empleado-jornada__empty-timeline {
+  font-size: 13px;
+  color: var(--auditoria-text-secondary, #647a85);
+  padding: 24px 0;
+  text-align: center;
+}
+
+.empleado-jornada__timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Pausas / Gaps */
+.empleado-jornada__gap-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fefce8;
+  border: 1px dashed #ca8a04;
+  border-radius: var(--radius-sm, 6px);
+  padding: 8px 14px;
+}
+
+.empleado-jornada__gap-icon {
+  color: #a16207;
+}
+
+.empleado-jornada__gap-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #854d0e;
+  display: block;
+}
+
+.empleado-jornada__gap-time {
+  font-size: 11px;
+  color: #a16207;
+}
+
+/* Grupos */
+.empleado-jornada__group-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--auditoria-bg-subtle, #f4f8fb);
+  border: 1px solid var(--auditoria-border-card, #d9e5ea);
+  border-radius: var(--radius-sm, 6px);
+  padding: 10px 14px;
+}
+
+.empleado-jornada__group-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.empleado-jornada__group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--auditoria-text-primary, #275369);
+  display: block;
+}
+
+.empleado-jornada__group-meta {
+  font-size: 11px;
+  color: var(--auditoria-text-secondary, #647a85);
+}
+
+/* Eventos Individuales */
+.empleado-jornada__event-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid var(--auditoria-border-subtle, #edf2f5);
+  border-radius: var(--radius-sm, 6px);
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.empleado-jornada__event-item:hover {
+  background: var(--auditoria-surface-hover, #dff3fa);
+  border-color: var(--auditoria-primary, #1687c9);
+}
+
+.empleado-jornada__event-item--fallo {
+  border-left: 3.5px solid #b91c1c;
+}
+
+.empleado-jornada__event-time {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--auditoria-text-secondary, #647a85);
+  width: 45px;
+  flex-shrink: 0;
+}
+
+.empleado-jornada__event-cat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm, 6px);
+  flex-shrink: 0;
+}
+
+.empleado-jornada__event-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.empleado-jornada__event-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.empleado-jornada__event-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--auditoria-text-primary, #275369);
+}
+
+.empleado-jornada__event-res-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.empleado-jornada__event-desc {
+  font-size: 12px;
+  color: var(--auditoria-text-secondary, #647a85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empleado-jornada__event-arrow {
+  color: var(--auditoria-text-light, #94a3a8);
+}
+

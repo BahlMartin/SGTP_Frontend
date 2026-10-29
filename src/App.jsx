@@ -14,6 +14,7 @@ import AdmisionScreen from './Screens/AdmisionScreen/AdmisionScreen'
 import TecnicoBoxScreen from './Screens/TecnicoBoxScreen/TecnicoBoxScreen'
 import JefaScreen from './Screens/JefaScreen/JefaScreen'
 import SecretariaScreen from './Screens/SecretariaScreen/SecretariaScreen'
+import ActividadScreen from './Screens/ActividadScreen/ActividadScreen'
 import NotFoundScreen from './Screens/NotFoundScreen/NotFoundScreen'
 
 function TriageQueueWrapper() {
@@ -62,6 +63,11 @@ export default function App() {
               <Route element={<RoleMiddleware allowedRoles={['Secretaria', 'Jefa', 'Admin']} />}>
                 <Route path="/reportes" element={<SecretariaScreen />} />
                 <Route path="/secretaria" element={<Navigate to="/reportes" replace />} />
+              </Route>
+
+              {/* 5. Auditoría y Actividad: Jefa y Admin */}
+              <Route element={<RoleMiddleware allowedRoles={['Jefa', 'Admin']} />}>
+                <Route path="/auditoria" element={<ActividadScreen />} />
               </Route>
             </Route>
           </Route>
