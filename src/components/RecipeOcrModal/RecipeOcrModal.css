@@ -56,12 +56,17 @@
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
-  z-index: 2;
+  z-index: 5;
 }
 
 .ocr-modal__close-btn:hover {
   background: #f1f5f9;
   color: #0f172a;
+}
+
+/* Alerta Flotante (Toast) para Móviles */
+.ocr-modal__floating-toast {
+  display: none;
 }
 
 .ocr-modal__header {
@@ -344,6 +349,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 10px;
+  flex-shrink: 0;
 }
 
 .ocr-modal__review-image-wrapper {
@@ -646,6 +652,7 @@
   flex-direction: column;
   gap: 4px;
   box-shadow: 0 2px 6px rgba(147, 51, 234, 0.08);
+  flex-shrink: 0;
 }
 
 .ocr-modal__combo-header {
@@ -828,7 +835,57 @@
     display: none;
   }
 
-  /* El cuerpo de revisión se convierte en un único contenedor scrolleable */
+  /* Ocultar alerta fija en móvil y activar el Toast Flotante */
+  .ocr-modal__alert--desktop {
+    display: none;
+  }
+
+  .ocr-modal__floating-toast {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: absolute;
+    bottom: 72px;
+    left: 14px;
+    right: 14px;
+    z-index: 10;
+    background: rgba(240, 253, 244, 0.97);
+    backdrop-filter: blur(6px);
+    border: 1px solid #86efac;
+    border-radius: 10px;
+    padding: 9px 12px;
+    color: #166534;
+    font-size: 0.76rem;
+    box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.18);
+    animation: toastSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes toastSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .ocr-modal__toast-close {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: #15803d;
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* El cuerpo de revisión se convierte en un único contenedor scrolleable sin solapamiento */
   .ocr-modal__review-body {
     display: flex;
     flex-direction: column;
@@ -837,9 +894,12 @@
     padding-right: 2px;
   }
 
+  /* Evitar que flex comprima el sidebar o el main-panel provocando que se encimen */
   .ocr-modal__sidebar,
   .ocr-modal__main-panel {
-    overflow-y: visible;
+    overflow: visible;
+    min-height: auto;
+    flex-shrink: 0;
     padding-right: 0;
   }
 
@@ -866,15 +926,6 @@
   /* Grilla de 1 sola columna en móviles para lectura clara */
   .ocr-modal__studies-grid {
     grid-template-columns: 1fr;
-  }
-
-  .ocr-modal__alert {
-    padding: 6px 10px;
-    font-size: 0.74rem;
-  }
-
-  .ocr-modal__alert-content strong {
-    font-size: 0.75rem;
   }
 
   .ocr-modal__combo-desc {

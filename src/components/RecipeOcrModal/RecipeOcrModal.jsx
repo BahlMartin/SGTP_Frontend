@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Upload,
   Check,
@@ -26,6 +26,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   const [ocrError, setOcrError] = useState(null)
   const [ocrResult, setOcrResult] = useState(null)
   const [selectedStudies, setSelectedStudies] = useState([])
+  const [showFloatingAlert, setShowFloatingAlert] = useState(false)
 
   // Manejar subida o selección de archivo
   const handleFileChange = (e) => {
@@ -64,6 +65,15 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     }
   }, [handlePasteEvent])
 
+  // Auto-ocultar la alerta flotante luego de unos segundos para despejar la vista en móvil
+  useEffect(() => {
+    if (!showFloatingAlert) return
+    const timer = setTimeout(() => {
+      setShowFloatingAlert(false)
+    }, 4500)
+    return () => clearTimeout(timer)
+  }, [showFloatingAlert])
+
   // Iniciar procesamiento completo con PaddleOCR PP-OCRv5 -> Django Mapeo
   const handleProcessOcr = async () => {
     if (!file && !imagePreview) return
@@ -79,6 +89,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
 
       setOcrResult(res)
       setSelectedStudies(res.suggestedStudies || [])
+      setShowFloatingAlert(true)
     } catch (err) {
       console.error('Error al procesar receta OCR:', err)
       setOcrError(err.message || 'No se pudo procesar la receta médica.')
@@ -124,8 +135,14 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     onClose()
   }
 
-  // Estudios sugeridos identificados por PaddleOCR
-  const displayedStudies = ocrResult?.suggestedStudies || []
+  // Estudios mostrados en la grilla: combina los sugeridos por OCR + los agregados desde sugerencias contextuales
+  // para que si el usuario agrega una sugerencia contextual, aparezca en la grilla y pueda desmarcarla si se equivocó.
+  const displayedStudies = useMemo(() => {
+    const baseStudies = ocrResult?.suggestedStudies || []
+    const baseIds = new Set(baseStudies.map((s) => s.id))
+    const addedContextualStudies = selectedStudies.filter((s) => !baseIds.has(s.id))
+    return [...baseStudies, ...addedContextualStudies]
+  }, [ocrResult, selectedStudies])
 
   return (
     <div className="ocr-modal" role="dialog" aria-modal="true" aria-labelledby="ocr-modal-title">
@@ -137,6 +154,33 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         >
           <X size={20} />
         </button>
+
+        {/* Alerta Flotante (Toast) de Prácticas Reconocidas */}
+        {ocrResult && showFloatingAlert && (
+          <div className="ocr-modal__floating-toast" role="status">
+            <Check size={15} className="ocr-modal__alert-icon" />
+            <div className="ocr-modal__alert-content">
+              {ocrResult.totalSugerencias > 0 ? (
+                <>
+                  <strong>{ocrResult.totalSugerencias} prácticas reconocidas</strong>
+                  <span className="ocr-modal__alert-subtext">
+                    — Valide las selecciones
+                  </span>
+                </>
+              ) : (
+                <span>No se detectaron estudios coincidentes automáticamente.</span>
+              )}
+            </div>
+            <button
+              type="button"
+              className="ocr-modal__toast-close"
+              onClick={() => setShowFloatingAlert(false)}
+              aria-label="Cerrar aviso"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         <div className="ocr-modal__header">
           <div className="ocr-modal__chip-ai">
@@ -310,7 +354,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
 
               {/* Panel Derecho: Lista de estudios y sugerencias contextuales */}
               <div className="ocr-modal__main-panel">
-                <div className="ocr-modal__alert">
+                {/* Alerta estática visible en Desktop; en móvil usa el Toast Flotante para no tapar la imagen/confianza */}
+                <div className="ocr-modal__alert ocr-modal__alert--desktop">
                   <Check size={15} className="ocr-modal__alert-icon" />
                   <div className="ocr-modal__alert-content">
                     {ocrResult.totalSugerencias > 0 ? (
@@ -326,7 +371,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                   </div>
                 </div>
 
-                {/* Grilla de Prácticas Detectadas (2 columnas en PC, 1 en móvil, sin scroll anidado) */}
+                {/* Grilla de Prácticas Detectadas + Agregadas (2 columnas en PC, 1 en móvil, sin scroll anidado) */}
                 {displayedStudies.length > 0 ? (
                   <div className="ocr-modal__studies-grid">
                     {displayedStudies.map((study) => {
@@ -337,21 +382,24 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                         <label
                           key={study.id}
                           className={`ocr-modal__study-item ${isSelected ? 'ocr-modal__study-item--selected' : ''}`}
-                          onClick={() => toggleStudy(study)}
                         >
                           <input
                             type="checkbox"
                             className="ocr-modal__study-checkbox"
                             checked={isSelected}
-                            onChange={() => {}}
+                            onChange={() => toggleStudy(study)}
                           />
                           <div className="ocr-modal__study-details">
                             <span className="ocr-modal__study-name">{study.nombre}</span>
                             <div className="ocr-modal__study-meta">
-                              <span className="ocr-modal__study-code">{study.codigoPractica}</span>
-                              <span className="ocr-modal__motor-badge ocr-modal__motor-badge--paddle">
-                                🎯 PaddleOCR
-                              </span>
+                              {study.codigoPractica && (
+                                <span className="ocr-modal__study-code">{study.codigoPractica}</span>
+                              )}
+                              {study.origenDeteccion !== 'VALIDADO_POR_CONTEXTO' && (
+                                <span className="ocr-modal__motor-badge ocr-modal__motor-badge--paddle">
+                                  🎯 PaddleOCR
+                                </span>
+                              )}
                               {study.origenDeteccion === 'COMBO_RUTINA' ? (
                                 <span className="ocr-modal__origin-badge ocr-modal__origin-badge--combo">
                                   Combo de Rutina
@@ -362,7 +410,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                                 </span>
                               ) : study.origenDeteccion === 'VALIDADO_POR_CONTEXTO' ? (
                                 <span className="ocr-modal__origin-badge ocr-modal__origin-badge--context">
-                                  Validado por contexto
+                                  ✨ Agregado por sugerencia
                                 </span>
                               ) : scoreNumber > 0 ? (
                                 <span
@@ -441,6 +489,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                 className="ocr-modal__cancel-btn"
                 onClick={() => {
                   setOcrResult(null)
+                  setShowFloatingAlert(false)
                   setProgressInfo({ percent: 0, message: '' })
                 }}
               >
