@@ -11,11 +11,19 @@
 
 .jefa-screen__matrix-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
+  flex-direction: column;
   gap: 10px;
+  margin-bottom: 12px;
   flex-shrink: 0;
+}
+
+.jefa-screen__matrix-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .jefa-screen__matrix-header-title-box {
@@ -39,6 +47,51 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
+}
+
+.jefa-screen__matrix-card .jefa-screen__date-picker-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-card, #cbd5e1);
+  border-radius: var(--radius-sm, 6px);
+  padding: 3px 8px;
+  max-width: 100%;
+}
+
+.jefa-screen__matrix-card .jefa-screen__date-icon {
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.jefa-screen__matrix-card .jefa-screen__date-input {
+  border: none;
+  background: transparent;
+  color: var(--text-primary, #0f172a);
+  font-size: 0.75rem;
+  outline: none;
+  font-family: inherit;
+}
+
+.jefa-screen__matrix-card .jefa-screen__date-today-btn {
+  background: var(--surface-hover, #f1f5f9);
+  border: 1px solid var(--border-card, #cbd5e1);
+  color: var(--text-primary, #0f172a);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.jefa-screen__matrix-card .jefa-screen__date-today-btn:hover {
+  background: var(--medical-primary, #3b82f6);
+  color: #ffffff;
+  border-color: var(--medical-primary, #3b82f6);
 }
 
 .jefa-screen__matrix-toolbar {
@@ -276,6 +329,8 @@
 /* Pestañas de modo Actividad vs Demoras */
 .jefa-screen__matrix-mode-tabs {
   display: inline-flex;
+  align-self: flex-start;
+  width: fit-content;
   background: var(--bg-surface, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
   border-radius: var(--radius-md, 6px);

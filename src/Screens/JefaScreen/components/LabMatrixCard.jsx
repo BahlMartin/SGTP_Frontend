@@ -94,59 +94,59 @@ export default function LabMatrixCard({
   return (
     <div className="jefa-screen__matrix-card">
       <div className="jefa-screen__matrix-header">
-        <div className="jefa-screen__matrix-header-title-box">
+        <div className="jefa-screen__matrix-header-top">
           <h3 className="jefa-screen__section-title">Estudios de laboratorio</h3>
-          <div className="jefa-screen__matrix-mode-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={viewMode === 'activity'}
-              className={`jefa-screen__matrix-mode-btn ${viewMode === 'activity' ? 'jefa-screen__matrix-mode-btn--active' : ''}`}
-              onClick={() => setViewMode('activity')}
-              title="Ver estudios solicitados por fecha"
-            >
-              <Layers size={13} />
-              <span>Actividad</span>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={viewMode === 'delays'}
-              className={`jefa-screen__matrix-mode-btn ${viewMode === 'delays' ? 'jefa-screen__matrix-mode-btn--active' : ''}`}
-              onClick={() => setViewMode('delays')}
-              title="Configurar tiempos de demora de cada estudio"
-            >
-              <Clock size={13} />
-              <span>Demoras</span>
-            </button>
-          </div>
+          {viewMode === 'activity' && (
+            <div className="jefa-screen__matrix-date-box">
+              <div className="jefa-screen__date-picker-wrap" title="Seleccionar fecha de estudios">
+                <Calendar size={13} className="jefa-screen__date-icon" />
+                <input
+                  type="date"
+                  className="jefa-screen__date-input"
+                  value={selectedDate || todayStr}
+                  onChange={(e) => onDateChange(e.target.value)}
+                  max={todayStr}
+                  aria-label="Filtrar estudios por fecha"
+                />
+              </div>
+              {!isToday && (
+                <button
+                  type="button"
+                  className="jefa-screen__date-today-btn"
+                  onClick={() => onDateChange(todayStr)}
+                  title="Volver a la fecha de hoy"
+                >
+                  Hoy
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
-        {viewMode === 'activity' && (
-          <div className="jefa-screen__matrix-date-box">
-            <div className="jefa-screen__date-picker-wrap" title="Seleccionar fecha de estudios">
-              <Calendar size={13} className="jefa-screen__date-icon" />
-              <input
-                type="date"
-                className="jefa-screen__date-input"
-                value={selectedDate || todayStr}
-                onChange={(e) => onDateChange(e.target.value)}
-                max={todayStr}
-                aria-label="Filtrar estudios por fecha"
-              />
-            </div>
-            {!isToday && (
-              <button
-                type="button"
-                className="jefa-screen__date-today-btn"
-                onClick={() => onDateChange(todayStr)}
-                title="Volver a la fecha de hoy"
-              >
-                Hoy
-              </button>
-            )}
-          </div>
-        )}
+        <div className="jefa-screen__matrix-mode-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={viewMode === 'activity'}
+            className={`jefa-screen__matrix-mode-btn ${viewMode === 'activity' ? 'jefa-screen__matrix-mode-btn--active' : ''}`}
+            onClick={() => setViewMode('activity')}
+            title="Ver estudios solicitados por fecha"
+          >
+            <Layers size={13} />
+            <span>Actividad</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={viewMode === 'delays'}
+            className={`jefa-screen__matrix-mode-btn ${viewMode === 'delays' ? 'jefa-screen__matrix-mode-btn--active' : ''}`}
+            onClick={() => setViewMode('delays')}
+            title="Configurar tiempos de demora de cada estudio"
+          >
+            <Clock size={13} />
+            <span>Demoras</span>
+          </button>
+        </div>
       </div>
 
       <div className="jefa-screen__matrix-toolbar">
@@ -249,14 +249,6 @@ export default function LabMatrixCard({
                     <div className="jefa-screen__matrix-cat">
                       <div className="jefa-screen__matrix-cat-title-row">
                         <span className="jefa-screen__matrix-cat-name">{study.nombre}</span>
-                        <button
-                          type="button"
-                          className="jefa-screen__matrix-btn-edit-delay"
-                          onClick={() => setStudyToEdit(study)}
-                          title={`Editar tiempo de demora de ${study.nombre} (actual: ${horas} hs)`}
-                        >
-                          <Pencil size={11} />
-                        </button>
                       </div>
                       <div className="jefa-screen__matrix-meta-row">
                         {study.codigo && (
