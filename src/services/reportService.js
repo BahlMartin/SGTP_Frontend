@@ -192,6 +192,25 @@ export async function downloadReportePdfApi(fechaStr) {
 }
 
 /**
+ * Descarga el libro Excel (.xlsx) oficial de 6 hojas compilado en tiempo real por el backend.
+ */
+export async function downloadReporteExcelApi(fechaStr) {
+  const query = fechaStr ? `?fecha=${fechaStr}` : ''
+  const blob = await apiClient.download(`/reports/descargar-excel/${query}`)
+
+  const url = window.URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `Reporte_Asistencial_${fechaStr || 'hoy'}.xlsx`
+  document.body.appendChild(anchor)
+  anchor.click()
+  document.body.removeChild(anchor)
+  window.URL.revokeObjectURL(url)
+
+  return true
+}
+
+/**
  * Dispara el despacho manual del reporte diario vía correo institucional SMTP.
  */
 export async function dispararEnvioReporteApi(fechaStr) {

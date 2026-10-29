@@ -1,11 +1,12 @@
 import React from 'react'
-import { ArrowUpRight, Download, Mail } from 'lucide-react'
+import { ArrowUpRight, Download, FileSpreadsheet, Mail } from 'lucide-react'
 import './SecretariaJornadaBar.css'
 
 export default function SecretariaJornadaBar({
   jornadaDate,
   onDateChange,
   onExportPdf,
+  onExportExcel,
   onSendEmail,
   isSendingEmail = false
 }) {
@@ -36,7 +37,21 @@ export default function SecretariaJornadaBar({
           title="Descargar reporte como PDF"
         >
           <Download className="secretaria-jornada-bar__btn-icon" />
+          <span className="secretaria-jornada-bar__btn-label">PDF</span>
         </button>
+        {onExportExcel && (
+          <button
+            type="button"
+            className="secretaria-jornada-bar__btn-excel"
+            onClick={onExportExcel}
+            disabled={isSendingEmail}
+            aria-label="Descargar reporte como Excel"
+            title="Descargar reporte como Excel (.xlsx)"
+          >
+            <FileSpreadsheet className="secretaria-jornada-bar__btn-icon" />
+            <span className="secretaria-jornada-bar__btn-label">Excel</span>
+          </button>
+        )}
         <button
           type="button"
           className="secretaria-jornada-bar__btn-email"

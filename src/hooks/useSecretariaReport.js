@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { computeDailyReportMetrics, fetchMetricasDiariasApi } from '../services/reportService'
 import { getTodayLocalDateString } from '../utils/formatters'
 import { useExportReportPdf } from './useExportReportPdf'
+import { useExportReportExcel } from './useExportReportExcel'
 import { useSendReportEmail } from './useSendReportEmail'
 import { useFeedbackNotice } from './useFeedbackNotice'
 
@@ -92,6 +93,12 @@ export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }
     onSuccessNotice: showNotice
   })
 
+  // Hook reutilizable para exportación de Excel (conectado con backend)
+  const { handleExportExcel } = useExportReportExcel({
+    jornadaDate,
+    onSuccessNotice: showNotice
+  })
+
   // Hook reutilizable para despacho por correo SMTP (conectado con backend)
   const { handleSendEmail, isSendingEmail } = useSendReportEmail({
     jornadaDate,
@@ -108,6 +115,7 @@ export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }
     totalPacientes,
     getPercentage,
     handleExportPdf,
+    handleExportExcel,
     handleSendEmail,
     showNotice,
     refreshMetrics

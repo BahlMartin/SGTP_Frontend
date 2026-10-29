@@ -31,6 +31,7 @@ export default function SecretariaScreen() {
     isSendingEmail,
     metrics,
     handleExportPdf,
+    handleExportExcel,
     handleSendEmail,
     showNotice,
     refreshMetrics
@@ -98,6 +99,7 @@ export default function SecretariaScreen() {
           jornadaDate={jornadaDate}
           onDateChange={(selectedDateValue) => setJornadaDate(selectedDateValue)}
           onExportPdf={handleExportPdf}
+          onExportExcel={handleExportExcel}
           onSendEmail={handleSendEmail}
           isSendingEmail={isSendingEmail}
         />
