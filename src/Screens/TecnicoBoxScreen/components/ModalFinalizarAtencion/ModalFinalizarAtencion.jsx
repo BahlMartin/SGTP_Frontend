@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { X, CheckCircle2, AlertTriangle, ClipboardCheck } from 'lucide-react'
+import { X, CheckCircle2, AlertTriangle, ClipboardCheck, AlertCircle } from 'lucide-react'
 import './ModalFinalizarAtencion.css'
 
 export default function ModalFinalizarAtencion({
@@ -37,6 +37,21 @@ export default function ModalFinalizarAtencion({
   const turnoDisplay = patientInBox.num_llamado || patientInBox.num_totem || 'S/N'
   const nombreCompleto = `${patientInBox.paciente_nombre || ''} ${patientInBox.paciente_apellido || ''}`.trim()
   const pendingCount = Math.max(0, totalStudiesCount - completedCount)
+
+  // Determinación del estado de toma de muestras:
+  // - 'danger' (rojo): ningún estudio marcado como tomado (completedCount === 0 y totalStudiesCount > 0)
+  // - 'warning' (amarillo): se marcó alguno pero quedan pendientes
+  // - 'success' (verde): todos los estudios marcados como tomados
+  const isNoneCompleted = totalStudiesCount > 0 && completedCount === 0
+  const isPartialCompleted = completedCount > 0 && completedCount < totalStudiesCount
+  const isAllCompleted = totalStudiesCount === 0 || completedCount >= totalStudiesCount
+
+  let statusModifier = 'success'
+  if (isNoneCompleted) {
+    statusModifier = 'danger'
+  } else if (isPartialCompleted) {
+    statusModifier = 'warning'
+  }
 
   const handleConfirm = async () => {
     setErrorMessage('')
@@ -109,31 +124,37 @@ export default function ModalFinalizarAtencion({
             </div>
           </div>
 
-          {/* Estado de muestras tomadas */}
+          {/* Estado de muestras tomadas (Rojo si ninguna, Amarillo si alguna, Verde si todas) */}
           <div
-            className={`modal-finalizar-atencion__status-box ${
-              pendingCount > 0
-                ? 'modal-finalizar-atencion__status-box--warning'
-                : 'modal-finalizar-atencion__status-box--success'
-            }`}
+            className={`modal-finalizar-atencion__status-box modal-finalizar-atencion__status-box--${statusModifier}`}
           >
             <div className="modal-finalizar-atencion__status-icon-wrap">
-              {pendingCount > 0 ? (
-                <AlertTriangle size={20} className="modal-finalizar-atencion__status-icon--warn" />
-              ) : (
-                <ClipboardCheck size={20} className="modal-finalizar-atencion__status-icon--check" />
+              {isNoneCompleted && (
+                <AlertCircle size={20} className="modal-finalizar-atencion__status-icon--danger" />
+              )}
+              {isPartialCompleted && (
+                <AlertTriangle size={20} className="modal-finalizar-atencion__status-icon--warning" />
+              )}
+              {isAllCompleted && (
+                <ClipboardCheck size={20} className="modal-finalizar-atencion__status-icon--success" />
               )}
             </div>
             <div className="modal-finalizar-atencion__status-text">
               <strong>
-                {pendingCount > 0
-                  ? `Atención: Quedan ${pendingCount} de ${totalStudiesCount} estudios sin marcar como tomada`
-                  : `Todas las muestras tomadas (${completedCount}/${totalStudiesCount})`}
+                {isNoneCompleted &&
+                  `Atención: No se marcó ningún estudio como tomado (0/${totalStudiesCount})`}
+                {isPartialCompleted &&
+                  `Atención: Quedan ${pendingCount} de ${totalStudiesCount} estudios sin marcar como tomada`}
+                {isAllCompleted &&
+                  `Todas las muestras tomadas (${completedCount}/${totalStudiesCount})`}
               </strong>
               <p>
-                {pendingCount > 0
-                  ? 'Puede finalizar la consulta de todas formas si las muestras físicas ya fueron recolectadas.'
-                  : 'Todas las determinaciones clínicas fueron registradas correctamente.'}
+                {isNoneCompleted &&
+                  'No se ha registrado la toma de ninguna muestra clínica para esta atención. Puede finalizar de todas formas si las muestras ya fueron recolectadas.'}
+                {isPartialCompleted &&
+                  'Puede finalizar la consulta de todas formas si las muestras físicas ya fueron recolectadas.'}
+                {isAllCompleted &&
+                  'Todas las determinaciones clínicas fueron registradas correctamente.'}
               </p>
             </div>
           </div>
