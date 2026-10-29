@@ -63,7 +63,11 @@ export default function TriageDistributionCard({
         const k = item.triage_key || normalizeCategoryKey(item.clasificacion_triage)
         map[k] = {
           totalPacientes: toCount(item.total_pacientes),
-          esperaMinutos: Number(item.promedio_espera_minutos) || 0
+          esperaMinutos: Number(item.promedio_espera_minutos) || 0,
+          slaTarget:
+            item.tiempo_objetivo_minutos !== undefined && item.tiempo_objetivo_minutos !== null
+              ? Number(item.tiempo_objetivo_minutos)
+              : undefined
         }
       })
     }
@@ -75,10 +79,15 @@ export default function TriageDistributionCard({
       const slaEntry = slaMap[category.key]
       const count = toCount(triageDistribution?.[category.key] ?? slaEntry?.totalPacientes)
       const waitMinutes = slaEntry?.esperaMinutos ?? 0
-      const slaStatus = resolveSlaStatus(count, waitMinutes, category.slaTarget)
+      const effectiveSlaTarget =
+        slaEntry?.slaTarget !== undefined && slaEntry?.slaTarget !== null
+          ? slaEntry.slaTarget
+          : category.slaTarget
+      const slaStatus = resolveSlaStatus(count, waitMinutes, effectiveSlaTarget)
 
       return {
         ...category,
+        slaTarget: effectiveSlaTarget,
         count,
         waitMinutes,
         slaStatus

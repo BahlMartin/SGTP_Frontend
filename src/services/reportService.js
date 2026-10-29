@@ -178,7 +178,11 @@ export async function fetchMetricasDiariasApi(fechaStr, fechaHastaStr = null) {
         ...item,
         triage_key: resolveCategoryId(item.clasificacion_triage),
         total_pacientes: Number(item.total_pacientes) || 0,
-        promedio_espera_minutos: Number(item.promedio_espera_minutos) || 0
+        promedio_espera_minutos: Number(item.promedio_espera_minutos) || 0,
+        tiempo_objetivo_minutos:
+          item.tiempo_objetivo_minutos !== undefined && item.tiempo_objetivo_minutos !== null
+            ? Number(item.tiempo_objetivo_minutos)
+            : undefined
       }))
     : []
 
