@@ -34,20 +34,40 @@ export default function EmpleadoJornadaView({
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState(null)
 
-  // Cargar lista de empleados permitidos (Jefa no ve Admins)
+  // Cargar lista de empleados permitidos (Jefa no ve Admins, solo personal activo y no eliminado)
   useEffect(() => {
     let isMounted = true
     async function loadStaff() {
       try {
-        const staff = await fetchAllStaffApi(true)
+        // Obtenemos solo personal activo (incluirInactivos = false)
+        const staff = await fetchAllStaffApi(false)
         const filtered = staff.filter((u) => {
+          // Filtrado estricto: excluir inactivos o eliminados
+          if (u.activo === false || u.is_active === false) return false
+          // Restricción RBAC: Jefa no puede auditar ni ver Administradores
           if (currentUser?.rol === 'Jefa' && u.rol === 'Admin') return false
           return true
         })
         if (isMounted) {
           setPersonalList(filtered)
           if (filtered.length > 0) {
-            setSelectedEmpId((prev) => prev || String(filtered[0].id))
+            setSelectedEmpId((prev) => {
+              // Si el ID actualmente seleccionado sigue activo en la lista, conservarlo
+              const currentValid = prev && filtered.some((emp) => String(emp.id) === String(prev))
+              if (currentValid) return prev
+
+              // Si vino initialEmpleadoId y corresponde a un empleado activo, seleccionarlo
+              const initialValid =
+                initialEmpleadoId &&
+                filtered.some((emp) => String(emp.id) === String(initialEmpleadoId))
+              if (initialValid) return String(initialEmpleadoId)
+
+              // Por defecto, seleccionar el primer empleado activo disponible
+              return String(filtered[0].id)
+            })
+          } else {
+            setSelectedEmpId('')
+            setJornadaData(null)
           }
         }
       } catch (err) {
@@ -58,7 +78,7 @@ export default function EmpleadoJornadaView({
     return () => {
       isMounted = false
     }
-  }, [currentUser?.rol])
+  }, [currentUser?.rol, initialEmpleadoId])
 
   // Cargar jornada del empleado seleccionado
   const fetchJornada = useCallback(async () => {
@@ -117,12 +137,17 @@ export default function EmpleadoJornadaView({
             value={selectedEmpId}
             onChange={(e) => setSelectedEmpId(e.target.value)}
             className="empleado-jornada__select"
+            disabled={personalList.length === 0}
           >
-            {personalList.map((p) => (
-              <option key={p.id} value={String(p.id)}>
-                {p.nombre} ({p.rol}{p.matricula ? ` · Mat: ${p.matricula}` : ''})
-              </option>
-            ))}
+            {personalList.length === 0 ? (
+              <option value="">No hay empleados activos disponibles</option>
+            ) : (
+              personalList.map((p) => (
+                <option key={p.id} value={String(p.id)}>
+                  {p.nombre} ({p.rol}{p.matricula ? ` · Mat: ${p.matricula}` : ''})
+                </option>
+              ))
+            )}
           </select>
         </div>
 
@@ -151,6 +176,18 @@ export default function EmpleadoJornadaView({
         <div className="empleado-jornada__loading">
           <div className="eventos-table__spinner" aria-hidden="true" />
           <p>Consultando eventos de la jornada...</p>
+        </div>
+      )}
+
+      {!loading && personalList.length === 0 && !errorMsg && (
+        <div className="empleado-jornada__empty-state">
+          <p>No se encontraron empleados activos disponibles para consultar su jornada.</p>
+        </div>
+      )}
+
+      {!loading && personalList.length > 0 && !jornadaData && !errorMsg && (
+        <div className="empleado-jornada__empty-state">
+          <p>Seleccione un empleado activo para ver el desglose de su jornada laboral.</p>
         </div>
       )}
 

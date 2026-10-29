@@ -253,3 +253,14 @@
   color: var(--auditoria-text-light, #94a3a8);
 }
 
+.empleado-jornada__empty-state {
+  background: var(--auditoria-bg-card, #ffffff);
+  border: 1px solid var(--auditoria-border-card, #d9e5ea);
+  border-radius: var(--radius-md, 10px);
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--auditoria-text-secondary, #647a85);
+  font-size: 14px;
+  box-shadow: var(--auditoria-shadow-sm, 0 1px 3px rgba(24, 59, 74, 0.06));
+}
+
