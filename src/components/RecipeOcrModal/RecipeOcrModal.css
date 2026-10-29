@@ -15,12 +15,20 @@
   border-radius: var(--radius-xl, 16px);
   max-width: 620px;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 24px;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 22px 24px 18px;
   position: relative;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
   animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Expansión Split-View cuando entra en modo revisión */
+.ocr-modal__card--review {
+  max-width: 920px;
 }
 
 @keyframes modalScaleIn {
@@ -48,6 +56,7 @@
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
+  z-index: 2;
 }
 
 .ocr-modal__close-btn:hover {
@@ -56,7 +65,9 @@
 }
 
 .ocr-modal__header {
-  margin-bottom: 16px;
+  flex-shrink: 0;
+  margin-bottom: 14px;
+  padding-right: 32px;
 }
 
 .ocr-modal__chip-ai {
@@ -69,25 +80,26 @@
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .ocr-modal__title {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-primary, #0f172a);
   margin-bottom: 4px;
 }
 
 .ocr-modal__subtitle {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--text-muted, #64748b);
-  line-height: 1.4;
+  line-height: 1.35;
   margin: 0;
 }
 
 /* Errores */
 .ocr-modal__error-alert {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -96,8 +108,23 @@
   color: #991b1b;
   padding: 10px 14px;
   border-radius: 8px;
-  font-size: 0.88rem;
-  margin-bottom: 16px;
+  font-size: 0.86rem;
+  margin-bottom: 14px;
+}
+
+/* Contenedores de Fase (Upload y Review) con estructura Flex para Footer Fijo */
+.ocr-modal__step-upload,
+.ocr-modal__step-review {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.ocr-modal__upload-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 /* Dropzone y subida */
@@ -173,7 +200,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 12px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -181,7 +208,7 @@
 }
 
 .ocr-modal__preview-image {
-  max-height: 240px;
+  max-height: 220px;
   width: auto;
   max-width: 100%;
   border-radius: 8px;
@@ -210,7 +237,7 @@
 
 /* Barra de progreso de procesamiento */
 .ocr-modal__progress-box {
-  margin-top: 14px;
+  margin-top: 12px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   padding: 12px 14px;
@@ -249,11 +276,15 @@
   transition: width 0.25s ease;
 }
 
-/* Botón principal de procesamiento */
+/* Footer Fijo de Acciones */
 .ocr-modal__actions {
+  flex-shrink: 0;
   display: flex;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
 }
 
 .ocr-modal__run-btn {
@@ -283,64 +314,92 @@
   cursor: not-allowed;
 }
 
-/* Fase de Revisión Human-in-the-Loop */
-.ocr-modal__alert {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 10px;
-  padding: 12px 14px;
+/* =========================================================
+   Fase de Revisión: Layout Split-View en Desktop
+   ========================================================= */
+.ocr-modal__review-body {
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  gap: 18px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Panel Izquierdo (Sidebar de receta + metadatos) */
+.ocr-modal__sidebar {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
+}
+
+.ocr-modal__review-preview {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  margin-bottom: 14px;
-  color: #166534;
-  font-size: 0.84rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
 }
 
-.ocr-modal__alert-icon {
-  flex-shrink: 0;
-  color: #16a34a;
-  margin-top: 2px;
+.ocr-modal__review-image-wrapper {
+  width: 100%;
+  height: 170px;
+  background: #0f172a;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
 }
 
-.ocr-modal__alert-content strong {
-  display: block;
-  font-size: 0.88rem;
-  margin-bottom: 2px;
+.ocr-modal__review-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-.ocr-modal__alert-content p {
-  margin: 0;
-  line-height: 1.4;
+.ocr-modal__sidebar-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* Alternador de visualización de imagen original vs Otsu */
 .ocr-modal__view-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .ocr-modal__toggle-label {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #64748b;
 }
 
 .ocr-modal__toggle-btn {
-  background: #f1f5f9;
+  flex: 1;
+  justify-content: center;
+  background: #ffffff;
   border: 1px solid #cbd5e1;
   color: #475569;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 5px 8px;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -351,61 +410,103 @@
   border-color: #0284c7;
 }
 
-.ocr-modal__review-preview {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 8px 12px;
-  margin-bottom: 16px;
-}
-
-.ocr-modal__review-thumbnail {
-  width: 52px;
-  height: 52px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid #cbd5e1;
-}
-
 .ocr-modal__review-info {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .ocr-modal__info-chip {
   background: #e2e8f0;
   color: #334155;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 6px;
 }
 
-/* Grilla de Prácticas */
-.ocr-modal__studies-grid {
+/* Panel Derecho (Scroll único de prácticas y sugerencias) */
+.ocr-modal__main-panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 240px;
+  gap: 12px;
   overflow-y: auto;
-  margin-bottom: 14px;
-  padding-right: 4px;
+  min-height: 0;
+  padding-right: 6px;
+}
+
+/* Scrollbar estilizada y limpia para el panel principal */
+.ocr-modal__main-panel::-webkit-scrollbar,
+.ocr-modal__sidebar::-webkit-scrollbar,
+.ocr-modal__review-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ocr-modal__main-panel::-webkit-scrollbar-track,
+.ocr-modal__sidebar::-webkit-scrollbar-track,
+.ocr-modal__review-body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.ocr-modal__main-panel::-webkit-scrollbar-thumb,
+.ocr-modal__sidebar::-webkit-scrollbar-thumb,
+.ocr-modal__review-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.ocr-modal__main-panel::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.ocr-modal__alert {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  color: #166534;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+
+.ocr-modal__alert-icon {
+  flex-shrink: 0;
+  color: #16a34a;
+  margin-top: 2px;
+}
+
+.ocr-modal__alert-content strong {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 2px;
+}
+
+.ocr-modal__alert-content p {
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* Grilla de Prácticas (2 Columnas en Desktop, Sin Scroll Interno) */
+.ocr-modal__studies-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .ocr-modal__study-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  padding: 10px 14px;
+  padding: 10px 12px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s ease;
+  user-select: none;
 }
 
 .ocr-modal__study-item:hover {
@@ -422,37 +523,43 @@
 .ocr-modal__study-checkbox {
   width: 16px;
   height: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
   cursor: pointer;
   accent-color: #0284c7;
 }
 
 .ocr-modal__study-details {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .ocr-modal__study-name {
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   font-weight: 600;
   color: #0f172a;
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 .ocr-modal__study-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 5px;
 }
 
 .ocr-modal__study-code {
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   color: #64748b;
   font-family: var(--font-family);
 }
 
 .ocr-modal__study-score {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 600;
   padding: 2px 6px;
   border-radius: 4px;
@@ -527,11 +634,10 @@
   background: linear-gradient(135deg, #eff6ff, #f3e8ff);
   border: 1px solid #c084fc;
   border-radius: 10px;
-  padding: 12px 14px;
-  margin-bottom: 14px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   box-shadow: 0 2px 6px rgba(147, 51, 234, 0.08);
 }
 
@@ -539,9 +645,9 @@
   align-self: flex-start;
   background: #9333ea;
   color: #ffffff;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 6px;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -549,23 +655,23 @@
 
 .ocr-modal__combo-title {
   display: block;
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   color: #581c87;
   font-weight: 700;
 }
 
 .ocr-modal__combo-desc {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   color: #6b21a8;
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
 /* Badges de Procedencia Inteligente */
 .ocr-modal__origin-badge {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  padding: 2px 7px;
+  padding: 2px 6px;
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
@@ -596,7 +702,7 @@
   border: 1px dashed #86efac;
   border-radius: 8px;
   padding: 10px 12px;
-  margin-bottom: 14px;
+  flex-shrink: 0;
 }
 
 .ocr-modal__contextual-header {
@@ -623,7 +729,7 @@
   background: #ffffff;
   border: 1px solid #86efac;
   color: #15803d;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
   padding: 5px 10px;
   border-radius: 6px;
@@ -643,9 +749,9 @@
 
 /* Badges de Motor por Estudio */
 .ocr-modal__motor-badge {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 600;
-  padding: 2px 7px;
+  padding: 2px 6px;
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
@@ -675,5 +781,91 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 10px 0;
+}
+
+/* =========================================================
+   Diseño Responsive para Tablets y Celulares (<= 768px)
+   Unificación en 1 solo scroll continuo + 1 columna
+   ========================================================= */
+@media (max-width: 768px) {
+  .ocr-modal {
+    padding: 8px;
+    align-items: flex-end;
+  }
+
+  .ocr-modal__card,
+  .ocr-modal__card--review {
+    max-width: 100%;
+    max-height: 92dvh;
+    padding: 16px 14px 14px;
+    border-radius: 16px 16px 12px 12px;
+  }
+
+  .ocr-modal__header {
+    margin-bottom: 10px;
+  }
+
+  .ocr-modal__title {
+    font-size: 1.05rem;
+  }
+
+  /* Ocultar subtítulo técnico largo en móvil para priorizar el contenido */
+  .ocr-modal__subtitle {
+    display: none;
+  }
+
+  /* El cuerpo de revisión se convierte en un único contenedor scrolleable */
+  .ocr-modal__review-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  .ocr-modal__sidebar,
+  .ocr-modal__main-panel {
+    overflow-y: visible;
+    padding-right: 0;
+  }
+
+  /* Compactar la vista previa de la receta en una fila horizontal en celular */
+  .ocr-modal__review-preview {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 10px;
+    gap: 12px;
+  }
+
+  .ocr-modal__review-image-wrapper {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+  }
+
+  .ocr-modal__sidebar-controls {
+    flex: 1;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  /* Grilla de 1 sola columna en móviles para lectura clara */
+  .ocr-modal__studies-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ocr-modal__study-item {
+    padding: 11px 12px;
+  }
+
+  .ocr-modal__actions {
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+
+  .ocr-modal__confirm-btn,
+  .ocr-modal__cancel-btn {
+    padding: 12px 14px;
+    font-size: 0.86rem;
+  }
 }
