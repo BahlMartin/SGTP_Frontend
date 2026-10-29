@@ -50,7 +50,8 @@ export const TriageQueueContextProvider = ({ children }) => {
 
   useWebSocket('queue', {
     onMessage: useCallback((msg) => {
-      if (msg?.event === 'QUEUE_UPDATED') {
+      const evt = msg?.event || msg?.action
+      if (['QUEUE_UPDATED', 'TICKET_CREATED', 'NEW_TICKET', 'TICKET_LLAMADO'].includes(evt)) {
         refreshTickets()
       }
     }, [refreshTickets])
@@ -58,7 +59,8 @@ export const TriageQueueContextProvider = ({ children }) => {
 
   useWebSocket('tickets', {
     onMessage: useCallback((msg) => {
-      if (['TICKET_CREATED', 'TICKET_UPDATED', 'TICKET_LLAMADO'].includes(msg?.event)) {
+      const evt = msg?.event || msg?.action
+      if (['TICKET_CREATED', 'NEW_TICKET', 'TICKET_UPDATED', 'TICKET_LLAMADO'].includes(evt)) {
         refreshTickets()
       }
     }, [refreshTickets])
