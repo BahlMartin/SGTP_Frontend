@@ -49,15 +49,23 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
     }
   })
 
+  const totalIngresos = dayTickets.length || ingresos
+  const tasaCompletitud = totalIngresos > 0 ? Number(((atendidos / totalIngresos) * 100).toFixed(1)) : 0
+  const tasaDesercion = totalIngresos > 0 ? Number(((cancelados / totalIngresos) * 100).toFixed(1)) : 0
+
   return {
     atendidos,
     cancelados,
     enCurso,
-    ingresos: dayTickets.length || ingresos,
+    ingresos: totalIngresos,
     criticos,
+    tasaCompletitud,
+    tasaDesercion,
     esperaPromedio: '—',
     atencionPromedio: '—',
     triageDistribution: triageCounts,
+    slaTriage: [],
+    franjasHorarias: [],
     resumenEstudiosRealizadosPorSeccion: null,
     resumenEstudiosRealizadosPorMuestra: null,
     tickets: dayTickets
@@ -123,23 +131,55 @@ export async function fetchMetricasDiariasApi(fechaStr) {
       .toLowerCase()
       .replace(/[\s.-]+/g, '_')
 
+  const resolveCategoryId = (rawValue) => {
+    const categoryKey = normalizeCategory(rawValue)
+    const matched = TRIAGE_LIST.find((category) =>
+      [category.id, category.key, category.label, category.code].some(
+        (value) => normalizeCategory(value) === categoryKey
+      )
+    )
+    return matched ? matched.id : categoryKey || String(rawValue ?? '')
+  }
+
   if (Array.isArray(data.distribucion_triage)) {
     data.distribucion_triage.forEach((item) => {
-      const categoryKey = normalizeCategory(item.clasificacion_triage)
-      const matched = TRIAGE_LIST.find((category) =>
-        [category.id, category.key, category.label, category.code].some(
-          (value) => normalizeCategory(value) === categoryKey
-        )
-      )
+      const resolvedId = resolveCategoryId(item.clasificacion_triage)
       const quantity = Number(item.cantidad) || 0
 
-      if (matched) {
-        triageMap[matched.id] += quantity
+      if (resolvedId in triageMap) {
+        triageMap[resolvedId] += quantity
       } else {
-        triageMap[item.clasificacion_triage] = quantity
+        triageMap[resolvedId] = quantity
       }
     })
   }
+
+  const slaTriage = Array.isArray(data.sla_triage)
+    ? data.sla_triage.map((item) => ({
+        ...item,
+        triage_key: resolveCategoryId(item.clasificacion_triage),
+        total_pacientes: Number(item.total_pacientes) || 0,
+        promedio_espera_minutos: Number(item.promedio_espera_minutos) || 0
+      }))
+    : []
+
+  const franjasHorarias = Array.isArray(data.franjas_horarias)
+    ? data.franjas_horarias.map((slot) => ({
+        ...slot,
+        total_emitidos: Number(slot.total_emitidos) || 0,
+        total_atendidos: Number(slot.total_atendidos) || 0,
+        total_cancelados: Number(slot.total_cancelados) || 0,
+        promedio_espera_minutos: Number(slot.promedio_espera_minutos) || 0,
+        promedio_atencion_minutos: Number(slot.promedio_atencion_minutos) || 0,
+        distribucion_triage: Array.isArray(slot.distribucion_triage)
+          ? slot.distribucion_triage.map((tItem) => ({
+              ...tItem,
+              triage_key: resolveCategoryId(tItem.clasificacion_triage),
+              cantidad: Number(tItem.cantidad) || 0
+            }))
+          : []
+      }))
+    : []
 
   const enCurso = Math.max(
     0,
@@ -152,21 +192,18 @@ export async function fetchMetricasDiariasApi(fechaStr) {
     cancelados: data.total_cancelados || 0,
     enCurso,
     criticos: data.total_criticos_atendidos || 0,
-    tasaCompletitud: data.tasa_completitud_porcentaje || 0,
-    tasaDesercion: data.tasa_desercion_porcentaje || 0,
+    tasaCompletitud: Number(data.tasa_completitud_porcentaje) || 0,
+    tasaDesercion: Number(data.tasa_desercion_porcentaje) || 0,
     esperaPromedio: data.promedio_espera_minutos ? formatDurationHuman(Math.round(data.promedio_espera_minutos)) : '—',
     atencionPromedio: data.promedio_atencion_minutos ? formatDurationHuman(Math.round(data.promedio_atencion_minutos)) : '—',
     triageDistribution: triageMap,
-    slaTriage: data.sla_triage || [],
-    franjasHorarias: data.franjas_horarias || [],
+    slaTriage,
+    franjasHorarias,
     resumenSecciones: data.resumen_secciones || [],
     resumenEstudiosRealizadosPorSeccion,
     resumenEstudiosRealizadosPorMuestra,
     insumosTubos: data.insumos_tubos || [],
     auditoriaBox: data.auditoria_box || {},
-    rendimientoAdmision: data.rendimiento_admision || [],
-    rendimientoBox: data.rendimiento_box || [],
-    rendimientoPersonal: data.rendimiento_personal || [],
     totalEstudios: data.total_estudios || 0,
     raw: data
   }

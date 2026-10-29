@@ -6,6 +6,7 @@ import { useSecretariaReport } from '../../hooks/useSecretariaReport'
 import SecretariaJornadaBar from './components/SecretariaJornadaBar/SecretariaJornadaBar'
 import SecretariaKpiGrid from './components/SecretariaKpiGrid/SecretariaKpiGrid'
 import TriageDistributionCard from '../../components/ReportCharts/TriageDistributionCard'
+import TimeSlotsCard from '../../components/ReportCharts/TimeSlotsCard'
 import StudiesLollipopCard from '../../components/ReportCharts/StudiesLollipopCard'
 import StudiesSamplesBarsCard from '../../components/ReportCharts/StudiesSamplesBarsCard'
 import StaffSecurityCard from '../JefaScreen/components/StaffSecurityCard/StaffSecurityCard'
@@ -109,10 +110,14 @@ export default function SecretariaScreen() {
           cancelados={metrics.cancelados}
           ingresos={metrics.ingresos}
           enCurso={metrics.enCurso}
+          tasaCompletitud={metrics.tasaCompletitud}
+          tasaDesercion={metrics.tasaDesercion}
           esperaPromedio={metrics.esperaPromedio}
           atencionPromedio={metrics.atencionPromedio}
           criticos={metrics.criticos}
         />
+
+        <TimeSlotsCard franjasHorarias={metrics.franjasHorarias} />
 
         <div className="secretaria-screen__study-summaries">
           <StudiesLollipopCard
@@ -125,7 +130,11 @@ export default function SecretariaScreen() {
           />
         </div>
 
-        <TriageDistributionCard triageDistribution={metrics.triageDistribution} />
+        <TriageDistributionCard
+          triageDistribution={metrics.triageDistribution}
+          slaTriage={metrics.slaTriage}
+          franjasHorarias={metrics.franjasHorarias}
+        />
 
         <section className="secretaria-screen__security-section" aria-labelledby="secretaria-security-title">
           <h2 id="secretaria-security-title" className="secretaria-screen__section-title">
