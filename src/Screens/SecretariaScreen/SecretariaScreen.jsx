@@ -30,7 +30,10 @@ export default function SecretariaScreen() {
 
   const {
     jornadaDate,
+    jornadaEndDate,
+    periodMode,
     setJornadaDate,
+    applyPeriodRange,
     notice,
     errorNotice,
     emailError,
@@ -70,7 +73,8 @@ export default function SecretariaScreen() {
       if (!isRelevant) return
 
       const today = getTodayLocalDateString()
-      if (jornadaDate === today) {
+      const endDate = jornadaEndDate || jornadaDate
+      if (today >= jornadaDate && today <= endDate) {
         const now = Date.now()
         if (now - lastRefreshRef.current > 400) {
           lastRefreshRef.current = now
@@ -78,7 +82,7 @@ export default function SecretariaScreen() {
         }
       }
     },
-    [jornadaDate, refreshMetrics]
+    [jornadaDate, jornadaEndDate, refreshMetrics]
   )
 
   // Implementación de WebSocket para actualización de métricas en tiempo real
@@ -111,7 +115,10 @@ export default function SecretariaScreen() {
 
         <SecretariaJornadaBar
           jornadaDate={jornadaDate}
+          jornadaEndDate={jornadaEndDate}
+          periodMode={periodMode}
           onDateChange={(selectedDateValue) => setJornadaDate(selectedDateValue)}
+          onApplyPeriod={applyPeriodRange}
           onExportPdf={handleExportPdf}
           onExportExcel={handleExportExcel}
           onSendEmail={() => handleSendEmail()}

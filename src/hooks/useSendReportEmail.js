@@ -2,11 +2,12 @@ import { useState, useCallback } from 'react'
 import { sendDailyReportEmailApi } from '../services/reportService'
 
 /**
- * Hook reutilizable para el despacho y notificación del reporte diario por correo electrónico.
+ * Hook reutilizable para el despacho y notificación del reporte diario o por período por correo electrónico.
  * Soporta envío al propio usuario autenticado o al correo manual de un tercero.
  */
 export function useSendReportEmail({
   jornadaDate,
+  jornadaEndDate = null,
   recipientEmail,
   onSuccessNotice,
   onErrorNotice
@@ -30,7 +31,11 @@ export function useSendReportEmail({
             ? customRecipientEmail.trim()
             : recipientEmail || undefined
 
-        const responsePayload = await sendDailyReportEmailApi(jornadaDate, targetEmailAddress)
+        const responsePayload = await sendDailyReportEmailApi(
+          jornadaDate,
+          targetEmailAddress,
+          jornadaEndDate || jornadaDate
+        )
 
         if (onSuccessNotice) {
           onSuccessNotice(responsePayload.message)
@@ -57,7 +62,7 @@ export function useSendReportEmail({
         setIsSendingEmail(false)
       }
     },
-    [isSendingEmail, jornadaDate, recipientEmail, onSuccessNotice, onErrorNotice]
+    [isSendingEmail, jornadaDate, jornadaEndDate, recipientEmail, onSuccessNotice, onErrorNotice]
   )
 
   return {

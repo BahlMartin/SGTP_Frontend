@@ -5,17 +5,31 @@ import { TRIAGE_LIST, TRIAGE_CATEGORIES, getTriageInfo } from '../constants/tria
 /**
  * Cálculo asistencial local de métricas a partir del conjunto de tickets.
  */
-export function computeDailyReportMetrics(tickets = [], targetDate = new Date()) {
-  let targetDateStr = ''
+export function computeDailyReportMetrics(tickets = [], targetDate = new Date(), targetEndDate = null) {
+  let startDateStr = ''
   if (targetDate instanceof Date) {
-    targetDateStr = getArgentinaDateString(targetDate)
+    startDateStr = getArgentinaDateString(targetDate)
   } else if (typeof targetDate === 'string') {
-    targetDateStr = targetDate.slice(0, 10)
+    startDateStr = targetDate.slice(0, 10)
+  }
+
+  let endDateStr = startDateStr
+  if (targetEndDate instanceof Date) {
+    endDateStr = getArgentinaDateString(targetEndDate)
+  } else if (typeof targetEndDate === 'string' && targetEndDate.trim()) {
+    endDateStr = targetEndDate.slice(0, 10)
+  }
+
+  if (endDateStr < startDateStr) {
+    const tmp = startDateStr
+    startDateStr = endDateStr
+    endDateStr = tmp
   }
 
   const dayTickets = tickets.filter((ticket) => {
     if (!ticket.fecha_hora_admision) return false
-    return getArgentinaDateString(ticket.fecha_hora_admision) === targetDateStr
+    const ticketDateStr = getArgentinaDateString(ticket.fecha_hora_admision)
+    return ticketDateStr >= startDateStr && ticketDateStr <= endDateStr
   })
 
   let atendidos = 0
@@ -73,10 +87,15 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
 }
 
 /**
- * Consulta las métricas consolidadas del reporte diario en el backend.
+ * Consulta las métricas consolidadas del reporte diario o por rango en el backend.
  */
-export async function fetchMetricasDiariasApi(fechaStr) {
-  const query = `?fecha=${fechaStr || getTodayLocalDateString()}&_t=${Date.now()}`
+export async function fetchMetricasDiariasApi(fechaStr, fechaHastaStr = null) {
+  const desde = fechaStr || getTodayLocalDateString()
+  const hasta = fechaHastaStr || desde
+  const query =
+    desde === hasta
+      ? `?fecha=${desde}&_t=${Date.now()}`
+      : `?fecha_desde=${desde}&fecha_hasta=${hasta}&_t=${Date.now()}`
   const data = await apiClient.get(`/reports/metricas-diarias/${query}`)
 
   const resumenEstudiosRealizadosPorSeccion = Array.isArray(data.resumen_estudios_realizados_por_seccion)
@@ -212,14 +231,22 @@ export async function fetchMetricasDiariasApi(fechaStr) {
 /**
  * Descarga el archivo PDF oficial compilado en tiempo real por el backend.
  */
-export async function downloadReportePdfApi(fechaStr) {
-  const query = fechaStr ? `?fecha=${fechaStr}` : ''
+export async function downloadReportePdfApi(fechaStr, fechaHastaStr = null) {
+  const desde = fechaStr || ''
+  const hasta = fechaHastaStr || desde
+  let query = ''
+  if (desde && hasta && desde !== hasta) {
+    query = `?fecha_desde=${desde}&fecha_hasta=${hasta}`
+  } else if (desde) {
+    query = `?fecha=${desde}`
+  }
   const blob = await apiClient.download(`/reports/descargar-pdf/${query}`)
+  const fileLabel = desde && hasta && desde !== hasta ? `${desde}_a_${hasta}` : desde || 'hoy'
 
   const url = window.URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = `Reporte_Asistencial_${fechaStr || 'hoy'}.pdf`
+  anchor.download = `Reporte_Asistencial_${fileLabel}.pdf`
   document.body.appendChild(anchor)
   anchor.click()
   document.body.removeChild(anchor)
@@ -231,14 +258,22 @@ export async function downloadReportePdfApi(fechaStr) {
 /**
  * Descarga el libro Excel (.xlsx) oficial de 6 hojas compilado en tiempo real por el backend.
  */
-export async function downloadReporteExcelApi(fechaStr) {
-  const query = fechaStr ? `?fecha=${fechaStr}` : ''
+export async function downloadReporteExcelApi(fechaStr, fechaHastaStr = null) {
+  const desde = fechaStr || ''
+  const hasta = fechaHastaStr || desde
+  let query = ''
+  if (desde && hasta && desde !== hasta) {
+    query = `?fecha_desde=${desde}&fecha_hasta=${hasta}`
+  } else if (desde) {
+    query = `?fecha=${desde}`
+  }
   const blob = await apiClient.download(`/reports/descargar-excel/${query}`)
+  const fileLabel = desde && hasta && desde !== hasta ? `${desde}_a_${hasta}` : desde || 'hoy'
 
   const url = window.URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = `Reporte_Asistencial_${fechaStr || 'hoy'}.xlsx`
+  anchor.download = `Reporte_Asistencial_${fileLabel}.xlsx`
   document.body.appendChild(anchor)
   anchor.click()
   document.body.removeChild(anchor)
@@ -248,18 +283,23 @@ export async function downloadReporteExcelApi(fechaStr) {
 }
 
 /**
- * Dispara el despacho manual del reporte diario vía correo institucional SMTP.
+ * Dispara el despacho manual del reporte diario o por rango vía correo institucional SMTP.
  */
-export async function dispararEnvioReporteApi(fechaStr, emailDestinatario) {
-  const payload = { fecha: fechaStr }
+export async function dispararEnvioReporteApi(fechaStr, emailDestinatario, fechaHastaStr = null) {
+  const desde = fechaStr
+  const hasta = fechaHastaStr || desde
+  const payload =
+    desde && hasta && desde !== hasta
+      ? { fecha_desde: desde, fecha_hasta: hasta }
+      : { fecha: desde }
   if (emailDestinatario !== undefined && emailDestinatario !== null) {
     payload.email_destinatario = emailDestinatario
   }
   return await apiClient.post('/reports/disparar-envio/', payload)
 }
 
-export async function sendDailyReportEmailApi(fechaStr, emailDestinatario) {
-  const response = await dispararEnvioReporteApi(fechaStr, emailDestinatario)
+export async function sendDailyReportEmailApi(fechaStr, emailDestinatario, fechaHastaStr = null) {
+  const response = await dispararEnvioReporteApi(fechaStr, emailDestinatario, fechaHastaStr)
   return {
     success: true,
     message: response.mensaje || 'Reporte asistencial despachado exitosamente por correo institucional.',

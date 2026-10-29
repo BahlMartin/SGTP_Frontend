@@ -3,11 +3,10 @@ import { downloadReportePdfApi } from '../services/reportService'
 import { getArgentinaDateString } from '../utils/formatters'
 
 /**
- * Hook reutilizable para la exportación y descarga del reporte diario en formato PDF.
- * Conecta con el endpoint /app/reports/descargar-pdf/ del backend, que es la única
- * fuente del documento oficial (no existe generador local de respaldo).
+ * Hook reutilizable para la exportación y descarga del reporte en formato PDF.
+ * Conecta con el endpoint /app/reports/descargar-pdf/ del backend.
  */
-export function useExportReportPdf({ jornadaDate, onSuccessNotice }) {
+export function useExportReportPdf({ jornadaDate, jornadaEndDate = null, onSuccessNotice }) {
   const handleExportPdf = useCallback(async () => {
     let dateStr = ''
     if (jornadaDate instanceof Date) {
@@ -16,8 +15,15 @@ export function useExportReportPdf({ jornadaDate, onSuccessNotice }) {
       dateStr = jornadaDate
     }
 
+    let endDateStr = dateStr
+    if (jornadaEndDate instanceof Date) {
+      endDateStr = getArgentinaDateString(jornadaEndDate)
+    } else if (typeof jornadaEndDate === 'string' && jornadaEndDate.trim()) {
+      endDateStr = jornadaEndDate
+    }
+
     try {
-      await downloadReportePdfApi(dateStr)
+      await downloadReportePdfApi(dateStr, endDateStr)
       if (onSuccessNotice) {
         onSuccessNotice('Informe en formato PDF descargado exitosamente.')
       }
@@ -27,7 +33,7 @@ export function useExportReportPdf({ jornadaDate, onSuccessNotice }) {
         onSuccessNotice('No se pudo generar el informe PDF. Intente nuevamente en unos instantes.')
       }
     }
-  }, [jornadaDate, onSuccessNotice])
+  }, [jornadaDate, jornadaEndDate, onSuccessNotice])
 
   return {
     handleExportPdf

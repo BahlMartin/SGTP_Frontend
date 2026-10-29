@@ -3,10 +3,10 @@ import { downloadReporteExcelApi } from '../services/reportService'
 import { getArgentinaDateString } from '../utils/formatters'
 
 /**
- * Hook reutilizable para la exportación y descarga del reporte diario en formato Excel (.xlsx).
+ * Hook reutilizable para la exportación y descarga del reporte en formato Excel (.xlsx).
  * Conecta con el endpoint /app/reports/descargar-excel/ del backend.
  */
-export function useExportReportExcel({ jornadaDate, onSuccessNotice }) {
+export function useExportReportExcel({ jornadaDate, jornadaEndDate = null, onSuccessNotice }) {
   const handleExportExcel = useCallback(async () => {
     let dateStr = ''
     if (jornadaDate instanceof Date) {
@@ -15,8 +15,15 @@ export function useExportReportExcel({ jornadaDate, onSuccessNotice }) {
       dateStr = jornadaDate
     }
 
+    let endDateStr = dateStr
+    if (jornadaEndDate instanceof Date) {
+      endDateStr = getArgentinaDateString(jornadaEndDate)
+    } else if (typeof jornadaEndDate === 'string' && jornadaEndDate.trim()) {
+      endDateStr = jornadaEndDate
+    }
+
     try {
-      await downloadReporteExcelApi(dateStr)
+      await downloadReporteExcelApi(dateStr, endDateStr)
       if (onSuccessNotice) {
         onSuccessNotice('Informe en formato Excel (.xlsx) descargado exitosamente.')
       }
@@ -26,10 +33,9 @@ export function useExportReportExcel({ jornadaDate, onSuccessNotice }) {
         onSuccessNotice('No se pudo generar el informe Excel. Intente nuevamente en unos instantes.')
       }
     }
-  }, [jornadaDate, onSuccessNotice])
+  }, [jornadaDate, jornadaEndDate, onSuccessNotice])
 
   return {
     handleExportExcel
   }
 }
-
