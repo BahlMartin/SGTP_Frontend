@@ -496,6 +496,7 @@ export default function ActividadScreen() {
               <EmpleadoJornadaView
                 currentUser={currentUser}
                 onSelectEvent={handleSelectEvent}
+                initialEmpleadoId={searchParams.get('usuario')}
               />
               <DbIpAttribution />
             </div>

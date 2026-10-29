@@ -3,19 +3,19 @@ import {
   User,
   Calendar,
   Clock,
-    AlertTriangle,
+  AlertTriangle,
   Activity,
   Layers,
   ChevronRight,
-  Coffee,
-      } from 'lucide-react'
+  Coffee
+} from 'lucide-react'
 import { fetchEmpleadoJornadaApi } from '../../../services/auditService'
 import { fetchAllStaffApi } from '../../../services/userService'
 import ActivityStripSVG from './ActivityStripSVG'
 import {
   CATEGORIAS_CONFIG,
-    ACCIONES_CATALOGO,
-  } from '../constants/auditoriaConstants'
+  ACCIONES_CATALOGO
+} from '../constants/auditoriaConstants'
 import './EmpleadoJornadaView.css'
 
 export default function EmpleadoJornadaView({
@@ -24,7 +24,9 @@ export default function EmpleadoJornadaView({
   initialEmpleadoId = null
 }) {
   const [personalList, setPersonalList] = useState([])
-  const [selectedEmpId, setSelectedEmpId] = useState(initialEmpleadoId || '')
+  const [selectedEmpId, setSelectedEmpId] = useState(
+    initialEmpleadoId ? String(initialEmpleadoId) : ''
+  )
   const [selectedFecha, setSelectedFecha] = useState(
     new Date().toISOString().slice(0, 10)
   )
@@ -34,23 +36,29 @@ export default function EmpleadoJornadaView({
 
   // Cargar lista de empleados permitidos (Jefa no ve Admins)
   useEffect(() => {
+    let isMounted = true
     async function loadStaff() {
       try {
-        const staff = await fetchAllStaffApi(false)
+        const staff = await fetchAllStaffApi(true)
         const filtered = staff.filter((u) => {
           if (currentUser?.rol === 'Jefa' && u.rol === 'Admin') return false
           return true
         })
-        setPersonalList(filtered)
-        if (!selectedEmpId && filtered.length > 0) {
-          setSelectedEmpId(filtered[0].id)
+        if (isMounted) {
+          setPersonalList(filtered)
+          if (filtered.length > 0) {
+            setSelectedEmpId((prev) => prev || String(filtered[0].id))
+          }
         }
       } catch (err) {
         console.error('Error cargando personal para jornada:', err)
       }
     }
     loadStaff()
-  }, [currentUser?.rol, selectedEmpId])
+    return () => {
+      isMounted = false
+    }
+  }, [currentUser?.rol])
 
   // Cargar jornada del empleado seleccionado
   const fetchJornada = useCallback(async () => {
@@ -73,10 +81,28 @@ export default function EmpleadoJornadaView({
     fetchJornada()
   }, [fetchJornada])
 
-    const resumen = jornadaData?.resumen
-  const turno = jornadaData?.turno_programado
-  const bloques = jornadaData?.bloques_actividad || []
+  const empleado = jornadaData?.empleado
+  const resumen = jornadaData?.resumen
+  const turno = jornadaData?.turno_programado || {
+    inicio: empleado?.turnoInicio ?? 7,
+    fin: empleado?.turnoFin ?? 15,
+    label: empleado?.turnoLabel || empleado?.turno_label || '07:00–15:00'
+  }
+  const bloques = jornadaData?.bloques_actividad || jornadaData?.bloquesActividad || []
   const timeline = jornadaData?.timeline || []
+
+  const totalEventos = resumen?.total_eventos ?? resumen?.totalEventos ?? 0
+  const primeraAct = resumen?.primera_act ?? resumen?.primeraAct ?? '—'
+  const ultimaAct = resumen?.ultima_act ?? resumen?.ultimaAct ?? '—'
+  const cancelaciones = resumen?.cancelaciones ?? 0
+  const alertas = resumen?.alertas ?? 0
+  const turnoLabel =
+    resumen?.turno_label ??
+    resumen?.turnoLabel ??
+    empleado?.turnoLabel ??
+    empleado?.turno_label ??
+    turno?.label ??
+    '—'
 
   return (
     <div className="empleado-jornada-view" role="region" aria-label="Jornada por empleado">
@@ -93,7 +119,7 @@ export default function EmpleadoJornadaView({
             className="empleado-jornada__select"
           >
             {personalList.map((p) => (
-              <option key={p.id} value={p.id}>
+              <option key={p.id} value={String(p.id)}>
                 {p.nombre} ({p.rol}{p.matricula ? ` · Mat: ${p.matricula}` : ''})
               </option>
             ))}
@@ -134,40 +160,46 @@ export default function EmpleadoJornadaView({
           <div className="empleado-jornada__kpis-grid">
             <div className="empleado-jornada__kpi-card">
               <span className="empleado-jornada__kpi-title">Turno Asignado</span>
-              <div className="empleado-jornada__kpi-val">{resumen?.turno_label || '—'}</div>
+              <div className="empleado-jornada__kpi-val">{turnoLabel}</div>
               <span className="empleado-jornada__kpi-sub">Horario contractual</span>
             </div>
 
             <div className="empleado-jornada__kpi-card">
               <span className="empleado-jornada__kpi-title">Primera Actividad</span>
-              <div className="empleado-jornada__kpi-val">{resumen?.primera_act || '—'}</div>
+              <div className="empleado-jornada__kpi-val">{primeraAct}</div>
               <span className="empleado-jornada__kpi-sub">Primer registro</span>
             </div>
 
             <div className="empleado-jornada__kpi-card">
               <span className="empleado-jornada__kpi-title">Última Actividad</span>
-              <div className="empleado-jornada__kpi-val">{resumen?.ultima_act || '—'}</div>
+              <div className="empleado-jornada__kpi-val">{ultimaAct}</div>
               <span className="empleado-jornada__kpi-sub">Cierre de operaciones</span>
             </div>
 
             <div className="empleado-jornada__kpi-card">
               <span className="empleado-jornada__kpi-title">Total Acciones</span>
-              <div className="empleado-jornada__kpi-val">{resumen?.total_eventos ?? 0}</div>
+              <div className="empleado-jornada__kpi-val">{totalEventos}</div>
               <span className="empleado-jornada__kpi-sub">Operaciones auditadas</span>
             </div>
 
             <div className="empleado-jornada__kpi-card">
               <span className="empleado-jornada__kpi-title">Cancelaciones</span>
-              <div className="empleado-jornada__kpi-val" style={{ color: (resumen?.cancelaciones ?? 0) > 0 ? '#b91c1c' : 'inherit' }}>
-                {resumen?.cancelaciones ?? 0}
+              <div
+                className="empleado-jornada__kpi-val"
+                style={{ color: cancelaciones > 0 ? '#b91c1c' : 'inherit' }}
+              >
+                {cancelaciones}
               </div>
               <span className="empleado-jornada__kpi-sub">Pacientes cancelados</span>
             </div>
 
             <div className="empleado-jornada__kpi-card">
               <span className="empleado-jornada__kpi-title">Alertas</span>
-              <div className="empleado-jornada__kpi-val" style={{ color: (resumen?.alertas ?? 0) > 0 ? '#d97706' : 'inherit' }}>
-                {resumen?.alertas ?? 0}
+              <div
+                className="empleado-jornada__kpi-val"
+                style={{ color: alertas > 0 ? '#d97706' : 'inherit' }}
+              >
+                {alertas}
               </div>
               <span className="empleado-jornada__kpi-sub">Anomalías detectadas</span>
             </div>
@@ -200,18 +232,20 @@ export default function EmpleadoJornadaView({
               <div className="empleado-jornada__timeline-list">
                 {timeline.map((item, idx) => {
                   // Caso 1: Pausa / Gap de Inactividad > 30 minutos
-                  if (item.tipo === 'gap') {
+                  if (item.tipo === 'gap' || item.tipoGap) {
+                    const duracion = item.duracion_min ?? item.minutos ?? 30
+                    const rango = item.rango || `${item.desde} – ${item.hasta}`
                     return (
-                      <div key={`gap-${idx}`} className="empleado-jornada__gap-item">
+                      <div key={`gap-${item.id || idx}`} className="empleado-jornada__gap-item">
                         <div className="empleado-jornada__gap-icon">
                           <Coffee size={15} />
                         </div>
                         <div className="empleado-jornada__gap-content">
                           <span className="empleado-jornada__gap-title">
-                            Pausa de actividad prolongada ({item.duracion_min} minutos)
+                            Pausa de actividad prolongada ({duracion} minutos)
                           </span>
                           <span className="empleado-jornada__gap-time">
-                            Desde {item.desde} hasta {item.hasta}
+                            {rango}
                           </span>
                         </div>
                       </div>
@@ -221,7 +255,7 @@ export default function EmpleadoJornadaView({
                   // Caso 2: Grupo de acciones consecutivas
                   if (item.tipo === 'grupo') {
                     return (
-                      <div key={`group-${idx}`} className="empleado-jornada__group-item">
+                      <div key={`group-${item.id || idx}`} className="empleado-jornada__group-item">
                         <div className="empleado-jornada__group-badge">
                           <Layers size={14} />
                           <span>{item.cantidad}</span>
@@ -239,28 +273,33 @@ export default function EmpleadoJornadaView({
                   }
 
                   // Caso 3: Evento Individual
-                  const ev = item.evento
-                  if (!ev) return null
+                  const ev = item.evento || item
+                  const evId = ev.id || item.eventId || item.id
+                  const evCat = ev.categoria || item.categoria || 'gestion'
+                  const evAccion = ev.accion || item.accion || 'ACCION'
+                  const evRes = ev.resultado || item.resultado || 'EXITO'
+                  const evHora = ev.hora || item.hora || (ev.fecha ? String(ev.fecha).slice(11, 16) : '—')
+                  const evDesc = ev.descripcion || item.descripcion || item.titulo || ACCIONES_CATALOGO[evAccion] || evAccion
 
-                  const cat = CATEGORIAS_CONFIG[ev.categoria] || CATEGORIAS_CONFIG.gestion
+                  const cat = CATEGORIAS_CONFIG[evCat] || CATEGORIAS_CONFIG.gestion
                   const CatIcon = cat.Icon
-                  const isFallo = ev.resultado === 'FALLO'
+                  const isFallo = evRes === 'FALLO'
 
                   return (
                     <div
-                      key={`ev-${ev.id}`}
+                      key={`ev-${evId}-${idx}`}
                       className={`empleado-jornada__event-item ${
                         isFallo ? 'empleado-jornada__event-item--fallo' : ''
                       }`}
-                      onClick={() => onSelectEvent(ev.id)}
+                      onClick={() => onSelectEvent(evId)}
                       tabIndex={0}
                       role="button"
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') onSelectEvent(ev.id)
+                        if (e.key === 'Enter') onSelectEvent(evId)
                       }}
                     >
                       <span className="empleado-jornada__event-time">
-                        {ev.hora || ev.fecha?.slice(11, 16)}
+                        {evHora}
                       </span>
 
                       <div
@@ -273,16 +312,16 @@ export default function EmpleadoJornadaView({
                       <div className="empleado-jornada__event-body">
                         <div className="empleado-jornada__event-title-row">
                           <span className="empleado-jornada__event-title">
-                            {ACCIONES_CATALOGO[ev.accion] || ev.accion}
+                            {ACCIONES_CATALOGO[evAccion] || evAccion}
                           </span>
-                          {ev.resultado !== 'EXITO' && (
+                          {evRes !== 'EXITO' && (
                             <span className="empleado-jornada__event-res-pill">
-                              {ev.resultado}
+                              {evRes}
                             </span>
                           )}
                         </div>
                         <span className="empleado-jornada__event-desc">
-                          {ev.descripcion}
+                          {evDesc}
                         </span>
                       </div>
 
