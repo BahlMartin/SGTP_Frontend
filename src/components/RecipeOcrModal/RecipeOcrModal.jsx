@@ -294,16 +294,16 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                   </div>
                 </div>
 
-                {/* Banner de Combo o Batería de Rutina detectada */}
+                {/* Banner de Combo o Batería de Rutina detectada (compacto) */}
                 {ocrResult.comboDetectado && (
                   <div className="ocr-modal__combo-banner">
-                    <div className="ocr-modal__combo-badge">📦 Combo Detectado</div>
-                    <div className="ocr-modal__combo-content">
+                    <div className="ocr-modal__combo-header">
+                      <span className="ocr-modal__combo-badge">📦 Combo</span>
                       <strong className="ocr-modal__combo-title">{ocrResult.comboDetectado}</strong>
-                      <p className="ocr-modal__combo-desc">
-                        Se preseleccionaron automáticamente las prácticas correspondientes a este perfil de rutina.
-                      </p>
                     </div>
+                    <p className="ocr-modal__combo-desc">
+                      Prácticas del perfil preseleccionadas automáticamente.
+                    </p>
                   </div>
                 )}
               </aside>
@@ -311,14 +311,18 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
               {/* Panel Derecho: Lista de estudios y sugerencias contextuales */}
               <div className="ocr-modal__main-panel">
                 <div className="ocr-modal__alert">
-                  <Check size={18} className="ocr-modal__alert-icon" />
+                  <Check size={15} className="ocr-modal__alert-icon" />
                   <div className="ocr-modal__alert-content">
-                    <strong>Revisión Asistida de Prácticas (Human-in-the-Loop)</strong>
-                    <p>
-                      {ocrResult.totalSugerencias > 0
-                        ? `Se reconocieron ${ocrResult.totalSugerencias} prácticas clínicas. Valide las selecciones antes de transferirlas al ticket:`
-                        : 'No se detectaron estudios coincidentes automáticamente.'}
-                    </p>
+                    {ocrResult.totalSugerencias > 0 ? (
+                      <>
+                        <strong>{ocrResult.totalSugerencias} prácticas reconocidas</strong>
+                        <span className="ocr-modal__alert-subtext">
+                          — Valide las selecciones antes de confirmar
+                        </span>
+                      </>
+                    ) : (
+                      <span>No se detectaron estudios coincidentes automáticamente.</span>
+                    )}
                   </div>
                 </div>
 
