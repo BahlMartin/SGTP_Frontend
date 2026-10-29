@@ -394,7 +394,7 @@ export default function PatientInAttentionCard({
         completedCount={completedCount}
         totalStudiesCount={studiesList.length}
         onConfirm={onFinishConsultation}
-        onSuccess={onConsultationFinished}
+        onSuccess={(ticket) => onConsultationFinished?.(ticket || patientInBox)}
         isProcessing={isFinishing}
       />
     </div>

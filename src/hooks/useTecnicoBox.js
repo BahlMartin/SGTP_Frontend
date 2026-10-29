@@ -122,16 +122,18 @@ export function useTecnicoBox() {
   const handleFinishConsultation = async () => {
     if (!patientInBox) {
       alert('No hay paciente en atención en este box.')
-      return
+      return null
     }
 
+    const patientSnapshot = { ...patientInBox }
     setIsFinishing(true)
     try {
-      await finishAttention(currentBoxNumber)
+      const result = await finishAttention(currentBoxNumber)
       await refreshBoxes()
       showNotification(
-        `Consulta finalizada con éxito para el paciente ${patientInBox.paciente_nombre}. Box disponible.`
+        `Consulta finalizada con éxito para el paciente ${patientSnapshot.paciente_nombre}. Box disponible.`
       )
+      return result?.ticket || patientSnapshot
     } catch (error) {
       alert(error.message || 'Error al finalizar consulta.')
       throw error

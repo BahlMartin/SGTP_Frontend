@@ -40,11 +40,12 @@ export default function ModalFinalizarAtencion({
 
   const handleConfirm = async () => {
     setErrorMessage('')
+    const patientSnapshot = patientInBox
     try {
       const finishedTicket = await onConfirm()
       onClose()
       if (onSuccess) {
-        onSuccess(finishedTicket)
+        onSuccess(finishedTicket || patientSnapshot)
       }
     } catch (error) {
       setErrorMessage(error.message || 'No se pudo finalizar la consulta.')

@@ -23,7 +23,12 @@ export default function TicketModal({ ticket, onClose, title = '', className = '
   if (!ticket) return null
 
   const handlePrint = () => {
-    printThermalTicket('printable-ticket')
+    try {
+      printThermalTicket('printable-ticket')
+    } catch (err) {
+      console.warn('Aviso en impresión térmica, usando fallback:', err)
+      window.print()
+    }
   }
 
   const handleBackdropClick = (event) => {
