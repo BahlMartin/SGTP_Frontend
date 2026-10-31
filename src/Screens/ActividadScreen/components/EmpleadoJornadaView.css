@@ -198,6 +198,14 @@
   color: #1687c9;
 }
 
+.empleado-jornada__timeline-row--gap {
+  cursor: default;
+}
+
+.empleado-jornada__timeline-row--gap:hover .empleado-jornada__timeline-title {
+  color: #566d79;
+}
+
 .empleado-jornada__timeline-time {
   padding-top: 6px;
   font-size: 13px;

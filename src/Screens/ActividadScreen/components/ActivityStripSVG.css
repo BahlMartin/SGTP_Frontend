@@ -82,8 +82,13 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  background: repeating-linear-gradient(45deg, #94a3a8 0 2px, #ffffff 2px 6px);
-  opacity: 0.65;
+  background: repeating-linear-gradient(45deg, rgba(148, 163, 168, 0.5) 0 2px, rgba(255, 255, 255, 0.9) 2px 6px);
+  border-left: 1px dashed #647a85;
+  border-right: 1px dashed #647a85;
+  box-sizing: border-box;
+  opacity: 0.9;
+  z-index: 1;
+  pointer-events: auto;
 }
 
 .activity-strip__bars-row {

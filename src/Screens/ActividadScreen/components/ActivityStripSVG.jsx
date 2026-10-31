@@ -80,16 +80,16 @@ export default function ActivityStripSVG({
           const gFin = g.fin_hora ?? g.fin;
           if (gIni === undefined || gFin === undefined) return null;
           const gLeft = Math.max(0, Math.min(100, ((gIni - startHour) / totalRange) * 100));
-          const gWidth = Math.max(1, Math.min(100 - gLeft, ((gFin - gIni) / totalRange) * 100));
+          const gWidth = Math.max(0.6, Math.min(100 - gLeft, ((gFin - gIni) / totalRange) * 100));
           return (
             <div
-              key={gIdx}
+              key={g.id || gIdx}
               className="activity-strip__gap-overlay"
               style={{
                 left: `${gLeft}%`,
                 width: `${gWidth}%`
               }}
-              title={`Sin actividad: ${g.rango || `${g.desde} – ${g.hasta}`} (${g.duracion_min || 30} min)`}
+              title={`Sin actividad: ${g.rango || `${g.desde} – ${g.hasta}`} (${g.duracion_min ?? g.minutos ?? 30} min)`}
             />
           );
         })}

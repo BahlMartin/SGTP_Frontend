@@ -160,6 +160,34 @@ export default function EmpleadoJornadaView({
   const timeline = jornadaData?.timeline || []
   const rolEmpleado = empleado?.rol || 'Box'
 
+  // Lista de pausas / periodos sin actividad (> 30 min) para la linea de tiempo y fallback
+  const gapsList = useMemo(() => {
+    if (jornadaData?.gaps && Array.isArray(jornadaData.gaps) && jornadaData.gaps.length > 0) {
+      return jornadaData.gaps
+    }
+    return (jornadaData?.timeline || [])
+      .filter((item) => item.tipo === 'gap' || item.tipoGap)
+      .map((g) => {
+        let inicio = g.inicio_hora ?? g.inicio
+        let fin = g.fin_hora ?? g.fin
+        if (inicio === undefined && g.desde) {
+          const [dh, dm] = g.desde.split(':').map(Number)
+          inicio = Math.round(((dh || 0) + (dm || 0) / 60) * 100) / 100
+        }
+        if (fin === undefined && g.hasta) {
+          const [hh, hm] = g.hasta.split(':').map(Number)
+          fin = Math.round(((hh || 0) + (hm || 0) / 60) * 100) / 100
+        }
+        return {
+          ...g,
+          inicio,
+          fin,
+          inicio_hora: inicio,
+          fin_hora: fin
+        }
+      })
+  }, [jornadaData])
+
   // Determinar pestañas temáticas permitidas según el rol del empleado auditado
   const filterTabs = useMemo(() => {
     // 1. Admin y Jefa: no tienen box ni cancelaciones operacionales
@@ -212,21 +240,29 @@ export default function EmpleadoJornadaView({
 
   // Filtrado de la línea de tiempo por barra seleccionada y por categoría
   const filteredTimeline = useMemo(() => {
-    let list = timeline
+    let list = Array.isArray(timeline) ? [...timeline] : []
 
     // 1. Filtrar por barra horaria seleccionada en el gráfico
     if (selectedBar && selectedBar.event_ids) {
+      const selectedEventIds = new Set(
+        (selectedBar.event_ids || []).map((id) => Number(id))
+      )
       list = list.filter((item) => {
+        // Al hacer click en un bloque de actividad, solo mostramos los registros de ese bloque (no las pausas prolongadas)
         if (item.tipo === 'gap' || item.tipoGap) {
-          const gIni = item.inicio_hora ?? item.inicio ?? 0
-          const gFin = item.fin_hora ?? item.fin ?? 24
-          return gIni < selectedBar.fin && gFin > selectedBar.inicio
+          return false
         }
         if (item.tipo === 'grupo') {
-          return selectedBar.event_ids.some((id) => (item.event_ids || []).includes(id))
+          return (item.event_ids || []).some((id) => selectedEventIds.has(Number(id)))
         }
-        const evId = item.id || item.evento?.id || item.eventId
-        return selectedBar.event_ids.includes(evId)
+        const rawId =
+          item.eventId ??
+          item.evento?.id ??
+          (typeof item.id === 'string' && item.id.startsWith('ev-')
+            ? item.id.replace('ev-', '')
+            : item.id)
+        const evId = rawId != null ? Number(rawId) : null
+        return evId != null && selectedEventIds.has(evId)
       })
     }
 
@@ -308,7 +344,24 @@ export default function EmpleadoJornadaView({
       })
     }
 
-    return list
+    // 3. Ordenar los registros desde el más nuevo al más viejo
+    return [...list].sort((a, b) => {
+      const getTimestamp = (item) => {
+        const ev = item.evento || item
+        if (ev.fecha) {
+          const t = new Date(ev.fecha).getTime()
+          if (!isNaN(t)) return t
+        }
+        // Para pausas (gaps) u operaciones sin fecha completa, ordenar por hora (hasta o desde)
+        const horaStr = item.hasta || item.hora || ev.hora || item.desde || ''
+        if (horaStr && typeof horaStr === 'string' && horaStr.includes(':')) {
+          const [h, m, s] = horaStr.split(':').map(Number)
+          return (h || 0) * 3600 + (m || 0) * 60 + (s || 0)
+        }
+        return 0
+      }
+      return getTimestamp(b) - getTimestamp(a)
+    })
   }, [timeline, selectedBar, filterCategory])
 
   const totalEventos = resumen?.total_eventos ?? resumen?.totalEventos ?? 0
@@ -450,7 +503,7 @@ export default function EmpleadoJornadaView({
             <ActivityStripSVG
               turnoProgramado={turno}
               barras={jornadaData?.barras_actividad || []}
-              gaps={jornadaData?.gaps || []}
+              gaps={gapsList}
               selectedBar={selectedBar}
               onSelectBar={setSelectedBar}
             />
@@ -510,16 +563,22 @@ export default function EmpleadoJornadaView({
               <ol className="empleado-jornada__timeline-ol">
                 {filteredTimeline.map((item, idx) => {
                   const v = getEventVisualProps(item)
+                  const isGap = item.tipo === 'gap' || item.tipoGap
                   const ev = item.evento || item
-                  const evId = ev.id || item.eventId || item.id
-                  const evHora = ev.hora || item.hora || (ev.fecha ? formatHora(ev.fecha) : '—')
+                  const rawId = item.eventId ?? ev.id ?? item.id
+                  const evId = typeof rawId === 'string' && rawId.startsWith('ev-')
+                    ? Number(rawId.replace('ev-', ''))
+                    : (rawId != null && !isNaN(Number(rawId)) ? Number(rawId) : rawId)
+                  const evHora = isGap
+                    ? (item.desde || item.hora || '—')
+                    : (ev.hora || item.hora || (ev.fecha ? formatHora(ev.fecha) : '—'))
 
                   return (
                     <li
-                      key={`tl-${evId || idx}`}
-                      className="empleado-jornada__timeline-row"
-                      onClick={() => evId && onSelectEvent(evId)}
-                      title="Click para inspeccionar evento en el panel lateral"
+                      key={`tl-${item.id || evId || idx}`}
+                      className={`empleado-jornada__timeline-row ${isGap ? 'empleado-jornada__timeline-row--gap' : ''}`}
+                      onClick={() => !isGap && evId && onSelectEvent(evId)}
+                      title={isGap ? `${v.title} (${v.sub})` : 'Click para inspeccionar evento en el panel lateral'}
                     >
                       <time className="empleado-jornada__timeline-time">{evHora}</time>
                       <div className="empleado-jornada__timeline-line-col">
