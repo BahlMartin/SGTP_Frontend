@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { UserPlus, UserCheck, RotateCcw, AlertTriangle, Bell } from 'lucide-react'
+import { UserPlus, UserCheck, RotateCcw, AlertTriangle, Bell, UserX } from 'lucide-react'
 import TriageSelector from '../TriageSelector/TriageSelector'
 import StudiesSelector from '../../../../components/StudiesSelector/StudiesSelector'
 import PatientDropdown from '../../../../components/PatientDropdown/PatientDropdown'
@@ -21,6 +21,8 @@ export default function AdmissionForm({
   hasPendingTurnos = false,
   pendingTurnosCount = 0,
   isCallingTurno = false,
+  hasActiveTurno = false,
+  onCancelActiveTurno = () => {},
   onLoadPatient = () => {},
   onFieldChange = () => {},
   onToggleStudy = () => {},
@@ -115,9 +117,22 @@ export default function AdmissionForm({
           >
             <Bell size={15} className={hasPendingTurnos ? 'admission-form__call-next-icon--pulse' : ''} />
             <span>{isCallingTurno ? 'Llamando...' : 'Llamar al siguiente'}</span>
-            {pendingTurnosCount > 0 && (
-              <span className="admission-form__call-next-badge">{pendingTurnosCount}</span>
-            )}
+          </button>
+
+          <button
+            type="button"
+            className="admission-form__cancel-turno-btn"
+            onClick={onCancelActiveTurno}
+            disabled={isSubmitting || (!hasActiveTurno && !formData.dni && !formData.numeroLlamado)}
+            title={
+              hasActiveTurno
+                ? 'Cancelar el turno del paciente actual por ausencia y limpiar formulario'
+                : 'Cancelar y limpiar datos del formulario'
+            }
+            aria-label="Cancelar turno y limpiar formulario"
+          >
+            <UserX size={15} />
+            <span>Cancelar</span>
           </button>
 
           <button

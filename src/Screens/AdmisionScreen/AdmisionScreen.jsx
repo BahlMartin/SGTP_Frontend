@@ -69,6 +69,7 @@ export default function AdmisionScreen() {
   const [receptionQueue, setReceptionQueue] = useState([])
   const [callingTurnoId, setCallingTurnoId] = useState(null)
   const [activeReceptionTurnoId, setActiveReceptionTurnoId] = useState(null)
+  const [activeReceptionTurno, setActiveReceptionTurno] = useState(null)
   const [selectedTurnoForCancel, setSelectedTurnoForCancel] = useState(null)
   const [isCancelProcessing, setIsCancelProcessing] = useState(false)
   const [unregisteredPatientAlert, setUnregisteredPatientAlert] = useState('')
@@ -147,6 +148,7 @@ export default function AdmisionScreen() {
       if (!turno) return
       setCallingTurnoId(turno.id)
       setActiveReceptionTurnoId(turno.id)
+      setActiveReceptionTurno(turno)
       setAdmissionError('')
       setUnregisteredPatientAlert('')
 
@@ -210,7 +212,30 @@ export default function AdmisionScreen() {
   }
 
   /**
-   * Confirmar cancelación de turno de recepción
+   * Cancelar el turno actualmente convocado y limpiar el formulario
+   */
+  const handleCancelActiveTurno = useCallback(() => {
+    if (activeReceptionTurno) {
+      setSelectedTurnoForCancel(activeReceptionTurno)
+    } else if (activeReceptionTurnoId) {
+      const found = receptionQueue.find((t) => t.id === activeReceptionTurnoId)
+      setSelectedTurnoForCancel(
+        found || {
+          id: activeReceptionTurnoId,
+          numero_llamado: enteredCallNumber || 'Turno convocado',
+          dni: formData.dni
+        }
+      )
+    } else {
+      // Si no hay un turno de recepción activo pero el formulario fue autocompletado
+      resetAdmissionForm()
+      setAdmissionError('')
+      setUnregisteredPatientAlert('')
+    }
+  }, [activeReceptionTurno, activeReceptionTurnoId, receptionQueue, enteredCallNumber, formData.dni, resetAdmissionForm])
+
+  /**
+   * Confirmar cancelación de turno de recepción y limpiar formulario si estaba convocado
    */
   const handleConfirmCancelTurno = async (motivo) => {
     if (!selectedTurnoForCancel) return
@@ -218,8 +243,15 @@ export default function AdmisionScreen() {
     try {
       await receptionService.cancelarTurno(selectedTurnoForCancel.id, motivo)
       fetchReceptionQueue()
-      if (activeReceptionTurnoId === selectedTurnoForCancel.id) {
+      if (
+        activeReceptionTurnoId === selectedTurnoForCancel.id ||
+        activeReceptionTurno?.id === selectedTurnoForCancel.id
+      ) {
         setActiveReceptionTurnoId(null)
+        setActiveReceptionTurno(null)
+        resetAdmissionForm()
+        setAdmissionError('')
+        setUnregisteredPatientAlert('')
       }
       setSelectedTurnoForCancel(null)
     } catch (err) {
@@ -288,6 +320,7 @@ export default function AdmisionScreen() {
       if (activeReceptionTurnoId) {
         await receptionService.finalizarTurno(activeReceptionTurnoId).catch(() => {})
         setActiveReceptionTurnoId(null)
+        setActiveReceptionTurno(null)
       }
 
       setIssuedTicket(generatedTicket)
@@ -333,6 +366,8 @@ export default function AdmisionScreen() {
             hasPendingTurnos={receptionQueue.length > 0}
             pendingTurnosCount={receptionQueue.length}
             isCallingTurno={Boolean(callingTurnoId)}
+            hasActiveTurno={Boolean(activeReceptionTurno || activeReceptionTurnoId)}
+            onCancelActiveTurno={handleCancelActiveTurno}
             onLoadPatient={(patient) => {
               handleLoadPatient(patient)
               setUnregisteredPatientAlert('')
@@ -348,6 +383,7 @@ export default function AdmisionScreen() {
               setAdmissionError('')
               setUnregisteredPatientAlert('')
               setActiveReceptionTurnoId(null)
+              setActiveReceptionTurno(null)
               resetAdmissionForm()
               fetchReceptionQueue()
             }}
