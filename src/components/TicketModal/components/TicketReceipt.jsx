@@ -207,7 +207,7 @@ export default function TicketReceipt({ ticket }) {
             ? 'Atención en Box finalizada con éxito. Conserve este comprobante para retirar sus análisis en ventanilla de Secretaría.'
             : 'Por favor aguarde su turno en la sala de espera frente a la pantalla multibox.'}
         </p>
-        <span className="ticket-modal__uuid">UUID: {ticket.id}</span>
+        {/* <span className="ticket-modal__uuid">UUID: {ticket.id}</span> */}
       </div>
     </div>
   )
