@@ -111,10 +111,10 @@ export default function ReceptionQueueCard({
           <table className="reception-queue-card__table">
             <thead>
               <tr>
-                <th>Turno</th>
-                <th>DNI</th>
-                <th>Motivo</th>
-                <th>Espera</th>
+                <th className="reception-queue-card__th--turno">Turno</th>
+                <th className="reception-queue-card__th--dni">DNI</th>
+                <th className="reception-queue-card__th--cat">Motivo</th>
+                <th className="reception-queue-card__th--wait">Espera</th>
                 <th className="reception-queue-card__th--actions">Acción</th>
               </tr>
             </thead>
@@ -130,7 +130,7 @@ export default function ReceptionQueueCard({
                       turnoItem.estado === 'En Atencion' ? 'reception-queue-card__tr--in-attention' : ''
                     }`}
                   >
-                    <td>
+                    <td className="reception-queue-card__td-turno">
                       <span
                         className={`reception-queue-card__turno-pill ${getPrefixClass(
                           turnoItem.prefijo
@@ -142,7 +142,10 @@ export default function ReceptionQueueCard({
                     <td className="reception-queue-card__td-dni">
                       <strong>{formatearDni(turnoItem.dni)}</strong>
                     </td>
-                    <td className="reception-queue-card__td-cat">
+                    <td
+                      className="reception-queue-card__td-cat"
+                      title={turnoItem.categoria_label || turnoItem.prefijo}
+                    >
                       <span>{turnoItem.categoria_label || turnoItem.prefijo}</span>
                     </td>
                     <td className="reception-queue-card__td-wait">

@@ -363,12 +363,13 @@ export default function AdmisionScreen() {
                   activeSideTab === 'recepcion' ? 'admision-screen__tab-btn--active' : ''
                 }`}
                 onClick={() => setActiveSideTab('recepcion')}
+                title="Cola Tótem Recepción"
               >
                 <Radio
                   size={14}
                   className={receptionQueue.length > 0 ? 'admision-tab__live-icon' : ''}
                 />
-                <span>Cola Tótem Recepción</span>
+                <span className="admision-screen__tab-text">Cola Tótem Recepción</span>
                 {receptionQueue.length > 0 && (
                   <span className="admision-screen__tab-badge">{receptionQueue.length}</span>
                 )}
@@ -380,9 +381,10 @@ export default function AdmisionScreen() {
                   activeSideTab === 'ingresos' ? 'admision-screen__tab-btn--active' : ''
                 }`}
                 onClick={() => setActiveSideTab('ingresos')}
+                title="Últimos ingresos"
               >
                 <Clock size={14} />
-                <span>Últimos ingresos</span>
+                <span className="admision-screen__tab-text">Últimos ingresos</span>
                 {todayTickets.length > 0 && (
                   <span className="admision-screen__tab-badge admision-screen__tab-badge--muted">
                     {todayTickets.length}
