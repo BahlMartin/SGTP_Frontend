@@ -16,8 +16,20 @@ export const REPORT_KPI_DEFINITIONS = [
     icon: Users,
     title: 'atendidos',
     getValue: (metricsData) => metricsData?.atendidos ?? 0,
-    getSubtext: (metricsData) =>
-      `${metricsData?.ingresos ?? 0} ingresos · ${metricsData?.cancelados ?? 0} ausentes · ${metricsData?.enCurso ?? 0} en curso`,
+    getSubtext: (metricsData) => {
+      const cancelados = metricsData?.cancelados ?? 0
+      const adm = metricsData?.canceladosAdmision ?? 0
+      const box = metricsData?.canceladosBox ?? 0
+      let cancText = `${cancelados} ausentes`
+      if (adm > 0 && box > 0) {
+        cancText = `${cancelados} ausentes (${adm} adm · ${box} box)`
+      } else if (adm > 0) {
+        cancText = `${cancelados} ausentes (${adm} en adm)`
+      } else if (box > 0) {
+        cancText = `${cancelados} ausentes (${box} en box)`
+      }
+      return `${metricsData?.ingresos ?? 0} ingresos · ${cancText} · ${metricsData?.enCurso ?? 0} en curso`
+    },
     getRates: (metricsData) => {
       const ingresos = Number(metricsData?.ingresos) || 0
       const completitud =

@@ -74,7 +74,12 @@ export default function SecretariaScreen() {
         'NEW_TICKET',
         'TICKET_UPDATED',
         'TICKET_LLAMADO',
-        'reporte_actualizado'
+        'reporte_actualizado',
+        'RECEPTION_UPDATED',
+        'TURNO_CREATED',
+        'TURNO_CALLED',
+        'TURNO_CANCELLED',
+        'TURNO_FINALIZED'
       ].includes(evt)
 
       if (!isRelevant) return
