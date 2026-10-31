@@ -253,11 +253,13 @@ export default function EmpleadoJornadaView({
         if (filterCategory === 'admision') {
           return (
             colorTipo === 'admision' ||
+            colorTipo === 'cancelacion' ||
             evCat === 'admision' ||
             evAccion.includes('TICKET') ||
             evAccion.includes('OCR') ||
             evAccion.includes('RECETA') ||
-            evAccion.includes('PACIENTE')
+            evAccion.includes('PACIENTE') ||
+            evAccion.includes('CANCEL')
           )
         }
         if (filterCategory === 'box') {
