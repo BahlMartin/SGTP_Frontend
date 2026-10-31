@@ -296,7 +296,6 @@ export default function ActividadScreen() {
       return
     }
     const isAlreadyActive = filtros[filterKey] === filterVal
-    setMostrarTablaCompleta(true)
     handleFiltroChange({
       [filterKey]: isAlreadyActive ? '' : filterVal
     })
@@ -508,6 +507,7 @@ export default function ActividadScreen() {
                 <DashboardChartsCard
                   actividadPorHora={kpisData.actividad_por_hora}
                   cancelacionesPorMotivo={kpisData.cancelaciones_por_motivo}
+                  cancelacionesDesglose={kpisData.cancelaciones_desglose}
                 />
               </div>
 

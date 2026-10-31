@@ -156,6 +156,19 @@
   border-color: var(--auditoria-primary, #1687c9);
 }
 
+.filtros-actividad__select--kpi {
+  background: #f0f7fb;
+  border-color: #bcd9e8;
+  font-weight: 600;
+  color: #1e5270;
+}
+
+.filtros-actividad__select--kpi-active {
+  background: #e0f2fe;
+  border-color: #0284c7;
+  color: #0369a1;
+}
+
 .filtros-actividad__checkbox-label {
   display: flex;
   align-items: center;

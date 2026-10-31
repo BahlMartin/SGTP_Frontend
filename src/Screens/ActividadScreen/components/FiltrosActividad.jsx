@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Search, X, Calendar, RotateCcw } from 'lucide-react'
 import {
   CATEGORIAS_CONFIG,
@@ -25,6 +25,45 @@ export default function FiltrosActividad({
     if (!isAdmin && key === 'Admin') return false
     return true
   })
+
+  // Detectar cuál filtro rápido de KPI está actualmente activo
+  const selectedKpiVal = useMemo(() => {
+    if (filtros.categoria === 'acceso') return 'logins'
+    if (filtros.resultado === 'FALLO') return 'fallidos'
+    if (filtros.accion === 'ATENCION_CANCELADA') return 'cancelaciones'
+    if (filtros.ocr) return 'ocr'
+    if (filtros.solo_alertas) return 'alertas'
+    if (filtros.personal_activo) return 'personal_activo'
+    return ''
+  }, [filtros])
+
+  // Aplicar selección del menú de KPIs superiores
+  const handleKpiQuickSelect = (val) => {
+    const cleanFields = {
+      categoria: '',
+      resultado: '',
+      accion: '',
+      ocr: false,
+      solo_alertas: false,
+      personal_activo: false
+    }
+
+    if (!val) {
+      onFiltroChange(cleanFields)
+      return
+    }
+
+    const mapFilters = {
+      logins: { ...cleanFields, categoria: 'acceso' },
+      fallidos: { ...cleanFields, resultado: 'FALLO' },
+      cancelaciones: { ...cleanFields, accion: 'ATENCION_CANCELADA' },
+      ocr: { ...cleanFields, ocr: true },
+      alertas: { ...cleanFields, solo_alertas: true },
+      personal_activo: { ...cleanFields, personal_activo: true }
+    }
+
+    onFiltroChange(mapFilters[val] || cleanFields)
+  }
 
   const hasActiveFilters = Boolean(
     filtros.q ||
@@ -124,6 +163,23 @@ export default function FiltrosActividad({
             </button>
           )}
         </div>
+
+        {/* Menú de acceso rápido a filtros de KPIs Top */}
+        <select
+          className={`filtros-actividad__select filtros-actividad__select--kpi ${selectedKpiVal ? 'filtros-actividad__select--kpi-active' : ''}`}
+          value={selectedKpiVal}
+          onChange={(e) => handleKpiQuickSelect(e.target.value)}
+          aria-label="Filtro rápido de KPIs"
+          title="Filtro rápido de KPIs superiores"
+        >
+          <option value="">Filtro rápido de KPIs...</option>
+          <option value="logins">🔑 Inicios de sesión</option>
+          <option value="fallidos">🛡️ Fallidos / Bloqueados</option>
+          <option value="cancelaciones">🚫 Cancelaciones</option>
+          <option value="ocr">📄 Escaneos OCR</option>
+          <option value="alertas">⚠️ Alertas activas</option>
+          <option value="personal_activo">👥 Personal activo</option>
+        </select>
 
         {/* Rol */}
         <select
