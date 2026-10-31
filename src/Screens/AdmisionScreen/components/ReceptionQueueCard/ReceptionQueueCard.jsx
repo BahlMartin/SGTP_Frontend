@@ -63,7 +63,7 @@ export default function ReceptionQueueCard({
           >
             <span className="reception-queue-card__badge-count">{waitingQueue.length}</span>
             <span className="reception-queue-card__badge-text">
-              {waitingQueue.length === 1 ? 'paciente esperando' : 'pacientes esperando'}
+              {waitingQueue.length === 1 ? 'en espera' : 'en espera'}
             </span>
           </span>
         </div>
@@ -107,30 +107,22 @@ export default function ReceptionQueueCard({
           <p className="reception-queue-card__empty-text">Sin coincidencias para "{searchTerm}"</p>
         </div>
       ) : (
-        <div className="reception-queue-card__table-wrap">
-          <table className="reception-queue-card__table">
-            <thead>
-              <tr>
-                <th className="reception-queue-card__th--turno">Turno</th>
-                <th className="reception-queue-card__th--dni">DNI</th>
-                <th className="reception-queue-card__th--cat">Motivo</th>
-                <th className="reception-queue-card__th--wait">Espera</th>
-                <th className="reception-queue-card__th--actions">Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredQueue.map((turnoItem) => {
-                const waitMinutes = calculateMinutesDiff(turnoItem.created_at)
-                const isCurrentlyCalling = callingTurnoId === turnoItem.id
+        <div className="reception-queue-card__list-wrap">
+          <ul className="reception-queue-card__list">
+            {filteredQueue.map((turnoItem) => {
+              const waitMinutes = calculateMinutesDiff(turnoItem.created_at)
+              const isCurrentlyCalling = callingTurnoId === turnoItem.id
+              const inAttention = turnoItem.estado === 'En Atencion'
 
-                return (
-                  <tr
-                    key={turnoItem.id}
-                    className={`reception-queue-card__tr ${
-                      turnoItem.estado === 'En Atencion' ? 'reception-queue-card__tr--in-attention' : ''
-                    }`}
-                  >
-                    <td className="reception-queue-card__td-turno">
+              return (
+                <li
+                  key={turnoItem.id}
+                  className={`reception-queue-card__item ${
+                    inAttention ? 'reception-queue-card__item--in-attention' : ''
+                  }`}
+                >
+                  <div className="reception-queue-card__item-main">
+                    <div className="reception-queue-card__item-top">
                       <span
                         className={`reception-queue-card__turno-pill ${getPrefixClass(
                           turnoItem.prefijo
@@ -138,52 +130,53 @@ export default function ReceptionQueueCard({
                       >
                         {turnoItem.numero_llamado}
                       </span>
-                    </td>
-                    <td className="reception-queue-card__td-dni">
-                      <strong>{formatearDni(turnoItem.dni)}</strong>
-                    </td>
-                    <td
-                      className="reception-queue-card__td-cat"
-                      title={turnoItem.categoria_label || turnoItem.prefijo}
-                    >
-                      <span>{turnoItem.categoria_label || turnoItem.prefijo}</span>
-                    </td>
-                    <td className="reception-queue-card__td-wait">
-                      <div className="reception-queue-card__wait-wrap">
-                        <Clock size={13} className="reception-queue-card__wait-icon" />
+                      <span className="reception-queue-card__item-dni">
+                        DNI <strong>{formatearDni(turnoItem.dni)}</strong>
+                      </span>
+                    </div>
+
+                    <div className="reception-queue-card__item-bottom">
+                      <span
+                        className="reception-queue-card__item-cat"
+                        title={turnoItem.categoria_label || turnoItem.prefijo}
+                      >
+                        {turnoItem.categoria_label || turnoItem.prefijo}
+                      </span>
+                      <span className="reception-queue-card__item-dot">•</span>
+                      <span className="reception-queue-card__item-wait">
+                        <Clock size={11} className="reception-queue-card__wait-icon" />
                         <span>{formatWaitTime(waitMinutes)}</span>
-                      </div>
-                    </td>
-                    <td className="reception-queue-card__td-actions">
-                      <div className="reception-queue-card__actions-group">
-                        <button
-                          type="button"
-                          className="reception-queue-card__btn-call"
-                          onClick={() => onCallPatient?.(turnoItem)}
-                          disabled={isProcessing || isCurrentlyCalling}
-                          title="Llamar y cargar datos en formulario"
-                          aria-label={`Llamar turno ${turnoItem.numero_llamado}`}
-                        >
-                          <Bell size={13} />
-                          <span>{isCurrentlyCalling ? 'Llamando...' : 'Llamar'}</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="reception-queue-card__btn-cancel"
-                          onClick={() => onCancelTurno?.(turnoItem)}
-                          disabled={isProcessing || isCurrentlyCalling}
-                          title="Cancelar turno por ausencia"
-                          aria-label={`Cancelar turno ${turnoItem.numero_llamado}`}
-                        >
-                          <UserX size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="reception-queue-card__item-actions">
+                    <button
+                      type="button"
+                      className="reception-queue-card__btn-call"
+                      onClick={() => onCallPatient?.(turnoItem)}
+                      disabled={isProcessing || isCurrentlyCalling}
+                      title="Llamar y cargar datos en formulario"
+                      aria-label={`Llamar turno ${turnoItem.numero_llamado}`}
+                    >
+                      <Bell size={12} />
+                      <span>{isCurrentlyCalling ? 'Llamando...' : 'Llamar'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="reception-queue-card__btn-cancel"
+                      onClick={() => onCancelTurno?.(turnoItem)}
+                      disabled={isProcessing || isCurrentlyCalling}
+                      title="Cancelar turno por ausencia"
+                      aria-label={`Cancelar turno ${turnoItem.numero_llamado}`}
+                    >
+                      <UserX size={12} />
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
         </div>
       )}
     </div>

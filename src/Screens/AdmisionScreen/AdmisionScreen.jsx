@@ -369,7 +369,7 @@ export default function AdmisionScreen() {
                   size={14}
                   className={receptionQueue.length > 0 ? 'admision-tab__live-icon' : ''}
                 />
-                <span className="admision-screen__tab-text">Cola Tótem Recepción</span>
+                <span className="admision-screen__tab-text">Cola Tótem</span>
                 {receptionQueue.length > 0 && (
                   <span className="admision-screen__tab-badge">{receptionQueue.length}</span>
                 )}

@@ -1,4 +1,4 @@
-/* Estilos para ReceptionQueueCard (reutilizando el diseño de MultiboxQueueCard) */
+/* Estilos para ReceptionQueueCard (diseño optimizado para columna de 280px-340px) */
 
 .reception-queue-card {
   background: var(--color-surface, #ffffff);
@@ -8,25 +8,29 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .reception-queue-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.9rem 1.1rem;
+  padding: 0.75rem 0.9rem;
   border-bottom: 1px solid var(--color-border, #e2e8f0);
   background: var(--color-surface-subtle, #f8fafc);
+  gap: 8px;
 }
 
 .reception-queue-card__title-wrap {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
 .reception-queue-card__live-icon {
   color: #3b82f6;
+  flex-shrink: 0;
   animation: pulseLive 2s infinite;
 }
 
@@ -36,20 +40,25 @@
 }
 
 .reception-queue-card__title {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--color-text-primary, #0f172a);
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .reception-queue-card__badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.25rem 0.65rem;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
   border-radius: 9999px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .reception-queue-card__badge--active {
@@ -68,7 +77,7 @@
 }
 
 .reception-queue-card__search-toolbar {
-  padding: 0.75rem 1rem;
+  padding: 0.65rem 0.85rem;
   border-bottom: 1px solid var(--color-border, #e2e8f0);
   background: var(--color-surface, #ffffff);
 }
@@ -76,11 +85,11 @@
 .reception-queue-card__search-box {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   background: #f8fafc;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
-  padding: 0.4rem 0.75rem;
+  padding: 0.35rem 0.65rem;
 }
 
 .reception-queue-card__search-icon {
@@ -92,7 +101,7 @@
   border: none;
   background: transparent;
   width: 100%;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--color-text-primary, #0f172a);
   outline: none;
 }
@@ -103,136 +112,103 @@
   color: #94a3b8;
   cursor: pointer;
   padding: 2px;
+  display: flex;
+  align-items: center;
 }
 
 .reception-queue-card__empty-state {
-  padding: 2.5rem 1rem;
+  padding: 2.2rem 1rem;
   text-align: center;
 }
 
 .reception-queue-card__empty-text {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--color-text-secondary, #64748b);
-  margin: 0 0 0.35rem 0;
+  margin: 0 0 0.3rem 0;
 }
 
 .reception-queue-card__empty-subtext {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: #94a3b8;
 }
 
-.reception-queue-card__table-wrap {
+.reception-queue-card__list-wrap {
   max-height: 480px;
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
 }
 
-.reception-queue-card__table-wrap::-webkit-scrollbar {
-  width: 6px;
+.reception-queue-card__list-wrap::-webkit-scrollbar {
+  width: 5px;
 }
 
-.reception-queue-card__table-wrap::-webkit-scrollbar-track {
+.reception-queue-card__list-wrap::-webkit-scrollbar-track {
   background: #f1f5f9;
 }
 
-.reception-queue-card__table-wrap::-webkit-scrollbar-thumb {
+.reception-queue-card__list-wrap::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
 
-.reception-queue-card__table-wrap::-webkit-scrollbar-thumb:hover {
+.reception-queue-card__list-wrap::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
-.reception-queue-card__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.82rem;
-  table-layout: auto;
+.reception-queue-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.reception-queue-card__table th {
-  background: #f8fafc;
-  padding: 0.6rem 0.5rem;
-  text-align: left;
-  font-weight: 600;
-  color: #64748b;
-  font-size: 0.73rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid var(--color-border, #e2e8f0);
-  white-space: nowrap;
-}
-
-.reception-queue-card__table td {
-  padding: 0.55rem 0.5rem;
-  vertical-align: middle;
-}
-
-.reception-queue-card__table th:first-child,
-.reception-queue-card__table td:first-child {
-  padding-left: 0.85rem;
-}
-
-.reception-queue-card__table th:last-child,
-.reception-queue-card__table td:last-child {
-  padding-right: 0.85rem;
-}
-
-.reception-queue-card__th--turno,
-.reception-queue-card__td-turno {
-  width: 1%;
-  white-space: nowrap;
-}
-
-.reception-queue-card__th--dni,
-.reception-queue-card__td-dni {
-  white-space: nowrap;
-}
-
-.reception-queue-card__th--cat,
-.reception-queue-card__td-cat {
-  max-width: 105px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.reception-queue-card__th--wait,
-.reception-queue-card__td-wait {
-  white-space: nowrap;
-}
-
-.reception-queue-card__th--actions,
-.reception-queue-card__td-actions {
-  text-align: right;
-  width: 1%;
-  white-space: nowrap;
-}
-
-.reception-queue-card__tr {
+.reception-queue-card__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0.65rem 0.85rem;
   border-bottom: 1px solid #f1f5f9;
-  transition: background 0.15s;
+  background: #ffffff;
+  transition: background 0.15s ease;
 }
 
-.reception-queue-card__tr:hover {
+.reception-queue-card__item:hover {
   background: #f8fafc;
 }
 
-.reception-queue-card__tr--in-attention {
+.reception-queue-card__item--in-attention {
   background: #f0fdf4;
+  border-left: 3px solid #22c55e;
+}
+
+.reception-queue-card__item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.reception-queue-card__item-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
 .reception-queue-card__turno-pill {
   display: inline-block;
-  padding: 0.2rem 0.5rem;
-  border-radius: 6px;
+  padding: 0.15rem 0.45rem;
+  border-radius: 5px;
   font-weight: 700;
   font-size: 0.78rem;
   font-family: monospace;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .reception-badge--extraccion {
@@ -264,50 +240,78 @@
   color: #334155;
 }
 
-.reception-queue-card__td-dni strong {
+.reception-queue-card__item-dni {
+  font-size: 0.78rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reception-queue-card__item-dni strong {
   font-family: monospace;
   color: #1e293b;
-  font-size: 0.82rem;
+  font-weight: 700;
 }
 
-.reception-queue-card__td-cat {
-  color: #475569;
-  font-size: 0.78rem;
-}
-
-.reception-queue-card__wait-wrap {
+.reception-queue-card__item-bottom {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 5px;
+  font-size: 0.74rem;
   color: #64748b;
-  font-size: 0.75rem;
+  min-width: 0;
+}
+
+.reception-queue-card__item-cat {
+  color: #475569;
+  font-weight: 500;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.reception-queue-card__actions-group {
+.reception-queue-card__item-dot {
+  color: #cbd5e1;
+  font-weight: bold;
+}
+
+.reception-queue-card__item-wait {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  color: #64748b;
+}
+
+.reception-queue-card__wait-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.reception-queue-card__item-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0.35rem;
+  gap: 5px;
   flex-shrink: 0;
-  white-space: nowrap;
 }
 
 .reception-queue-card__btn-call {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 4px;
   background: #2563eb;
   color: #ffffff;
   border: none;
   border-radius: 6px;
-  padding: 0.32rem 0.55rem;
-  font-size: 0.75rem;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.74rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
 
 .reception-queue-card__btn-call:hover:not(:disabled) {
@@ -327,11 +331,11 @@
   color: #dc2626;
   border: 1px solid #fecaca;
   border-radius: 6px;
-  padding: 0.32rem 0.45rem;
+  padding: 0.35rem 0.45rem;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
 
 .reception-queue-card__btn-cancel:hover:not(:disabled) {
@@ -343,4 +347,3 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
-
