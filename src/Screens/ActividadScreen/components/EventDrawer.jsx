@@ -11,7 +11,6 @@ import {
   Copy,
   Check,
   ExternalLink,
-  Code,
   Laptop
 } from 'lucide-react'
 import {
@@ -32,8 +31,6 @@ export default function EventDrawer({
   hasNext = false
 }) {
   const [copiedCoords, setCopiedCoords] = useState(false)
-  const [copiedJson, setCopiedJson] = useState(false)
-  const [showJson, setShowJson] = useState(false)
 
   if (!evento) return null
 
@@ -58,13 +55,6 @@ export default function EventDrawer({
       setCopiedCoords(true)
       setTimeout(() => setCopiedCoords(false), 2000)
     }
-  }
-
-  // Copiar JSON
-  const handleCopyJson = () => {
-    navigator.clipboard.writeText(JSON.stringify(evento, null, 2))
-    setCopiedJson(true)
-    setTimeout(() => setCopiedJson(false), 2000)
   }
 
   // Extraer información de Diff si existe en metadata
@@ -393,41 +383,6 @@ export default function EventDrawer({
               </div>
             )}
           </div>
-        </section>
-
-        {/* 8. Inspector Técnico (JSON Raw) */}
-        <section className="event-drawer__section">
-          <button
-            type="button"
-            className="event-drawer__json-toggle"
-            onClick={() => setShowJson((prev) => !prev)}
-            aria-expanded={showJson}
-          >
-            <Code size={15} />
-            <span>Inspección técnica (JSON)</span>
-            <span className="event-drawer__json-toggle-state">
-              {showJson ? 'Ocultar' : 'Ver'}
-            </span>
-          </button>
-
-          {showJson && (
-            <div className="event-drawer__json-container">
-              <div className="event-drawer__json-actions">
-                <button
-                  type="button"
-                  className="event-drawer__copy-btn"
-                  onClick={handleCopyJson}
-                  title="Copiar JSON completo del evento"
-                >
-                  {copiedJson ? <Check size={13} /> : <Copy size={13} />}
-                  {copiedJson ? 'Copiado al portapapeles' : 'Copiar JSON'}
-                </button>
-              </div>
-              <pre className="event-drawer__json-pre">
-                {JSON.stringify(evento, null, 2)}
-              </pre>
-            </div>
-          )}
         </section>
       </div>
     </aside>

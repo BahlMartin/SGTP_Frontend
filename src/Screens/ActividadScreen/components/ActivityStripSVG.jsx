@@ -11,27 +11,43 @@ import React, { useState } from 'react'
 export default function ActivityStripSVG({
   turnoProgramado = { inicio: 7, fin: 15, label: '07:00–15:00' },
   bloques = [],
-  ancho = 800,
-  alto = 95
+  ancho = 850,
+  alto = 100,
+  onSelectEvent
 }) {
   const [hoveredBlock, setHoveredBlock] = useState(null)
 
-  // Mapeo lineal de horas (0 a 24) al eje X (margen izquierdo 50px, margen derecho 20px)
+  const isIlimitado = Boolean(
+    turnoProgramado.es_ilimitado ||
+    turnoProgramado.esIlimitado ||
+    (turnoProgramado.inicio === 0 && (turnoProgramado.fin >= 23.9 || turnoProgramado.fin === 24))
+  )
+
+  // Mapeo lineal de horas (0 a 24) al eje X (margen izquierdo 45px, margen derecho 25px)
   const marginX = 45
   const chartWidth = ancho - marginX - 25
   const horaToX = (hora) => marginX + (Math.max(0, Math.min(24, hora)) / 24) * chartWidth
 
-  const shiftStartX = horaToX(turnoProgramado.inicio ?? 7)
-  const shiftEndX = horaToX(turnoProgramado.fin ?? 15)
+  const shiftStartX = isIlimitado ? marginX : horaToX(turnoProgramado.inicio ?? 7)
+  const shiftEndX = isIlimitado ? marginX + chartWidth : horaToX(turnoProgramado.fin ?? 15)
   const shiftWidth = Math.max(2, shiftEndX - shiftStartX)
 
   const ticks = [0, 4, 8, 12, 16, 20, 24]
+
+  const getBlockColor = (b) => {
+    if (b.color_tipo === 'login') return '#6366f1'
+    if (b.color_tipo === 'cancelacion') return '#dc2626'
+    if (b.color_tipo === 'alerta') return '#f59e0b'
+    if (b.color_tipo === 'ticket') return '#1687c9'
+    if (b.tipo === 'fuera_turno' && !isIlimitado) return '#ef4444'
+    return '#1687c9'
+  }
 
   return (
     <div style={{ width: '100%', overflowX: 'auto', position: 'relative' }}>
       <svg
         viewBox={`0 0 ${ancho} ${alto}`}
-        style={{ width: '100%', minWidth: '600px', display: 'block' }}
+        style={{ width: '100%', minWidth: '650px', display: 'block' }}
         role="img"
         aria-label={`Línea de tiempo de actividad diaria. Turno asignado: ${turnoProgramado.label || '07:00-15:00'}`}
       >
@@ -42,43 +58,50 @@ export default function ActivityStripSVG({
         </defs>
 
         {/* 1. Fondo del timeline */}
-        <rect x={marginX} y="30" width={chartWidth} height="32" rx="4" fill="#f8fafc" stroke="#d9e5ea" strokeWidth="1" />
+        <rect x={marginX} y="32" width={chartWidth} height="32" rx="4" fill="#f8fafc" stroke="#d9e5ea" strokeWidth="1" />
 
         {/* 2. Franja de Turno Asignado */}
         <rect
           x={shiftStartX}
-          y="30"
+          y="32"
           width={shiftWidth}
           height="32"
-          fill="#e0f2fe"
-          opacity="0.75"
-          stroke="#1687c9"
+          fill={isIlimitado ? '#ecfdf5' : '#e0f2fe'}
+          opacity={isIlimitado ? '0.45' : '0.75'}
+          stroke={isIlimitado ? '#10b981' : '#1687c9'}
           strokeWidth="1"
-          strokeDasharray="3 3"
+          strokeDasharray={isIlimitado ? 'none' : '3 3'}
         />
 
         {/* 3. Bloques de Actividad Real */}
         {bloques.map((b, idx) => {
           const x = horaToX(b.inicio)
-          const w = Math.max(3, horaToX(b.fin) - x)
-          const isFuera = b.tipo === 'fuera_turno'
-          const fill = isFuera ? '#ef4444' : '#1687c9'
+          const w = Math.max(4, horaToX(b.fin) - x)
+          const fill = getBlockColor(b)
 
           return (
             <rect
               key={idx}
               x={x}
-              y="34"
+              y="36"
               width={w}
               height="24"
-              rx="2"
+              rx="3"
               fill={fill}
-              opacity="0.9"
-              style={{ cursor: 'pointer', transition: 'opacity 0.15s ease' }}
+              opacity="0.92"
+              style={{
+                cursor: b.evento_id ? 'pointer' : 'default',
+                transition: 'opacity 0.15s ease, transform 0.15s ease'
+              }}
+              onClick={() => {
+                if (b.evento_id && onSelectEvent) {
+                  onSelectEvent(b.evento_id)
+                }
+              }}
               onMouseEnter={() => setHoveredBlock(b)}
               onMouseLeave={() => setHoveredBlock(null)}
             >
-              <title>{`${b.tipo === 'fuera_turno' ? 'Fuera de turno: ' : 'Actividad: '}${b.inicio_str || b.inicio} a ${b.fin_str || b.fin} (${b.eventos || 1} acciones)`}</title>
+              <title>{`${b.titulo || 'Actividad'}: ${b.inicio_str || b.inicio} (${b.color_tipo || b.tipo}) - Clic para ver detalle`}</title>
             </rect>
           )
         })}
@@ -89,10 +112,10 @@ export default function ActivityStripSVG({
           const label = `${String(t).padStart(2, '0')}:00`
           return (
             <g key={t}>
-              <line x1={x} y1="62" x2={x} y2="67" stroke="#94a3a8" strokeWidth="1" />
+              <line x1={x} y1="64" x2={x} y2="69" stroke="#94a3a8" strokeWidth="1" />
               <text
                 x={x}
-                y="79"
+                y="81"
                 textAnchor="middle"
                 fontSize="10"
                 fontFamily="monospace"
@@ -105,24 +128,39 @@ export default function ActivityStripSVG({
           )
         })}
 
-        {/* 5. Leyenda en la cabecera del SVG */}
+        {/* 5. Leyenda en la cabecera del SVG con colores por actividad */}
         <text x={marginX} y="18" fontSize="11" fontWeight="600" fill="#275369">
           Línea de tiempo de actividad (24 hs)
         </text>
 
-        <rect x={ancho - 310} y="8" width="12" height="12" fill="#e0f2fe" stroke="#1687c9" strokeDasharray="2 2" />
-        <text x={ancho - 292} y="18" fontSize="10" fill="#647a85">
-          Turno ({turnoProgramado.label || 'Asignado'})
+        {/* Leyenda: Turno */}
+        <rect x={marginX + 190} y="8" width="10" height="10" fill={isIlimitado ? '#ecfdf5' : '#e0f2fe'} stroke={isIlimitado ? '#10b981' : '#1687c9'} strokeDasharray={isIlimitado ? 'none' : '2 2'} />
+        <text x={marginX + 204} y="17" fontSize="10" fill="#647a85">
+          {isIlimitado ? 'Acceso 24h' : 'Turno'}
         </text>
 
-        <rect x={ancho - 160} y="8" width="12" height="12" fill="#1687c9" rx="2" />
-        <text x={ancho - 142} y="18" fontSize="10" fill="#647a85">
-          Actividad
+        {/* Leyenda: Login */}
+        <rect x={marginX + 270} y="8" width="10" height="10" fill="#6366f1" rx="2" />
+        <text x={marginX + 284} y="17" fontSize="10" fill="#647a85">
+          Inicio Sesión
         </text>
 
-        <rect x={ancho - 70} y="8" width="12" height="12" fill="#ef4444" rx="2" />
-        <text x={ancho - 52} y="18" fontSize="10" fill="#647a85">
-          Extra/Fuera
+        {/* Leyenda: Ticket */}
+        <rect x={marginX + 365} y="8" width="10" height="10" fill="#1687c9" rx="2" />
+        <text x={marginX + 379} y="17" fontSize="10" fill="#647a85">
+          Ticket / Atención
+        </text>
+
+        {/* Leyenda: Alerta */}
+        <rect x={marginX + 480} y="8" width="10" height="10" fill="#f59e0b" rx="2" />
+        <text x={marginX + 494} y="17" fontSize="10" fill="#647a85">
+          Alerta
+        </text>
+
+        {/* Leyenda: Cancelación */}
+        <rect x={marginX + 545} y="8" width="10" height="10" fill="#dc2626" rx="2" />
+        <text x={marginX + 559} y="17" fontSize="10" fill="#647a85">
+          Cancelación
         </text>
       </svg>
 
@@ -141,10 +179,11 @@ export default function ActivityStripSVG({
             borderRadius: '4px',
             pointerEvents: 'none',
             whiteSpace: 'nowrap',
-            zIndex: 10
+            zIndex: 10,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}
         >
-          {hoveredBlock.inicio_str} – {hoveredBlock.fin_str} ({hoveredBlock.eventos} ev.)
+          {hoveredBlock.titulo || hoveredBlock.accion} ({hoveredBlock.inicio_str} – {hoveredBlock.fin_str}) · Clic para abrir detalle
         </div>
       )}
     </div>

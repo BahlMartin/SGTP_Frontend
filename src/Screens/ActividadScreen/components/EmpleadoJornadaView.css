@@ -189,8 +189,28 @@
   border-color: var(--auditoria-primary, #1687c9);
 }
 
+.empleado-jornada__event-item--login {
+  border-left: 4px solid #6366f1;
+}
+
+.empleado-jornada__event-item--ticket {
+  border-left: 4px solid #1687c9;
+}
+
+.empleado-jornada__event-item--alerta {
+  border-left: 4px solid #f59e0b;
+}
+
+.empleado-jornada__event-item--cancelacion {
+  border-left: 4px solid #dc2626;
+}
+
+.empleado-jornada__event-item--gestion {
+  border-left: 4px solid #94a3a8;
+}
+
 .empleado-jornada__event-item--fallo {
-  border-left: 3.5px solid #b91c1c;
+  border-left: 4px solid #b91c1c;
 }
 
 .empleado-jornada__event-time {

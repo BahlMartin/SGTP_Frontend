@@ -30,8 +30,11 @@ export default function FiltrosActividad({
     filtros.q ||
       filtros.rol ||
       filtros.categoria ||
+      filtros.accion ||
       filtros.resultado ||
       filtros.solo_alertas ||
+      filtros.personal_activo ||
+      filtros.ocr ||
       filtros.periodo !== 'hoy' ||
       filtros.desde ||
       filtros.hasta
@@ -228,6 +231,33 @@ export default function FiltrosActividad({
             <span className="filtros-actividad__chip">
               Categoría: {CATEGORIAS_CONFIG[filtros.categoria]?.label || filtros.categoria}
               <button type="button" onClick={() => onFiltroChange({ categoria: '' })}>
+                <X size={12} />
+              </button>
+            </span>
+          )}
+
+          {filtros.accion && (
+            <span className="filtros-actividad__chip">
+              Acción: {filtros.accion === 'ATENCION_CANCELADA' ? 'Cancelaciones' : filtros.accion}
+              <button type="button" onClick={() => onFiltroChange({ accion: '' })}>
+                <X size={12} />
+              </button>
+            </span>
+          )}
+
+          {filtros.personal_activo && (
+            <span className="filtros-actividad__chip">
+              Solo personal activo
+              <button type="button" onClick={() => onFiltroChange({ personal_activo: false })}>
+                <X size={12} />
+              </button>
+            </span>
+          )}
+
+          {filtros.ocr && (
+            <span className="filtros-actividad__chip">
+              Solo escaneos OCR
+              <button type="button" onClick={() => onFiltroChange({ ocr: false })}>
                 <X size={12} />
               </button>
             </span>

@@ -14,25 +14,59 @@ import { fetchAllStaffApi } from '../../../services/userService'
 import ActivityStripSVG from './ActivityStripSVG'
 import {
   CATEGORIAS_CONFIG,
-  ACCIONES_CATALOGO
+  ACCIONES_CATALOGO,
+  formatHora
 } from '../constants/auditoriaConstants'
 import './EmpleadoJornadaView.css'
 
 export default function EmpleadoJornadaView({
   currentUser,
   onSelectEvent,
-  initialEmpleadoId = null
+  initialEmpleadoId = null,
+  initialFecha = null,
+  onParamsChange
 }) {
   const [personalList, setPersonalList] = useState([])
-  const [selectedEmpId, setSelectedEmpId] = useState(
-    initialEmpleadoId ? String(initialEmpleadoId) : ''
-  )
-  const [selectedFecha, setSelectedFecha] = useState(
-    new Date().toISOString().slice(0, 10)
-  )
+  const [selectedEmpId, setSelectedEmpId] = useState(() => {
+    if (initialEmpleadoId) return String(initialEmpleadoId)
+    try {
+      const saved = sessionStorage.getItem('sgtp_jornada_empleado_id')
+      if (saved) return String(saved)
+    } catch {}
+    return ''
+  })
+  const [selectedFecha, setSelectedFecha] = useState(() => {
+    if (initialFecha) return String(initialFecha)
+    try {
+      const saved = sessionStorage.getItem('sgtp_jornada_fecha')
+      if (saved) return String(saved)
+    } catch {}
+    return new Date().toISOString().slice(0, 10)
+  })
   const [jornadaData, setJornadaData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState(null)
+
+  // Handlers sincronizados
+  const handleEmpChange = (empId) => {
+    setSelectedEmpId(empId)
+    try {
+      sessionStorage.setItem('sgtp_jornada_empleado_id', empId)
+    } catch {}
+    if (onParamsChange) {
+      onParamsChange({ tab: 'jornada', usuario: empId, fecha: selectedFecha })
+    }
+  }
+
+  const handleFechaChange = (fechaVal) => {
+    setSelectedFecha(fechaVal)
+    try {
+      sessionStorage.setItem('sgtp_jornada_fecha', fechaVal)
+    } catch {}
+    if (onParamsChange) {
+      onParamsChange({ tab: 'jornada', usuario: selectedEmpId, fecha: fechaVal })
+    }
+  }
 
   // Cargar lista de empleados permitidos (Jefa no ve Admins, solo personal activo y no eliminado)
   useEffect(() => {
@@ -54,16 +88,30 @@ export default function EmpleadoJornadaView({
             setSelectedEmpId((prev) => {
               // Si el ID actualmente seleccionado sigue activo en la lista, conservarlo
               const currentValid = prev && filtered.some((emp) => String(emp.id) === String(prev))
-              if (currentValid) return prev
+              if (currentValid) {
+                if (onParamsChange) {
+                  onParamsChange({ tab: 'jornada', usuario: prev, fecha: selectedFecha })
+                }
+                return prev
+              }
 
               // Si vino initialEmpleadoId y corresponde a un empleado activo, seleccionarlo
               const initialValid =
                 initialEmpleadoId &&
                 filtered.some((emp) => String(emp.id) === String(initialEmpleadoId))
-              if (initialValid) return String(initialEmpleadoId)
+              if (initialValid) {
+                if (onParamsChange) {
+                  onParamsChange({ tab: 'jornada', usuario: String(initialEmpleadoId), fecha: selectedFecha })
+                }
+                return String(initialEmpleadoId)
+              }
 
               // Por defecto, seleccionar el primer empleado activo disponible
-              return String(filtered[0].id)
+              const firstId = String(filtered[0].id)
+              if (onParamsChange) {
+                onParamsChange({ tab: 'jornada', usuario: firstId, fecha: selectedFecha })
+              }
+              return firstId
             })
           } else {
             setSelectedEmpId('')
@@ -103,10 +151,20 @@ export default function EmpleadoJornadaView({
 
   const empleado = jornadaData?.empleado
   const resumen = jornadaData?.resumen
+
+  const esIlimitado = Boolean(
+    jornadaData?.es_ilimitado ||
+    resumen?.es_ilimitado ||
+    empleado?.es_ilimitado ||
+    ['Admin', 'Jefa'].includes(empleado?.rol)
+  )
+
   const turno = jornadaData?.turno_programado || {
-    inicio: empleado?.turnoInicio ?? 7,
-    fin: empleado?.turnoFin ?? 15,
-    label: empleado?.turnoLabel || empleado?.turno_label || '07:00–15:00'
+    inicio: esIlimitado ? 0 : (empleado?.turnoInicio ?? 7),
+    fin: esIlimitado ? 24 : (empleado?.turnoFin ?? 15),
+    label: esIlimitado ? 'Acceso ilimitado (00:00 a 23:59:59)' : (empleado?.turnoLabel || empleado?.turno_label || '07:00–15:00'),
+    es_ilimitado: esIlimitado,
+    esIlimitado
   }
   const bloques = jornadaData?.bloques_actividad || jornadaData?.bloquesActividad || []
   const timeline = jornadaData?.timeline || []
@@ -116,13 +174,16 @@ export default function EmpleadoJornadaView({
   const ultimaAct = resumen?.ultima_act ?? resumen?.ultimaAct ?? '—'
   const cancelaciones = resumen?.cancelaciones ?? 0
   const alertas = resumen?.alertas ?? 0
-  const turnoLabel =
-    resumen?.turno_label ??
-    resumen?.turnoLabel ??
-    empleado?.turnoLabel ??
-    empleado?.turno_label ??
-    turno?.label ??
-    '—'
+  const turnoLabel = esIlimitado
+    ? 'Acceso ilimitado (24 hs)'
+    : (
+        resumen?.turno_label ??
+        resumen?.turnoLabel ??
+        empleado?.turnoLabel ??
+        empleado?.turno_label ??
+        turno?.label ??
+        '—'
+      )
 
   return (
     <div className="empleado-jornada-view" role="region" aria-label="Jornada por empleado">
@@ -135,7 +196,7 @@ export default function EmpleadoJornadaView({
           <select
             id="jornada-emp-select"
             value={selectedEmpId}
-            onChange={(e) => setSelectedEmpId(e.target.value)}
+            onChange={(e) => handleEmpChange(e.target.value)}
             className="empleado-jornada__select"
             disabled={personalList.length === 0}
           >
@@ -159,7 +220,7 @@ export default function EmpleadoJornadaView({
             id="jornada-fecha-input"
             type="date"
             value={selectedFecha}
-            onChange={(e) => setSelectedFecha(e.target.value)}
+            onChange={(e) => handleFechaChange(e.target.value)}
             className="empleado-jornada__date-input"
           />
         </div>
@@ -252,6 +313,7 @@ export default function EmpleadoJornadaView({
               bloques={bloques}
               ancho={850}
               alto={95}
+              onSelectEvent={onSelectEvent}
             />
           </div>
 
@@ -315,17 +377,24 @@ export default function EmpleadoJornadaView({
                   const evCat = ev.categoria || item.categoria || 'gestion'
                   const evAccion = ev.accion || item.accion || 'ACCION'
                   const evRes = ev.resultado || item.resultado || 'EXITO'
-                  const evHora = ev.hora || item.hora || (ev.fecha ? String(ev.fecha).slice(11, 16) : '—')
+                  const evHora = ev.hora || item.hora || (ev.fecha ? formatHora(ev.fecha) : '—')
                   const evDesc = ev.descripcion || item.descripcion || item.titulo || ACCIONES_CATALOGO[evAccion] || evAccion
 
                   const cat = CATEGORIAS_CONFIG[evCat] || CATEGORIAS_CONFIG.gestion
                   const CatIcon = cat.Icon
                   const isFallo = evRes === 'FALLO'
 
+                  const colorTipo = item.color_tipo || (
+                    evAccion.includes('LOGIN') || evAccion === 'LOGOUT' || evCat === 'acceso' ? 'login' :
+                    evAccion === 'ATENCION_CANCELADA' ? 'cancelacion' :
+                    (ev.alertas?.length > 0 || isFallo) ? 'alerta' :
+                    ['admision', 'box'].includes(evCat) || evAccion.includes('TICKET') ? 'ticket' : 'gestion'
+                  )
+
                   return (
                     <div
                       key={`ev-${evId}-${idx}`}
-                      className={`empleado-jornada__event-item ${
+                      className={`empleado-jornada__event-item empleado-jornada__event-item--${colorTipo} ${
                         isFallo ? 'empleado-jornada__event-item--fallo' : ''
                       }`}
                       onClick={() => onSelectEvent(evId)}

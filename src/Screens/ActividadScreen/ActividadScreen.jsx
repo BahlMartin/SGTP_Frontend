@@ -47,8 +47,11 @@ export default function ActividadScreen() {
       q: searchParams.get('q') || '',
       rol: searchParams.get('rol') || '',
       categoria: searchParams.get('categoria') || '',
+      accion: searchParams.get('accion') || '',
       resultado: searchParams.get('resultado') || '',
       solo_alertas: searchParams.get('solo_alertas') === 'true',
+      personal_activo: searchParams.get('personal_activo') === 'true',
+      ocr: searchParams.get('ocr') === 'true',
       page: Number(searchParams.get('page')) || 1,
       page_size: Number(searchParams.get('page_size')) || 50
     }
@@ -62,6 +65,14 @@ export default function ActividadScreen() {
   )
   const [selectedEventDetail, setSelectedEventDetail] = useState(null)
   const [nuevosEventosPendientes, setNuevosEventosPendientes] = useState([])
+  const [alertasVistasIds, setAlertasVistasIds] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('sgtp_alertas_vistas')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
 
   const [loadingTable, setLoadingTable] = useState(false)
   const [loadingExport, setLoadingExport] = useState(false)
@@ -109,8 +120,11 @@ export default function ActividadScreen() {
         q: filtros.q,
         rol: filtros.rol,
         categoria: filtros.categoria,
+        accion: filtros.accion,
         resultado: filtros.resultado,
         solo_alertas: filtros.solo_alertas,
+        personal_activo: filtros.personal_activo,
+        ocr: filtros.ocr,
         page: filtros.page,
         page_size: filtros.page_size
       })
@@ -239,8 +253,11 @@ export default function ActividadScreen() {
       q: '',
       rol: '',
       categoria: '',
+      accion: '',
       resultado: '',
       solo_alertas: '',
+      personal_activo: '',
+      ocr: '',
       page: 1
     })
   }
@@ -266,6 +283,26 @@ export default function ActividadScreen() {
     setSelectedEventId(id)
     updateParams({ evento_id: id })
   }
+
+  const handleSelectAlerta = useCallback((eventoId) => {
+    if (!eventoId) return
+    handleSelectEvent(eventoId)
+    setAlertasVistasIds((prev) => {
+      if (prev.includes(eventoId)) return prev
+      const next = [...prev, eventoId]
+      try {
+        sessionStorage.setItem('sgtp_alertas_vistas', JSON.stringify(next))
+      } catch (err) {
+        console.warn('Error guardando alertas vistas:', err)
+      }
+      return next
+    })
+  }, [])
+
+  const alertasVisibles = useMemo(() => {
+    const list = kpisData.alertas_recientes || []
+    return list.filter((al) => !alertasVistasIds.includes(al.evento_id))
+  }, [kpisData.alertas_recientes, alertasVistasIds])
 
   const handleCloseDrawer = () => {
     setSelectedEventId(null)
@@ -427,8 +464,8 @@ export default function ActividadScreen() {
 
               {/* Banner de Alertas */}
               <AlertasBanner
-                alertas={kpisData.alertas_recientes || []}
-                onSelectEvent={handleSelectEvent}
+                alertas={alertasVisibles}
+                onSelectEvent={handleSelectAlerta}
                 onFilterAlerts={() => handleFiltroChange({ solo_alertas: true })}
               />
 
@@ -497,6 +534,8 @@ export default function ActividadScreen() {
                 currentUser={currentUser}
                 onSelectEvent={handleSelectEvent}
                 initialEmpleadoId={searchParams.get('usuario')}
+                initialFecha={searchParams.get('fecha')}
+                onParamsChange={updateParams}
               />
               <DbIpAttribution />
             </div>

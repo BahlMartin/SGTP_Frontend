@@ -56,7 +56,13 @@ export default function AlertasBanner({ alertas = [], onSelectEvent, onFilterAle
           {alertas.map((al, idx) => {
             const isAlta = al.severidad === 'ALTA'
             return (
-              <li key={al.evento_id || idx} className="alertas-banner__item">
+              <li
+                key={al.evento_id || idx}
+                className="alertas-banner__item"
+                onClick={() => onSelectEvent && al.evento_id && onSelectEvent(al.evento_id)}
+                style={{ cursor: al.evento_id ? 'pointer' : 'default' }}
+                title="Inspeccionar alerta y ver detalle en panel lateral"
+              >
                 <span
                   className={`alertas-banner__badge ${
                     isAlta
@@ -75,7 +81,10 @@ export default function AlertasBanner({ alertas = [], onSelectEvent, onFilterAle
                   <button
                     type="button"
                     className="alertas-banner__item-action"
-                    onClick={() => onSelectEvent(al.evento_id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onSelectEvent(al.evento_id)
+                    }}
                     title="Inspeccionar en panel lateral"
                   >
                     Detalle <ArrowRight size={13} />

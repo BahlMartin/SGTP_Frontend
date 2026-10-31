@@ -61,8 +61,8 @@ export default function ActividadKpis({ kpis = {}, activeFilter, onKpiClick }) {
       icon: FileScan,
       color: '#0f766e',
       bg: '#e6f4f2',
-      filterKey: 'categoria',
-      filterVal: 'admision'
+      filterKey: 'ocr',
+      filterVal: true
     },
     {
       id: 'alertas',
@@ -84,8 +84,8 @@ export default function ActividadKpis({ kpis = {}, activeFilter, onKpiClick }) {
       icon: Users,
       color: '#1687c9',
       bg: '#e0f2fe',
-      filterKey: null,
-      filterVal: null
+      filterKey: 'personal_activo',
+      filterVal: true
     }
   ]
 

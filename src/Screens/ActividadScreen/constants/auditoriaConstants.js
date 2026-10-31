@@ -113,18 +113,23 @@ export const ACCIONES_CATALOGO = {
   REPORTE_ENVIADO: 'Reporte despachado por correo institucional'
 }
 
-export function formatHora(isoString) {
-  if (!isoString) return '—'
+export function formatHora(val, includeSeconds = false) {
+  if (!val) return '—'
+  if (typeof val === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(val.trim())) {
+    const parts = val.trim()
+    return includeSeconds && parts.length === 8 ? parts : parts.slice(0, 5)
+  }
   try {
-    const d = new Date(isoString)
+    const d = new Date(val)
+    if (isNaN(d.getTime())) return String(val)
     return d.toLocaleTimeString('es-AR', {
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
+      ...(includeSeconds ? { second: '2-digit' } : {}),
       hour12: false
     })
   } catch {
-    return isoString
+    return String(val)
   }
 }
 
