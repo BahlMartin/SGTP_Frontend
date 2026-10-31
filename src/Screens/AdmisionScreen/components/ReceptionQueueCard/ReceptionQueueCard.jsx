@@ -1,7 +1,15 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Radio, Clock, Search, X, Bell, UserX } from 'lucide-react'
 import { formatWaitTime, calculateMinutesDiff } from '../../../../utils/formatters'
 import './ReceptionQueueCard.css'
+
+// Prioridad de Triage médica: Guardia (1) > Médicos (2) > Extracción (3) > Consulta (4)
+const TRIAGE_PRIORITY = {
+  G: 1,
+  Med: 2,
+  Ext: 3,
+  Csl: 4
+}
 
 export default function ReceptionQueueCard({
   waitingQueue = [],
@@ -11,18 +19,35 @@ export default function ReceptionQueueCard({
   isProcessing = false
 }) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
 
-  // Filtrado reactivo por DNI, turno y categoría
+  // Actualiza los minutos transcurridos en tiempo real cada 30 segundos
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 30000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Filtrado y ordenamiento asistencial respetando el orden de Triage
   const filteredQueue = useMemo(() => {
-    if (!searchTerm.trim()) return waitingQueue
     const term = searchTerm.toLowerCase().trim()
+    let list = waitingQueue
 
-    return waitingQueue.filter((item) => {
-      const turno = String(item.numero_llamado || '').toLowerCase()
-      const dni = String(item.dni || '').toLowerCase()
-      const categoria = String(item.categoria_label || item.prefijo || '').toLowerCase()
+    if (term) {
+      list = list.filter((item) => {
+        const turno = String(item.numero_llamado || '').toLowerCase()
+        const dni = String(item.dni || '').toLowerCase()
+        const categoria = String(item.categoria_label || item.prefijo || '').toLowerCase()
+        return turno.includes(term) || dni.includes(term) || categoria.includes(term)
+      })
+    }
 
-      return turno.includes(term) || dni.includes(term) || categoria.includes(term)
+    return [...list].sort((a, b) => {
+      const priorityA = TRIAGE_PRIORITY[a.prefijo] || 99
+      const priorityB = TRIAGE_PRIORITY[b.prefijo] || 99
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB
+      }
+      return new Date(a.created_at) - new Date(b.created_at)
     })
   }, [waitingQueue, searchTerm])
 
@@ -110,7 +135,7 @@ export default function ReceptionQueueCard({
         <div className="reception-queue-card__list-wrap">
           <ul className="reception-queue-card__list">
             {filteredQueue.map((turnoItem) => {
-              const waitMinutes = calculateMinutesDiff(turnoItem.created_at)
+              const waitMinutes = calculateMinutesDiff(turnoItem.created_at, currentTime)
               const isCurrentlyCalling = callingTurnoId === turnoItem.id
               const inAttention = turnoItem.estado === 'En Atencion'
 

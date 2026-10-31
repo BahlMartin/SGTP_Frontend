@@ -73,11 +73,19 @@ export default function AdmisionScreen() {
   const [isCancelProcessing, setIsCancelProcessing] = useState(false)
   const [unregisteredPatientAlert, setUnregisteredPatientAlert] = useState('')
 
-  // Carga de la cola de recepción
+  // Carga de la cola de recepción ordenada por prioridad de Triage y FIFO
   const fetchReceptionQueue = useCallback(async () => {
     try {
       const data = await receptionService.getTurnosPendientes()
-      setReceptionQueue(Array.isArray(data) ? data : [])
+      const list = Array.isArray(data) ? [...data] : []
+      const priorityMap = { G: 1, Med: 2, Ext: 3, Csl: 4 }
+      list.sort((a, b) => {
+        const pA = priorityMap[a.prefijo] || 99
+        const pB = priorityMap[b.prefijo] || 99
+        if (pA !== pB) return pA - pB
+        return new Date(a.created_at) - new Date(b.created_at)
+      })
+      setReceptionQueue(list)
     } catch (err) {
       console.warn('Error al obtener cola de recepción:', err)
     }

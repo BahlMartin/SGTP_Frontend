@@ -53,13 +53,15 @@ export function getArgentinaDateString(dateInput) {
 }
 
 /**
- * Calcula diferencia en minutos entre dos marcas temporales
+ * Calcula diferencia en minutos entre dos marcas temporales.
+ * Si endInput no se especifica, utiliza la fecha/hora actual por defecto.
  */
-export function calculateMinutesDiff(startInput, endInput) {
+export function calculateMinutesDiff(startInput, endInput = new Date()) {
   if (!startInput || !endInput) return null
   const start = new Date(startInput).getTime()
   const end = new Date(endInput).getTime()
-  if (isNaN(start) || isNaN(end) || end < start) return null
+  if (isNaN(start) || isNaN(end)) return null
+  if (end < start) return 0
   return Math.round((end - start) / 60000)
 }
 
