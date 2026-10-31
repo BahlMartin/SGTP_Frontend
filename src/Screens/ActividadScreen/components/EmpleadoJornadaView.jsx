@@ -158,6 +158,57 @@ export default function EmpleadoJornadaView({
   }
   const bloques = jornadaData?.bloques_actividad || jornadaData?.bloquesActividad || []
   const timeline = jornadaData?.timeline || []
+  const rolEmpleado = empleado?.rol || 'Box'
+
+  // Determinar pestañas temáticas permitidas según el rol del empleado auditado
+  const filterTabs = useMemo(() => {
+    // 1. Admin y Jefa: no tienen box ni cancelaciones operacionales
+    if (['Admin', 'Jefa'].includes(rolEmpleado)) {
+      return [
+        { key: 'todo', label: 'Todo' },
+        { key: 'acceso', label: 'Solo acceso' },
+        { key: 'alertas', label: 'Solo alertas' },
+        { key: 'gestion', label: 'Solo gestión' }
+      ]
+    }
+
+    // 2. Secretaria: reportes y correos, sin box ni cancelaciones
+    if (rolEmpleado === 'Secretaria') {
+      return [
+        { key: 'todo', label: 'Todo' },
+        { key: 'acceso', label: 'Solo acceso' },
+        { key: 'reportes', label: 'Solo exportación / correos' },
+        { key: 'alertas', label: 'Solo alertas' }
+      ]
+    }
+
+    // 3. Admisión: 'Solo admisión' en vez de 'Solo box', cancelaciones y alertas
+    if (rolEmpleado === 'Admision') {
+      return [
+        { key: 'todo', label: 'Todo' },
+        { key: 'acceso', label: 'Solo acceso' },
+        { key: 'admision', label: 'Solo admisión' },
+        { key: 'cancelaciones', label: 'Solo cancelaciones' },
+        { key: 'alertas', label: 'Solo alertas' }
+      ]
+    }
+
+    // 4. Box / Técnico: Solo box, cancelaciones y alertas
+    return [
+      { key: 'todo', label: 'Todo' },
+      { key: 'acceso', label: 'Solo acceso' },
+      { key: 'box', label: 'Solo box' },
+      { key: 'cancelaciones', label: 'Solo cancelaciones' },
+      { key: 'alertas', label: 'Solo alertas' }
+    ]
+  }, [rolEmpleado])
+
+  // Resetear a 'todo' si la categoría actual no pertenece al rol
+  useEffect(() => {
+    if (!filterTabs.some((t) => t.key === filterCategory)) {
+      setFilterCategory('todo')
+    }
+  }, [filterTabs, filterCategory])
 
   // Filtrado de la línea de tiempo por barra seleccionada y por categoría
   const filteredTimeline = useMemo(() => {
@@ -199,14 +250,48 @@ export default function EmpleadoJornadaView({
             evAccion.includes('LOGOUT')
           )
         }
+        if (filterCategory === 'admision') {
+          return (
+            colorTipo === 'admision' ||
+            evCat === 'admision' ||
+            evAccion.includes('TICKET') ||
+            evAccion.includes('OCR') ||
+            evAccion.includes('RECETA') ||
+            evAccion.includes('PACIENTE')
+          )
+        }
         if (filterCategory === 'box') {
           return (
             colorTipo === 'ticket' ||
-            ['box', 'admision'].includes(evCat) ||
-            evAccion.includes('TICKET') ||
-            evAccion.includes('TURNO') ||
+            colorTipo === 'box' ||
+            evCat === 'box' ||
+            evAccion.includes('BOX') ||
             evAccion.includes('LLAMADO') ||
             evAccion.includes('ATENCION')
+          )
+        }
+        if (filterCategory === 'reportes') {
+          return (
+            evCat === 'reportes' ||
+            evAccion.includes('REPORTE') ||
+            evAccion.includes('EXPORT') ||
+            evAccion.includes('ENVIO')
+          )
+        }
+        if (filterCategory === 'gestion') {
+          return (
+            evCat === 'gestion' ||
+            evCat === 'sla' ||
+            evAccion.includes('USUARIO') ||
+            evAccion.includes('HABILITACION') ||
+            evAccion.includes('SLA')
+          )
+        }
+        if (filterCategory === 'cancelaciones') {
+          return (
+            colorTipo === 'cancelacion' ||
+            evAccion === 'ATENCION_CANCELADA' ||
+            evAccion.includes('CANCEL')
           )
         }
         if (filterCategory === 'alertas') {
@@ -215,13 +300,6 @@ export default function EmpleadoJornadaView({
             (ev.alertas && ev.alertas.length > 0) ||
             evRes === 'FALLO' ||
             evRes === 'DENEGADO'
-          )
-        }
-        if (filterCategory === 'cancelaciones') {
-          return (
-            colorTipo === 'cancelacion' ||
-            evAccion === 'ATENCION_CANCELADA' ||
-            evAccion.includes('CANCEL')
           )
         }
         return true
@@ -382,67 +460,26 @@ export default function EmpleadoJornadaView({
               <Clock size={16} /> Registro Cronológico de la Jornada
             </h4>
 
-            {/* Selector de Filtros estilo Tablist */}
+            {/* Selector de Filtros estilo Tablist dinámico según el rol */}
             <div
               role="tablist"
               aria-label="Filtrar eventos de la jornada"
               className="empleado-jornada__filter-tabs"
             >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={filterCategory === 'todo'}
-                className={`empleado-jornada__filter-tab-btn ${
-                  filterCategory === 'todo' ? 'empleado-jornada__filter-tab-btn--active' : ''
-                }`}
-                onClick={() => setFilterCategory('todo')}
-              >
-                Todo
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={filterCategory === 'acceso'}
-                className={`empleado-jornada__filter-tab-btn ${
-                  filterCategory === 'acceso' ? 'empleado-jornada__filter-tab-btn--active' : ''
-                }`}
-                onClick={() => setFilterCategory('acceso')}
-              >
-                Solo acceso
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={filterCategory === 'box'}
-                className={`empleado-jornada__filter-tab-btn ${
-                  filterCategory === 'box' ? 'empleado-jornada__filter-tab-btn--active' : ''
-                }`}
-                onClick={() => setFilterCategory('box')}
-              >
-                Solo box
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={filterCategory === 'alertas'}
-                className={`empleado-jornada__filter-tab-btn ${
-                  filterCategory === 'alertas' ? 'empleado-jornada__filter-tab-btn--active' : ''
-                }`}
-                onClick={() => setFilterCategory('alertas')}
-              >
-                Solo alertas
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={filterCategory === 'cancelaciones'}
-                className={`empleado-jornada__filter-tab-btn ${
-                  filterCategory === 'cancelaciones' ? 'empleado-jornada__filter-tab-btn--active' : ''
-                }`}
-                onClick={() => setFilterCategory('cancelaciones')}
-              >
-                Solo cancelaciones
-              </button>
+              {filterTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={filterCategory === tab.key}
+                  className={`empleado-jornada__filter-tab-btn ${
+                    filterCategory === tab.key ? 'empleado-jornada__filter-tab-btn--active' : ''
+                  }`}
+                  onClick={() => setFilterCategory(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
             {/* Aviso de filtrado activo por intervalo de barra */}
@@ -558,6 +595,67 @@ function TimelineSvgIcon({ iconName }) {
       </svg>
     )
   }
+  if (iconName === 'admision') {
+    // Clipboard checklist de admisión / ticket creado
+    return (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+        <path d="M9 14h6" />
+        <path d="M12 11v6" />
+      </svg>
+    )
+  }
+  if (iconName === 'scan') {
+    // Documento / Escaneo OCR
+    return (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="16" y1="13" x2="8" y2="13" />
+        <line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+    )
+  }
+  if (iconName === 'reportes' || iconName === 'mail') {
+    // Exportación de reporte / despacho de correo institucional
+    return (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+        <polyline points="22,6 12,13 2,6" />
+      </svg>
+    )
+  }
   if (iconName === 'box') {
     return (
       <svg
@@ -665,6 +763,17 @@ function getEventVisualProps(item) {
   const isCancel = evAccion === 'ATENCION_CANCELADA' || evAccion.includes('CANCEL')
   const isAlerta = (ev.alertas && ev.alertas.length > 0) || isFallo
   const isAcceso = evCat === 'acceso' || evAccion.includes('LOGIN') || evAccion.includes('LOGOUT')
+  const isAdmision =
+    evCat === 'admision' ||
+    evAccion.includes('TICKET') ||
+    evAccion.includes('OCR') ||
+    evAccion.includes('RECETA') ||
+    evAccion.includes('PACIENTE')
+  const isReporte =
+    evCat === 'reportes' ||
+    evAccion.includes('REPORTE') ||
+    evAccion.includes('EXPORT') ||
+    evAccion.includes('ENVIO')
 
   if (isCancel) {
     return {
@@ -702,6 +811,33 @@ function getEventVisualProps(item) {
       sub: evDesc,
       tag: evAccion === 'LOGIN_EXITOSO' ? 'Inicio de sesión' : '',
       tagType: 'acceso'
+    }
+  }
+
+  if (isAdmision) {
+    const isOcr = evAccion.includes('OCR') || evAccion === 'RECETA_ESCANEADA'
+    return {
+      icon: isOcr ? 'scan' : 'admision',
+      fg: '#0f766e',
+      bg: '#e6f4f2',
+      titleColor: '#0f766e',
+      title: ACCIONES_CATALOGO[evAccion] || evAccion,
+      sub: evDesc,
+      tag: isOcr ? 'Escaneo OCR' : 'Admisión',
+      tagType: 'admision'
+    }
+  }
+
+  if (isReporte) {
+    return {
+      icon: 'reportes',
+      fg: '#334155',
+      bg: '#e8ecf1',
+      titleColor: '#334155',
+      title: ACCIONES_CATALOGO[evAccion] || evAccion,
+      sub: evDesc,
+      tag: 'Reporte / Correo',
+      tagType: 'reportes'
     }
   }
 

@@ -1,19 +1,22 @@
 .event-drawer {
-  width: 440px;
+  width: 460px;
+  max-width: 90vw;
   background: var(--auditoria-bg-card, #ffffff);
   border-left: 1px solid var(--auditoria-border-card, #d9e5ea);
-  box-shadow: var(--auditoria-shadow-drawer, -8px 0 24px -4px rgba(24, 59, 74, 0.14));
+  box-shadow: -8px 0 32px rgba(15, 23, 42, 0.2);
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 80px;
-  height: calc(100vh - 96px);
-  max-height: calc(100vh - 96px);
-  z-index: 90;
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  height: 100vh;
+  max-height: 100vh;
+  z-index: 1200;
   overflow: hidden;
   flex-shrink: 0;
-  border-radius: var(--radius-md, 8px);
-  animation: slideInRight 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 16px 0 0 16px;
+  animation: slideInRight 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideInRight {

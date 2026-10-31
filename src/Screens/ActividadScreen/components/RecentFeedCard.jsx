@@ -48,14 +48,28 @@ function FeedIcon({ category }) {
 
 export default function RecentFeedCard({
   feed = [],
+  filtros = {},
   mostrarTablaCompleta = false,
   onToggleTablaCompleta = () => {},
   onSelectEvent = () => {}
 }) {
+  let feedTitle = 'Feed reciente · últimos 20';
+  if (filtros.accion === 'ATENCION_CANCELADA') {
+    feedTitle = 'Feed reciente · últimas 20 cancelaciones';
+  } else if (filtros.resultado === 'FALLO') {
+    feedTitle = 'Feed reciente · últimos 20 fallos / bloqueos';
+  } else if (filtros.solo_alertas) {
+    feedTitle = 'Feed reciente · últimas 20 alertas';
+  } else if (filtros.ocr) {
+    feedTitle = 'Feed reciente · últimos 20 escaneos OCR';
+  } else if (filtros.accion === 'LOGIN_EXITOSO') {
+    feedTitle = 'Feed reciente · últimos 20 accesos';
+  }
+
   return (
     <section className="recent-feed-card" aria-label="Actividad reciente">
       <div className="recent-feed-card__header">
-        <h2 className="recent-feed-card__title">Feed reciente · últimos 20</h2>
+        <h2 className="recent-feed-card__title">{feedTitle}</h2>
         <button
           type="button"
           className="recent-feed-card__toggle-btn"

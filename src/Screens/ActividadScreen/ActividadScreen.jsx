@@ -6,7 +6,8 @@ import {
   ListFilter,
   UserCheck,
   AlertCircle,
-  Bell
+  Bell,
+  X
 } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import { useAuth } from '../../context/AuthContext'
@@ -101,20 +102,39 @@ export default function ActividadScreen() {
     }, { replace: true })
   }, [setSearchParams])
 
-  // Cargar métricas / KPIs
+  // Cargar métricas / KPIs y feed reciente según filtros activos
   const loadKpis = useCallback(async () => {
     try {
       const data = await fetchAuditoriaResumenKpisApi({
         periodo: filtros.periodo,
         desde: filtros.desde,
         hasta: filtros.hasta,
-        rol: filtros.rol
+        q: filtros.q,
+        rol: filtros.rol,
+        categoria: filtros.categoria,
+        accion: filtros.accion,
+        resultado: filtros.resultado,
+        solo_alertas: filtros.solo_alertas,
+        personal_activo: filtros.personal_activo,
+        ocr: filtros.ocr
       })
       setKpisData(data || {})
     } catch (err) {
       console.warn('Error al cargar KPIs de auditoría:', err)
     }
-  }, [filtros.periodo, filtros.desde, filtros.hasta, filtros.rol])
+  }, [filtros])
+
+  // Cerrar modal al presionar Escape
+  useEffect(() => {
+    if (!mostrarTablaCompleta) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setMostrarTablaCompleta(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [mostrarTablaCompleta])
 
   // Cargar listado de eventos
   const loadEventos = useCallback(async () => {
@@ -491,74 +511,91 @@ export default function ActividadScreen() {
                 />
               </div>
 
-              {/* 3. Feed Reciente (últimos 20 eventos) */}
+              {/* 3. Feed Reciente (últimos 20 eventos según filtro activo) */}
               <RecentFeedCard
                 feed={kpisData.feed_reciente}
+                filtros={filtros}
                 mostrarTablaCompleta={mostrarTablaCompleta}
                 onToggleTablaCompleta={() => setMostrarTablaCompleta((prev) => !prev)}
                 onSelectEvent={handleSelectEvent}
               />
 
-              {/* 4. Tabla Completa Desplegable (con filtros avanzados y paginación) */}
+              {/* 4. Modal / Overlay de Tabla Completa (con z-index y cierre al hacer click afuera o en X) */}
               {mostrarTablaCompleta && (
-                <section
-                  className="actividad-screen__full-table-section"
-                  aria-label="Registro detallado de auditoría"
+                <div
+                  className="actividad-screen__modal-backdrop"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      setMostrarTablaCompleta(false)
+                    }
+                  }}
                 >
-                  <div className="actividad-screen__full-table-header">
-                    <h3 className="actividad-screen__full-table-title">
-                      Registro Detallado de Auditoría Operacional
-                    </h3>
-                    <button
-                      type="button"
-                      className="actividad-screen__full-table-close-btn"
-                      onClick={() => setMostrarTablaCompleta(false)}
-                      title="Ocultar tabla de registros"
-                    >
-                      Ocultar tabla ✕
-                    </button>
-                  </div>
-
-                  {/* Filtros */}
-                  <FiltrosActividad
-                    filtros={filtros}
-                    onFiltroChange={handleFiltroChange}
-                    onResetFiltros={handleResetFiltros}
-                    isAdmin={isAdmin}
-                  />
-
-                  {/* Píldora de Nuevos Eventos en Vivo (si el usuario está en página > 1 o filtrando) */}
-                  {nuevosEventosPendientes.length > 0 && (
-                    <div className="actividad-screen__new-events-banner">
-                      <div className="actividad-screen__new-events-info">
-                        <Bell size={16} className="actividad-screen__new-events-icon" />
-                        <span>
-                          Hay <strong>{nuevosEventosPendientes.length}</strong> evento(s) nuevo(s) registrado(s) en vivo.
-                        </span>
+                  <div
+                    className="actividad-screen__modal-container"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="modal-audit-title"
+                  >
+                    <div className="actividad-screen__modal-header">
+                      <div>
+                        <h3 id="modal-audit-title" className="actividad-screen__modal-title">
+                          Registro Completo de Auditoría Operacional
+                        </h3>
+                        <p className="actividad-screen__modal-subtitle">
+                          Consola forense con filtros temáticos, búsqueda de personal y paginación
+                        </p>
                       </div>
                       <button
                         type="button"
-                        className="actividad-screen__new-events-btn"
-                        onClick={handleVerNuevosEventos}
+                        className="actividad-screen__modal-close-btn"
+                        onClick={() => setMostrarTablaCompleta(false)}
+                        title="Cerrar modal (Esc o click afuera)"
                       >
-                        Ver en tabla ahora
+                        <X size={20} />
                       </button>
                     </div>
-                  )}
 
-                  {/* Tabla de Eventos */}
-                  <EventosTable
-                    eventos={eventosData.results || []}
-                    totalCount={eventosData.count || 0}
-                    page={filtros.page}
-                    pageSize={filtros.page_size}
-                    onPageChange={(newPage) => updateParams({ page: newPage })}
-                    onPageSizeChange={(newSize) => updateParams({ page_size: newSize, page: 1 })}
-                    selectedEventId={selectedEventId}
-                    onSelectEvent={handleSelectEvent}
-                    loading={loadingTable}
-                  />
-                </section>
+                    {/* Filtros avanzados aplicables a la tabla */}
+                    <FiltrosActividad
+                      filtros={filtros}
+                      onFiltroChange={handleFiltroChange}
+                      onResetFiltros={handleResetFiltros}
+                      isAdmin={isAdmin}
+                    />
+
+                    {/* Píldora de Nuevos Eventos en Vivo */}
+                    {nuevosEventosPendientes.length > 0 && (
+                      <div className="actividad-screen__new-events-banner">
+                        <div className="actividad-screen__new-events-info">
+                          <Bell size={16} className="actividad-screen__new-events-icon" />
+                          <span>
+                            Hay <strong>{nuevosEventosPendientes.length}</strong> evento(s) nuevo(s) registrado(s) en vivo.
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="actividad-screen__new-events-btn"
+                          onClick={handleVerNuevosEventos}
+                        >
+                          Ver en tabla ahora
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Tabla de Eventos */}
+                    <EventosTable
+                      eventos={eventosData.results || []}
+                      totalCount={eventosData.count || 0}
+                      page={filtros.page}
+                      pageSize={filtros.page_size}
+                      onPageChange={(newPage) => updateParams({ page: newPage })}
+                      onPageSizeChange={(newSize) => updateParams({ page_size: newSize, page: 1 })}
+                      selectedEventId={selectedEventId}
+                      onSelectEvent={handleSelectEvent}
+                      loading={loadingTable}
+                    />
+                  </div>
+                </div>
               )}
 
               <DbIpAttribution />

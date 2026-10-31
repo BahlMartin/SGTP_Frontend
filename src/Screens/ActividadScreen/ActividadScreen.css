@@ -313,51 +313,89 @@
   margin-bottom: 16px;
 }
 
-/* Sección de Tabla Completa Desplegable */
-.actividad-screen__full-table-section {
+/* Modal / Overlay de Tabla Completa de Auditoría */
+.actividad-screen__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 16px;
-  background: #ffffff;
-  border: 1px solid var(--auditoria-border-card, #d9e5ea);
-  border-radius: 14px;
-  padding: 16px 20px;
-  box-shadow: 0 1px 3px rgba(24, 59, 74, 0.06);
-  animation: fadeInDown 0.25s ease;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 24px;
+  overflow-y: auto;
+  animation: fadeIn 0.2s ease;
 }
 
-.actividad-screen__full-table-header {
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.actividad-screen__modal-container {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  width: 100%;
+  max-width: 1480px;
+  margin: auto 0;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  animation: zoomInModal 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes zoomInModal {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.actividad-screen__modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 8px;
+  gap: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid #edf2f5;
 }
 
-.actividad-screen__full-table-title {
+.actividad-screen__modal-title {
   margin: 0;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 800;
   color: #275369;
 }
 
-.actividad-screen__full-table-close-btn {
+.actividad-screen__modal-subtitle {
+  margin: 3px 0 0 0;
+  font-size: 13px;
+  color: #647a85;
+}
+
+.actividad-screen__modal-close-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   background: #f4f8fb;
   border: 1px solid #d9e5ea;
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 700;
   color: #566d79;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.actividad-screen__full-table-close-btn:hover {
+.actividad-screen__modal-close-btn:hover {
   background: #fee2e2;
   border-color: #fca5a5;
   color: #991b1b;
