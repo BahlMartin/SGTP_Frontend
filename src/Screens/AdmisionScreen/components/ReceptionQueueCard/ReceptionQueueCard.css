@@ -167,10 +167,9 @@
 
 .reception-queue-card__item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 8px;
-  padding: 0.65rem 0.85rem;
+  padding: 0.75rem 0.9rem;
   border-bottom: 1px solid #f1f5f9;
   background: #ffffff;
   transition: background 0.15s ease;
@@ -185,15 +184,16 @@
   border-left: 3px solid #22c55e;
 }
 
-.reception-queue-card__item-main {
-  flex: 1;
-  min-width: 0;
+/* Fila 1: Número de llamado externo, DNI y tiempo de espera */
+.reception-queue-card__item-row-info {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
 }
 
-.reception-queue-card__item-top {
+.reception-queue-card__item-identity {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -244,8 +244,6 @@
   font-size: 0.78rem;
   color: #64748b;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .reception-queue-card__item-dni strong {
@@ -254,35 +252,14 @@
   font-weight: 700;
 }
 
-.reception-queue-card__item-bottom {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.74rem;
-  color: #64748b;
-  min-width: 0;
-}
-
-.reception-queue-card__item-cat {
-  color: #475569;
-  font-weight: 500;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.reception-queue-card__item-dot {
-  color: #cbd5e1;
-  font-weight: bold;
-}
-
 .reception-queue-card__item-wait {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   white-space: nowrap;
   color: #64748b;
+  font-size: 0.74rem;
+  flex-shrink: 0;
 }
 
 .reception-queue-card__wait-icon {
@@ -290,27 +267,31 @@
   flex-shrink: 0;
 }
 
-.reception-queue-card__item-actions {
+/* Fila 2: Botón de llamar o cancelar la consulta centrado */
+.reception-queue-card__item-row-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
 }
 
 .reception-queue-card__btn-call {
+  flex: 1;
+  max-width: 130px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 5px;
   background: #2563eb;
   color: #ffffff;
   border: none;
   border-radius: 6px;
-  padding: 0.35rem 0.55rem;
-  font-size: 0.74rem;
+  padding: 0.38rem 0.7rem;
+  font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;
   transition: all 0.15s ease;
 }
 
@@ -324,17 +305,21 @@
 }
 
 .reception-queue-card__btn-cancel {
+  flex: 1;
+  max-width: 130px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
   background: #fee2e2;
   color: #dc2626;
   border: 1px solid #fecaca;
   border-radius: 6px;
-  padding: 0.35rem 0.45rem;
+  padding: 0.38rem 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;
   transition: all 0.15s ease;
 }
 

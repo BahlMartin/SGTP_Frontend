@@ -121,8 +121,9 @@ export default function ReceptionQueueCard({
                     inAttention ? 'reception-queue-card__item--in-attention' : ''
                   }`}
                 >
-                  <div className="reception-queue-card__item-main">
-                    <div className="reception-queue-card__item-top">
+                  {/* Fila 1: Número de llamado externo, DNI y tiempo de espera */}
+                  <div className="reception-queue-card__item-row-info">
+                    <div className="reception-queue-card__item-identity">
                       <span
                         className={`reception-queue-card__turno-pill ${getPrefixClass(
                           turnoItem.prefijo
@@ -135,22 +136,14 @@ export default function ReceptionQueueCard({
                       </span>
                     </div>
 
-                    <div className="reception-queue-card__item-bottom">
-                      <span
-                        className="reception-queue-card__item-cat"
-                        title={turnoItem.categoria_label || turnoItem.prefijo}
-                      >
-                        {turnoItem.categoria_label || turnoItem.prefijo}
-                      </span>
-                      <span className="reception-queue-card__item-dot">•</span>
-                      <span className="reception-queue-card__item-wait">
-                        <Clock size={11} className="reception-queue-card__wait-icon" />
-                        <span>{formatWaitTime(waitMinutes)}</span>
-                      </span>
+                    <div className="reception-queue-card__item-wait">
+                      <Clock size={12} className="reception-queue-card__wait-icon" />
+                      <span>{formatWaitTime(waitMinutes)}</span>
                     </div>
                   </div>
 
-                  <div className="reception-queue-card__item-actions">
+                  {/* Fila 2: Centrado al medio el botón de llamar o de cancelar la consulta */}
+                  <div className="reception-queue-card__item-row-actions">
                     <button
                       type="button"
                       className="reception-queue-card__btn-call"
@@ -159,7 +152,7 @@ export default function ReceptionQueueCard({
                       title="Llamar y cargar datos en formulario"
                       aria-label={`Llamar turno ${turnoItem.numero_llamado}`}
                     >
-                      <Bell size={12} />
+                      <Bell size={13} />
                       <span>{isCurrentlyCalling ? 'Llamando...' : 'Llamar'}</span>
                     </button>
                     <button
@@ -170,7 +163,8 @@ export default function ReceptionQueueCard({
                       title="Cancelar turno por ausencia"
                       aria-label={`Cancelar turno ${turnoItem.numero_llamado}`}
                     >
-                      <UserX size={12} />
+                      <UserX size={13} />
+                      <span>Cancelar</span>
                     </button>
                   </div>
                 </li>
