@@ -23,6 +23,8 @@ import './ActividadScreen.css'
 
 import ActividadKpis from './components/ActividadKpis'
 import AlertasBanner from './components/AlertasBanner'
+import DashboardChartsCard from './components/DashboardChartsCard'
+import RecentFeedCard from './components/RecentFeedCard'
 import FiltrosActividad from './components/FiltrosActividad'
 import EventosTable from './components/EventosTable'
 import EventDrawer from './components/EventDrawer'
@@ -58,6 +60,12 @@ export default function ActividadScreen() {
   }, [searchParams])
 
   // 3. Estados de Datos
+  const hasActiveFilters = Boolean(
+    filtros.q || filtros.rol || filtros.categoria || filtros.accion ||
+    filtros.resultado || filtros.solo_alertas || filtros.personal_activo ||
+    filtros.ocr || (filtros.periodo && filtros.periodo !== 'hoy')
+  )
+  const [mostrarTablaCompleta, setMostrarTablaCompleta] = useState(() => hasActiveFilters)
   const [eventosData, setEventosData] = useState({ count: 0, results: [] })
   const [kpisData, setKpisData] = useState({})
   const [selectedEventId, setSelectedEventId] = useState(
@@ -268,6 +276,7 @@ export default function ActividadScreen() {
       return
     }
     const isAlreadyActive = filtros[filterKey] === filterVal
+    setMostrarTablaCompleta(true)
     handleFiltroChange({
       [filterKey]: isAlreadyActive ? '' : filterVal
     })
@@ -275,6 +284,7 @@ export default function ActividadScreen() {
 
   const handleVerNuevosEventos = () => {
     handleResetFiltros()
+    setMostrarTablaCompleta(true)
     setNuevosEventosPendientes([])
   }
 
@@ -286,7 +296,9 @@ export default function ActividadScreen() {
 
   const handleSelectAlerta = useCallback((eventoId) => {
     if (!eventoId) return
-    handleSelectEvent(eventoId)
+    setSelectedEventId(eventoId)
+    // Asegurar explícitamente permanecer en tab=general al abrir una alerta de auditoría
+    updateParams({ evento_id: eventoId, tab: 'general' })
     setAlertasVistasIds((prev) => {
       if (prev.includes(eventoId)) return prev
       const next = [...prev, eventoId]
@@ -297,7 +309,7 @@ export default function ActividadScreen() {
       }
       return next
     })
-  }, [])
+  }, [updateParams])
 
   const alertasVisibles = useMemo(() => {
     const list = kpisData.alertas_recientes || []
@@ -455,59 +467,99 @@ export default function ActividadScreen() {
         {activeTab === 'general' && (
           <div className="actividad-screen__content-layout">
             <div className="actividad-screen__primary-column">
-              {/* KPIs de Cabecera */}
+              {/* 1. KPIs de Cabecera */}
               <ActividadKpis
                 kpis={kpisData}
                 activeFilter={filtros}
                 onKpiClick={handleKpiClick}
               />
 
-              {/* Banner de Alertas */}
-              <AlertasBanner
-                alertas={alertasVisibles}
-                onSelectEvent={handleSelectAlerta}
-                onFilterAlerts={() => handleFiltroChange({ solo_alertas: true })}
-              />
+              {/* 2. Fila Dashboard: Requieren revisión + Gráficos (Actividad por hora / Cancelaciones) */}
+              <div className="actividad-screen__dashboard-row">
+                <AlertasBanner
+                  alertas={alertasVisibles}
+                  onSelectEvent={handleSelectAlerta}
+                  onFilterAlerts={() => {
+                    setMostrarTablaCompleta(true)
+                    handleFiltroChange({ solo_alertas: true })
+                  }}
+                />
 
-              {/* Filtros */}
-              <FiltrosActividad
-                filtros={filtros}
-                onFiltroChange={handleFiltroChange}
-                onResetFiltros={handleResetFiltros}
-                isAdmin={isAdmin}
-              />
+                <DashboardChartsCard
+                  actividadPorHora={kpisData.actividad_por_hora}
+                  cancelacionesPorMotivo={kpisData.cancelaciones_por_motivo}
+                />
+              </div>
 
-              {/* Píldora de Nuevos Eventos en Vivo (si el usuario está en página > 1 o filtrando) */}
-              {nuevosEventosPendientes.length > 0 && (
-                <div className="actividad-screen__new-events-banner">
-                  <div className="actividad-screen__new-events-info">
-                    <Bell size={16} className="actividad-screen__new-events-icon" />
-                    <span>
-                      Hay <strong>{nuevosEventosPendientes.length}</strong> evento(s) nuevo(s) registrado(s) en vivo.
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    className="actividad-screen__new-events-btn"
-                    onClick={handleVerNuevosEventos}
-                  >
-                    Ver en tabla ahora
-                  </button>
-                </div>
-              )}
-
-              {/* Tabla de Eventos */}
-              <EventosTable
-                eventos={eventosData.results || []}
-                totalCount={eventosData.count || 0}
-                page={filtros.page}
-                pageSize={filtros.page_size}
-                onPageChange={(newPage) => updateParams({ page: newPage })}
-                onPageSizeChange={(newSize) => updateParams({ page_size: newSize, page: 1 })}
-                selectedEventId={selectedEventId}
+              {/* 3. Feed Reciente (últimos 20 eventos) */}
+              <RecentFeedCard
+                feed={kpisData.feed_reciente}
+                mostrarTablaCompleta={mostrarTablaCompleta}
+                onToggleTablaCompleta={() => setMostrarTablaCompleta((prev) => !prev)}
                 onSelectEvent={handleSelectEvent}
-                loading={loadingTable}
               />
+
+              {/* 4. Tabla Completa Desplegable (con filtros avanzados y paginación) */}
+              {mostrarTablaCompleta && (
+                <section
+                  className="actividad-screen__full-table-section"
+                  aria-label="Registro detallado de auditoría"
+                >
+                  <div className="actividad-screen__full-table-header">
+                    <h3 className="actividad-screen__full-table-title">
+                      Registro Detallado de Auditoría Operacional
+                    </h3>
+                    <button
+                      type="button"
+                      className="actividad-screen__full-table-close-btn"
+                      onClick={() => setMostrarTablaCompleta(false)}
+                      title="Ocultar tabla de registros"
+                    >
+                      Ocultar tabla ✕
+                    </button>
+                  </div>
+
+                  {/* Filtros */}
+                  <FiltrosActividad
+                    filtros={filtros}
+                    onFiltroChange={handleFiltroChange}
+                    onResetFiltros={handleResetFiltros}
+                    isAdmin={isAdmin}
+                  />
+
+                  {/* Píldora de Nuevos Eventos en Vivo (si el usuario está en página > 1 o filtrando) */}
+                  {nuevosEventosPendientes.length > 0 && (
+                    <div className="actividad-screen__new-events-banner">
+                      <div className="actividad-screen__new-events-info">
+                        <Bell size={16} className="actividad-screen__new-events-icon" />
+                        <span>
+                          Hay <strong>{nuevosEventosPendientes.length}</strong> evento(s) nuevo(s) registrado(s) en vivo.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="actividad-screen__new-events-btn"
+                        onClick={handleVerNuevosEventos}
+                      >
+                        Ver en tabla ahora
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Tabla de Eventos */}
+                  <EventosTable
+                    eventos={eventosData.results || []}
+                    totalCount={eventosData.count || 0}
+                    page={filtros.page}
+                    pageSize={filtros.page_size}
+                    onPageChange={(newPage) => updateParams({ page: newPage })}
+                    onPageSizeChange={(newSize) => updateParams({ page_size: newSize, page: 1 })}
+                    selectedEventId={selectedEventId}
+                    onSelectEvent={handleSelectEvent}
+                    loading={loadingTable}
+                  />
+                </section>
+              )}
 
               <DbIpAttribution />
             </div>

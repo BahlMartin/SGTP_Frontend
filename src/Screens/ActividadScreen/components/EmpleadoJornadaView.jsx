@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   User,
   Calendar,
@@ -44,12 +44,15 @@ export default function EmpleadoJornadaView({
     return new Date().toISOString().slice(0, 10)
   })
   const [jornadaData, setJornadaData] = useState(null)
+  const [selectedBar, setSelectedBar] = useState(null)
+  const [filterCategory, setFilterCategory] = useState('todo') // 'todo', 'acceso', 'box', 'alertas', 'cancelaciones'
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState(null)
 
   // Handlers sincronizados
   const handleEmpChange = (empId) => {
     setSelectedEmpId(empId)
+    setSelectedBar(null)
     try {
       sessionStorage.setItem('sgtp_jornada_empleado_id', empId)
     } catch {}
@@ -60,6 +63,7 @@ export default function EmpleadoJornadaView({
 
   const handleFechaChange = (fechaVal) => {
     setSelectedFecha(fechaVal)
+    setSelectedBar(null)
     try {
       sessionStorage.setItem('sgtp_jornada_fecha', fechaVal)
     } catch {}
@@ -88,30 +92,16 @@ export default function EmpleadoJornadaView({
             setSelectedEmpId((prev) => {
               // Si el ID actualmente seleccionado sigue activo en la lista, conservarlo
               const currentValid = prev && filtered.some((emp) => String(emp.id) === String(prev))
-              if (currentValid) {
-                if (onParamsChange) {
-                  onParamsChange({ tab: 'jornada', usuario: prev, fecha: selectedFecha })
-                }
-                return prev
-              }
+              if (currentValid) return prev
 
               // Si vino initialEmpleadoId y corresponde a un empleado activo, seleccionarlo
               const initialValid =
                 initialEmpleadoId &&
                 filtered.some((emp) => String(emp.id) === String(initialEmpleadoId))
-              if (initialValid) {
-                if (onParamsChange) {
-                  onParamsChange({ tab: 'jornada', usuario: String(initialEmpleadoId), fecha: selectedFecha })
-                }
-                return String(initialEmpleadoId)
-              }
+              if (initialValid) return String(initialEmpleadoId)
 
               // Por defecto, seleccionar el primer empleado activo disponible
-              const firstId = String(filtered[0].id)
-              if (onParamsChange) {
-                onParamsChange({ tab: 'jornada', usuario: firstId, fecha: selectedFecha })
-              }
-              return firstId
+              return String(filtered[0].id)
             })
           } else {
             setSelectedEmpId('')
@@ -168,6 +158,78 @@ export default function EmpleadoJornadaView({
   }
   const bloques = jornadaData?.bloques_actividad || jornadaData?.bloquesActividad || []
   const timeline = jornadaData?.timeline || []
+
+  // Filtrado de la línea de tiempo por barra seleccionada y por categoría
+  const filteredTimeline = useMemo(() => {
+    let list = timeline
+
+    // 1. Filtrar por barra horaria seleccionada en el gráfico
+    if (selectedBar && selectedBar.event_ids) {
+      list = list.filter((item) => {
+        if (item.tipo === 'gap' || item.tipoGap) {
+          const gIni = item.inicio_hora ?? item.inicio ?? 0
+          const gFin = item.fin_hora ?? item.fin ?? 24
+          return gIni < selectedBar.fin && gFin > selectedBar.inicio
+        }
+        if (item.tipo === 'grupo') {
+          return selectedBar.event_ids.some((id) => (item.event_ids || []).includes(id))
+        }
+        const evId = item.id || item.evento?.id || item.eventId
+        return selectedBar.event_ids.includes(evId)
+      })
+    }
+
+    // 2. Filtrar por categoría temática de la pestaña
+    if (filterCategory !== 'todo') {
+      list = list.filter((item) => {
+        if (item.tipo === 'gap' || item.tipoGap) {
+          return filterCategory === 'alertas'
+        }
+        const ev = item.evento || item
+        const evCat = ev.categoria || item.categoria || ''
+        const evAccion = ev.accion || item.accion || ''
+        const evRes = ev.resultado || item.resultado || ''
+        const colorTipo = item.color_tipo || ''
+
+        if (filterCategory === 'acceso') {
+          return (
+            colorTipo === 'login' ||
+            evCat === 'acceso' ||
+            evAccion.includes('LOGIN') ||
+            evAccion.includes('LOGOUT')
+          )
+        }
+        if (filterCategory === 'box') {
+          return (
+            colorTipo === 'ticket' ||
+            ['box', 'admision'].includes(evCat) ||
+            evAccion.includes('TICKET') ||
+            evAccion.includes('TURNO') ||
+            evAccion.includes('LLAMADO') ||
+            evAccion.includes('ATENCION')
+          )
+        }
+        if (filterCategory === 'alertas') {
+          return (
+            colorTipo === 'alerta' ||
+            (ev.alertas && ev.alertas.length > 0) ||
+            evRes === 'FALLO' ||
+            evRes === 'DENEGADO'
+          )
+        }
+        if (filterCategory === 'cancelaciones') {
+          return (
+            colorTipo === 'cancelacion' ||
+            evAccion === 'ATENCION_CANCELADA' ||
+            evAccion.includes('CANCEL')
+          )
+        }
+        return true
+      })
+    }
+
+    return list
+  }, [timeline, selectedBar, filterCategory])
 
   const totalEventos = resumen?.total_eventos ?? resumen?.totalEventos ?? 0
   const primeraAct = resumen?.primera_act ?? resumen?.primeraAct ?? '—'
@@ -303,139 +365,173 @@ export default function EmpleadoJornadaView({
             </div>
           </div>
 
-          {/* 3. Visualización Gráfica SVG */}
+          {/* 3. Visualización Gráfica: Turno vs. Actividad (Barras interactivas de 15m) */}
           <div className="empleado-jornada__chart-card">
-            <h4 className="empleado-jornada__section-title">
-              <Activity size={16} /> Mapa Temporal de Actividad
-            </h4>
             <ActivityStripSVG
               turnoProgramado={turno}
-              bloques={bloques}
-              ancho={850}
-              alto={95}
-              onSelectEvent={onSelectEvent}
+              barras={jornadaData?.barras_actividad || []}
+              gaps={jornadaData?.gaps || []}
+              selectedBar={selectedBar}
+              onSelectBar={setSelectedBar}
             />
           </div>
 
-          {/* 4. Línea de Tiempo Cronológica */}
+          {/* 4. Línea de Tiempo Cronológica con Filtros */}
           <div className="empleado-jornada__timeline-card">
             <h4 className="empleado-jornada__section-title">
               <Clock size={16} /> Registro Cronológico de la Jornada
             </h4>
 
-            {timeline.length === 0 ? (
+            {/* Selector de Filtros estilo Tablist */}
+            <div
+              role="tablist"
+              aria-label="Filtrar eventos de la jornada"
+              className="empleado-jornada__filter-tabs"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={filterCategory === 'todo'}
+                className={`empleado-jornada__filter-tab-btn ${
+                  filterCategory === 'todo' ? 'empleado-jornada__filter-tab-btn--active' : ''
+                }`}
+                onClick={() => setFilterCategory('todo')}
+              >
+                Todo
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={filterCategory === 'acceso'}
+                className={`empleado-jornada__filter-tab-btn ${
+                  filterCategory === 'acceso' ? 'empleado-jornada__filter-tab-btn--active' : ''
+                }`}
+                onClick={() => setFilterCategory('acceso')}
+              >
+                Solo acceso
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={filterCategory === 'box'}
+                className={`empleado-jornada__filter-tab-btn ${
+                  filterCategory === 'box' ? 'empleado-jornada__filter-tab-btn--active' : ''
+                }`}
+                onClick={() => setFilterCategory('box')}
+              >
+                Solo box
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={filterCategory === 'alertas'}
+                className={`empleado-jornada__filter-tab-btn ${
+                  filterCategory === 'alertas' ? 'empleado-jornada__filter-tab-btn--active' : ''
+                }`}
+                onClick={() => setFilterCategory('alertas')}
+              >
+                Solo alertas
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={filterCategory === 'cancelaciones'}
+                className={`empleado-jornada__filter-tab-btn ${
+                  filterCategory === 'cancelaciones' ? 'empleado-jornada__filter-tab-btn--active' : ''
+                }`}
+                onClick={() => setFilterCategory('cancelaciones')}
+              >
+                Solo cancelaciones
+              </button>
+            </div>
+
+            {/* Aviso de filtrado activo por intervalo de barra */}
+            {selectedBar && (
+              <div className="empleado-jornada__bar-filter-banner">
+                <span>
+                  Mostrando únicamente eventos del intervalo{' '}
+                  <strong>{selectedBar.rango || selectedBar.hora_label}</strong> ({selectedBar.count}{' '}
+                  evento(s))
+                </span>
+                <button
+                  type="button"
+                  className="empleado-jornada__bar-filter-clear-btn"
+                  onClick={() => setSelectedBar(null)}
+                >
+                  Limpiar filtro ✕
+                </button>
+              </div>
+            )}
+
+            {filteredTimeline.length === 0 ? (
               <p className="empleado-jornada__empty-timeline">
-                No se registraron acciones ni conexiones para este personal en la fecha seleccionada.
+                No se registraron eventos para los filtros seleccionados.
               </p>
             ) : (
-              <div className="empleado-jornada__timeline-list">
-                {timeline.map((item, idx) => {
-                  // Caso 1: Pausa / Gap de Inactividad > 30 minutos
-                  if (item.tipo === 'gap' || item.tipoGap) {
-                    const duracion = item.duracion_min ?? item.minutos ?? 30
-                    const rango = item.rango || `${item.desde} – ${item.hasta}`
-                    return (
-                      <div key={`gap-${item.id || idx}`} className="empleado-jornada__gap-item">
-                        <div className="empleado-jornada__gap-icon">
-                          <Coffee size={15} />
-                        </div>
-                        <div className="empleado-jornada__gap-content">
-                          <span className="empleado-jornada__gap-title">
-                            Pausa de actividad prolongada ({duracion} minutos)
-                          </span>
-                          <span className="empleado-jornada__gap-time">
-                            {rango}
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  // Caso 2: Grupo de acciones consecutivas
-                  if (item.tipo === 'grupo') {
-                    return (
-                      <div key={`group-${item.id || idx}`} className="empleado-jornada__group-item">
-                        <div className="empleado-jornada__group-badge">
-                          <Layers size={14} />
-                          <span>{item.cantidad}</span>
-                        </div>
-                        <div className="empleado-jornada__group-content">
-                          <span className="empleado-jornada__group-title">
-                            {item.cantidad} acciones consecutivas de &ldquo;{ACCIONES_CATALOGO[item.accion] || item.accion}&rdquo;
-                          </span>
-                          <span className="empleado-jornada__group-meta">
-                            De {item.inicio} a {item.fin} ({item.duracion_min} min de trabajo continuo)
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  // Caso 3: Evento Individual
+              <ol className="empleado-jornada__timeline-ol">
+                {filteredTimeline.map((item, idx) => {
+                  const v = getEventVisualProps(item)
                   const ev = item.evento || item
                   const evId = ev.id || item.eventId || item.id
-                  const evCat = ev.categoria || item.categoria || 'gestion'
-                  const evAccion = ev.accion || item.accion || 'ACCION'
-                  const evRes = ev.resultado || item.resultado || 'EXITO'
                   const evHora = ev.hora || item.hora || (ev.fecha ? formatHora(ev.fecha) : '—')
-                  const evDesc = ev.descripcion || item.descripcion || item.titulo || ACCIONES_CATALOGO[evAccion] || evAccion
-
-                  const cat = CATEGORIAS_CONFIG[evCat] || CATEGORIAS_CONFIG.gestion
-                  const CatIcon = cat.Icon
-                  const isFallo = evRes === 'FALLO'
-
-                  const colorTipo = item.color_tipo || (
-                    evAccion.includes('LOGIN') || evAccion === 'LOGOUT' || evCat === 'acceso' ? 'login' :
-                    evAccion === 'ATENCION_CANCELADA' ? 'cancelacion' :
-                    (ev.alertas?.length > 0 || isFallo) ? 'alerta' :
-                    ['admision', 'box'].includes(evCat) || evAccion.includes('TICKET') ? 'ticket' : 'gestion'
-                  )
 
                   return (
-                    <div
-                      key={`ev-${evId}-${idx}`}
-                      className={`empleado-jornada__event-item empleado-jornada__event-item--${colorTipo} ${
-                        isFallo ? 'empleado-jornada__event-item--fallo' : ''
-                      }`}
-                      onClick={() => onSelectEvent(evId)}
-                      tabIndex={0}
-                      role="button"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') onSelectEvent(evId)
-                      }}
+                    <li
+                      key={`tl-${evId || idx}`}
+                      className="empleado-jornada__timeline-row"
+                      onClick={() => evId && onSelectEvent(evId)}
+                      title="Click para inspeccionar evento en el panel lateral"
                     >
-                      <span className="empleado-jornada__event-time">
-                        {evHora}
-                      </span>
-
-                      <div
-                        className="empleado-jornada__event-cat-icon"
-                        style={{ color: cat.color, backgroundColor: cat.bg }}
-                      >
-                        <CatIcon size={14} />
-                      </div>
-
-                      <div className="empleado-jornada__event-body">
-                        <div className="empleado-jornada__event-title-row">
-                          <span className="empleado-jornada__event-title">
-                            {ACCIONES_CATALOGO[evAccion] || evAccion}
-                          </span>
-                          {evRes !== 'EXITO' && (
-                            <span className="empleado-jornada__event-res-pill">
-                              {evRes}
-                            </span>
-                          )}
-                        </div>
-                        <span className="empleado-jornada__event-desc">
-                          {evDesc}
+                      <time className="empleado-jornada__timeline-time">{evHora}</time>
+                      <div className="empleado-jornada__timeline-line-col">
+                        <span
+                          className="empleado-jornada__timeline-icon-badge"
+                          style={{ color: v.fg, backgroundColor: v.bg }}
+                        >
+                          <TimelineSvgIcon iconName={v.icon} />
                         </span>
+                        <span className="empleado-jornada__timeline-connector" />
                       </div>
-
-                      <ChevronRight size={16} className="empleado-jornada__event-arrow" />
-                    </div>
+                      <div className="empleado-jornada__timeline-content">
+                        <span
+                          className="empleado-jornada__timeline-title"
+                          style={{ color: v.titleColor }}
+                        >
+                          {v.title}
+                        </span>
+                        {v.sub && (
+                          <span className="empleado-jornada__timeline-sub">
+                            · {v.sub}
+                          </span>
+                        )}
+                        {v.tag && (
+                          <span
+                            className={`empleado-jornada__timeline-tag ${
+                              v.tagType === 'cancel'
+                                ? 'empleado-jornada__timeline-tag--cancel'
+                                : 'empleado-jornada__timeline-tag--alerta'
+                            }`}
+                          >
+                            {v.tag}
+                          </span>
+                        )}
+                        {item.tipo === 'grupo' && (
+                          <button
+                            type="button"
+                            className="empleado-jornada__timeline-group-btn"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (item.evento_id || evId) onSelectEvent(item.evento_id || evId)
+                            }}
+                          >
+                            Ver los {item.cantidad} ▸
+                          </button>
+                        )}
+                      </div>
+                    </li>
                   )
                 })}
-              </div>
+              </ol>
             )}
           </div>
         </>
@@ -443,3 +539,181 @@ export default function EmpleadoJornadaView({
     </div>
   )
 }
+
+function TimelineSvgIcon({ iconName }) {
+  if (iconName === 'key') {
+    return (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M15.5 7.5a4 4 0 1 1-1 2.6L4 20v-3h3v-2h2l2.5-2.5" />
+      </svg>
+    )
+  }
+  if (iconName === 'box') {
+    return (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5s-2.5-1.1-2.5-2.5V2 M8.5 2h7 M14.5 16h-5" />
+      </svg>
+    )
+  }
+  if (iconName === 'ban') {
+    return (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="4.9" y1="4.9" x2="19.1" y2="19.1" />
+      </svg>
+    )
+  }
+  if (iconName === 'alert') {
+    return (
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z M12 9v4 M12 17h.01" />
+      </svg>
+    )
+  }
+  // gap / reloj
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+}
+
+function getEventVisualProps(item) {
+  if (item.tipo === 'gap' || item.tipoGap) {
+    return {
+      icon: 'gap',
+      fg: '#566d79',
+      bg: '#f4f8fb',
+      titleColor: '#566d79',
+      title: `Pausa prolongada (${item.duracion_min ?? item.minutos ?? 30} min)`,
+      sub: item.rango || `${item.desde} – ${item.hasta}`,
+      tag: 'Sin actividad',
+      tagType: 'alerta'
+    }
+  }
+
+  if (item.tipo === 'grupo') {
+    return {
+      icon: 'box',
+      fg: '#1687c9',
+      bg: '#e0f2fe',
+      titleColor: '#275369',
+      title: `${item.cantidad} acciones consecutivas: ${ACCIONES_CATALOGO[item.accion] || item.accion}`,
+      sub: `De ${item.inicio} a ${item.fin} (${item.duracion_min} min de trabajo continuo)`,
+      tag: `${item.cantidad} acciones`,
+      tagType: 'info'
+    }
+  }
+
+  const ev = item.evento || item
+  const evCat = ev.categoria || item.categoria || 'gestion'
+  const evAccion = ev.accion || item.accion || 'ACCION'
+  const evRes = ev.resultado || item.resultado || 'EXITO'
+  const evDesc = ev.descripcion || item.descripcion || item.titulo || ACCIONES_CATALOGO[evAccion] || evAccion
+  const isFallo = evRes === 'FALLO' || evRes === 'DENEGADO'
+  const isCancel = evAccion === 'ATENCION_CANCELADA' || evAccion.includes('CANCEL')
+  const isAlerta = (ev.alertas && ev.alertas.length > 0) || isFallo
+  const isAcceso = evCat === 'acceso' || evAccion.includes('LOGIN') || evAccion.includes('LOGOUT')
+
+  if (isCancel) {
+    return {
+      icon: 'ban',
+      fg: '#dc2626',
+      bg: '#fee2e2',
+      titleColor: '#991b1b',
+      title: ACCIONES_CATALOGO[evAccion] || evAccion,
+      sub: evDesc,
+      tag: 'Cancelación',
+      tagType: 'cancel'
+    }
+  }
+
+  if (isAlerta) {
+    return {
+      icon: 'alert',
+      fg: '#92400e',
+      bg: '#fdf3e7',
+      titleColor: '#92400e',
+      title: ACCIONES_CATALOGO[evAccion] || evAccion,
+      sub: evDesc,
+      tag: isFallo ? 'Fallo' : 'Alerta',
+      tagType: 'alerta'
+    }
+  }
+
+  if (isAcceso) {
+    return {
+      icon: 'key',
+      fg: '#4338ca',
+      bg: '#eef0fd',
+      titleColor: '#275369',
+      title: ACCIONES_CATALOGO[evAccion] || evAccion,
+      sub: evDesc,
+      tag: evAccion === 'LOGIN_EXITOSO' ? 'Inicio de sesión' : '',
+      tagType: 'acceso'
+    }
+  }
+
+  return {
+    icon: 'box',
+    fg: '#be185d',
+    bg: '#fbe8f1',
+    titleColor: '#275369',
+    title: ACCIONES_CATALOGO[evAccion] || evAccion,
+    sub: evDesc,
+    tag: '',
+    tagType: 'box'
+  }
+}
+

@@ -103,6 +103,189 @@
   text-align: center;
 }
 
+/* Tabs de filtrado de la jornada */
+.empleado-jornada__filter-tabs {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px;
+  gap: 2px;
+  background: #f4f8fb;
+  border: 1px solid #d9e5ea;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.empleado-jornada__filter-tab-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #566d79;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.empleado-jornada__filter-tab-btn:hover {
+  color: #1687c9;
+  background: #eef6fa;
+}
+
+.empleado-jornada__filter-tab-btn--active {
+  color: #ffffff !important;
+  background: #1687c9 !important;
+  font-weight: 700;
+}
+
+/* Banner de filtro por barra */
+.empleado-jornada__bar-filter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  background: #fbe8f1;
+  border: 1px solid #f0c4c4;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #991b1b;
+  margin-bottom: 12px;
+}
+
+.empleado-jornada__bar-filter-clear-btn {
+  background: #ffffff;
+  border: 1px solid #f0c4c4;
+  color: #991b1b;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.empleado-jornada__bar-filter-clear-btn:hover {
+  background: #fdf2f8;
+}
+
+/* Timeline moderno con línea vertical conectora y badges circulares */
+.empleado-jornada__timeline-ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.empleado-jornada__timeline-row {
+  display: grid;
+  grid-template-columns: 56px 36px 1fr;
+  column-gap: 8px;
+  align-items: stretch;
+  cursor: pointer;
+  padding: 2px 0;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.empleado-jornada__timeline-row:hover {
+  background-color: #f8fafc;
+}
+
+.empleado-jornada__timeline-row:hover .empleado-jornada__timeline-title {
+  color: #1687c9;
+}
+
+.empleado-jornada__timeline-time {
+  padding-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #566d79;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.empleado-jornada__timeline-line-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.empleado-jornada__timeline-icon-badge {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px #d9e5ea;
+}
+
+.empleado-jornada__timeline-connector {
+  flex: 1;
+  width: 2px;
+  min-height: 14px;
+  background: #d9e5ea;
+}
+
+.empleado-jornada__timeline-content {
+  padding: 4px 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.empleado-jornada__timeline-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #275369;
+  transition: color 0.15s ease;
+}
+
+.empleado-jornada__timeline-sub {
+  font-size: 12px;
+  color: #566d79;
+}
+
+.empleado-jornada__timeline-tag {
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+.empleado-jornada__timeline-tag--alerta {
+  color: #92400e;
+  background: #fdf3e7;
+  border: 1px solid #e8c9a4;
+}
+
+.empleado-jornada__timeline-tag--cancel {
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+}
+
+.empleado-jornada__timeline-group-btn {
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1687c9;
+  background: #ffffff;
+  border: 1px solid #d9e5ea;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.empleado-jornada__timeline-group-btn:hover {
+  background: #f0f7fb;
+}
+
 .empleado-jornada__timeline-list {
   display: flex;
   flex-direction: column;

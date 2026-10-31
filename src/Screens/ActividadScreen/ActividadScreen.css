@@ -303,3 +303,62 @@
 .actividad-screen__new-events-btn:hover {
   background: #1d4ed8;
 }
+
+/* Fila de Dashboard: Alertas + Gráficos (Actividad por hora / Cancelaciones) */
+.actividad-screen__dashboard-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: stretch;
+  margin-bottom: 16px;
+}
+
+/* Sección de Tabla Completa Desplegable */
+.actividad-screen__full-table-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  background: #ffffff;
+  border: 1px solid var(--auditoria-border-card, #d9e5ea);
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(24, 59, 74, 0.06);
+  animation: fadeInDown 0.25s ease;
+}
+
+.actividad-screen__full-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #edf2f5;
+}
+
+.actividad-screen__full-table-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #275369;
+}
+
+.actividad-screen__full-table-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f4f8fb;
+  border: 1px solid #d9e5ea;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #566d79;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.actividad-screen__full-table-close-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}

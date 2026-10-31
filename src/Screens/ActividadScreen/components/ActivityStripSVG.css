@@ -1,0 +1,137 @@
+.activity-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.activity-strip__legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+.activity-strip__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #275369;
+}
+
+.activity-strip__legend-items {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  color: #566d79;
+}
+
+.activity-strip__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.activity-strip__legend-box-turno {
+  width: 14px;
+  height: 10px;
+  background: #dff3fa;
+  border: 1px solid #1687c9;
+  border-radius: 2px;
+}
+
+.activity-strip__legend-box-actividad {
+  width: 4px;
+  height: 14px;
+  background: #1175ae;
+  border-radius: 1px;
+}
+
+.activity-strip__legend-box-gap {
+  width: 14px;
+  height: 10px;
+  background: repeating-linear-gradient(45deg, #94a3a8 0 2px, #ffffff 2px 5px);
+  border: 1px solid #94a3a8;
+  border-radius: 2px;
+}
+
+.activity-strip__chart-area {
+  position: relative;
+  height: 68px;
+  background: #f4f8fb;
+  border: 1px solid #edf2f5;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.activity-strip__shift-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #dff3fa;
+  border-left: 2px solid #1687c9;
+  border-right: 2px solid #1687c9;
+  box-sizing: border-box;
+  opacity: 0.85;
+}
+
+.activity-strip__gap-overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(45deg, #94a3a8 0 2px, #ffffff 2px 6px);
+  opacity: 0.65;
+}
+
+.activity-strip__bars-row {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 4px 6px 0;
+  z-index: 2;
+}
+
+.activity-strip__bar {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+  transition: all 0.15s ease;
+}
+
+.activity-strip__bar--active {
+  background: #1175ae;
+  cursor: pointer;
+}
+
+.activity-strip__bar--active:hover {
+  background: #0284c7;
+  transform: scaleY(1.06);
+  transform-origin: bottom;
+}
+
+.activity-strip__bar--selected {
+  background: #be185d !important;
+  box-shadow: 0 0 0 1.5px #ffffff, 0 0 6px rgba(190, 24, 93, 0.7);
+  transform: scaleY(1.1);
+  transform-origin: bottom;
+}
+
+.activity-strip__bar--empty {
+  background: transparent;
+  cursor: default;
+}
+
+.activity-strip__axis-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #566d79;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  padding: 0 4px;
+}
+

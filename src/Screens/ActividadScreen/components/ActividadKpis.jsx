@@ -14,7 +14,8 @@ export default function ActividadKpis({ kpis = {}, activeFilter, onKpiClick }) {
   const cancelacionesVal = kpis.cancelaciones ?? kpis.cancelaciones_hoy ?? 0
   const ocrVal = kpis.escaneos_ocr ?? kpis.escaneos_ocr_hoy ?? 0
   const alertasVal = kpis.alertas_activas ?? kpis.alertas_periodo ?? 0
-  const usuariosVal = kpis.usuarios_activos_24h ?? kpis.usuarios_activos_hoy ?? kpis.usuarios_activos ?? 0
+  const usuariosVal = kpis.usuarios_activos_ratio || (kpis.usuarios_activos_24h ? `${kpis.usuarios_activos_24h} / ${kpis.total_personal_activo || 22}` : `${kpis.usuarios_activos || 0}`)
+  const usuariosSub = kpis.total_personal_activo ? `de ${kpis.total_personal_activo} empleados` : 'Sesión iniciada sin logout'
   const loginsVal = kpis.logins_hoy ?? 0
 
   const cards = [
@@ -78,12 +79,12 @@ export default function ActividadKpis({ kpis = {}, activeFilter, onKpiClick }) {
     },
     {
       id: 'usuarios',
-      title: 'Personal Activo',
-      subtitle: 'Últimas 24 horas',
+      title: 'Usuarios Activos',
+      subtitle: usuariosSub,
       value: usuariosVal,
       icon: Users,
-      color: '#1687c9',
-      bg: '#e0f2fe',
+      color: '#334155',
+      bg: '#e8ecf1',
       filterKey: 'personal_activo',
       filterVal: true
     }
