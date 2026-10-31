@@ -23,6 +23,7 @@ export default function AddStaffModal({
   const [newStaffShiftEnd, setNewStaffShiftEnd] = useState('15:00')
   const [newStaffWorkDays, setNewStaffWorkDays] = useState([0, 1, 2, 3, 4])
   const [staffError, setStaffError] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (!isOpen) return null
 
@@ -41,13 +42,15 @@ export default function AddStaffModal({
     setStaffError(null)
   }
 
-  const handleClose = () => {
+  const handleClose = (force = false) => {
+    if (isSubmitting && !force) return
     resetForm()
     onClose()
   }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (isSubmitting) return
     setStaffError(null)
 
     if (!isValidHalfHourTime(newStaffShiftStart) || !isValidHalfHourTime(newStaffShiftEnd)) {
@@ -70,7 +73,10 @@ export default function AddStaffModal({
       return
     }
 
+    setIsSubmitting(true)
+
     try {
+      const staffFullName = `${newStaffName} ${newStaffSurname}`.trim()
       await onSubmit({
         nombre: newStaffName,
         apellidos: newStaffSurname,
@@ -83,16 +89,27 @@ export default function AddStaffModal({
         fin_turno: newStaffShiftEnd,
         dias_laborales: newStaffWorkDays
       })
-      handleClose()
+      handleClose(true)
+      setTimeout(() => {
+        window.alert(`¡Personal ${staffFullName || 'nuevo'} creado exitosamente!`)
+      }, 50)
     } catch (error) {
       setStaffError(error.message || 'Error al incorporar personal.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   return (
     <div className="jefa-screen__modal-overlay">
       <div className="jefa-screen__modal-card">
-        <button className="jefa-screen__modal-close" onClick={handleClose}>
+        <button
+          type="button"
+          className="jefa-screen__modal-close"
+          onClick={() => handleClose(false)}
+          disabled={isSubmitting}
+          aria-label="Cerrar modal"
+        >
           <X className="jefa-screen__modal-close-icon" />
         </button>
         <h3 className="jefa-screen__modal-title">Alta de Personal Asistencial</h3>
@@ -117,6 +134,7 @@ export default function AddStaffModal({
               placeholder="ej: Roberto"
               value={newStaffName}
               onChange={(event) => setNewStaffName(event.target.value)}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -129,6 +147,7 @@ export default function AddStaffModal({
               placeholder="ej: Gomez"
               value={newStaffSurname}
               onChange={(event) => setNewStaffSurname(event.target.value)}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -145,6 +164,7 @@ export default function AddStaffModal({
               onChange={(event) =>
                 setNewStaffDni(event.target.value.replace(/\D/g, ''))
               }
+              disabled={isSubmitting}
             />
           </div>
 
@@ -157,6 +177,7 @@ export default function AddStaffModal({
               placeholder="rgomez@sgtp.hospital.gob.ar"
               value={newStaffEmail}
               onChange={(event) => setNewStaffEmail(event.target.value)}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -170,6 +191,7 @@ export default function AddStaffModal({
                 value={newStaffPassword}
                 onChange={(event) => setNewStaffPassword(event.target.value)}
                 autoComplete="new-password"
+                disabled={isSubmitting}
               />
               <button
                 type="button"
@@ -177,6 +199,7 @@ export default function AddStaffModal({
                 onClick={() => setShowPassword(!showPassword)}
                 title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                disabled={isSubmitting}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -195,6 +218,7 @@ export default function AddStaffModal({
               placeholder="ej: TEC-8821"
               value={newStaffMatricula}
               onChange={(event) => setNewStaffMatricula(event.target.value)}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -204,6 +228,7 @@ export default function AddStaffModal({
               id="new-staff-role"
               value={newStaffRol}
               onChange={(event) => setNewStaffRol(event.target.value)}
+              disabled={isSubmitting}
             >
               <option value="Box">Técnico / Box</option>
               <option value="Admision">Admisión</option>
@@ -220,6 +245,7 @@ export default function AddStaffModal({
             selectedDays={newStaffWorkDays}
             onChange={setNewStaffWorkDays}
             required
+            disabled={isSubmitting}
           />
 
           <div className="jefa-screen__modal-field jefa-screen__modal-field--shift">
@@ -228,23 +254,30 @@ export default function AddStaffModal({
               label="Inicio del turno:"
               value={newStaffShiftStart}
               onChange={setNewStaffShiftStart}
+              disabled={isSubmitting}
             />
             <ShiftTimeInput
               id="new-staff-shift-end"
               label="Fin del turno:"
               value={newStaffShiftEnd}
               onChange={setNewStaffShiftEnd}
+              disabled={isSubmitting}
             />
           </div>
 
           <div className="jefa-screen__modal-actions">
-            <button type="submit" className="jefa-screen__btn-save">
-              Crear Usuario
+            <button
+              type="submit"
+              className="jefa-screen__btn-save"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creando Usuario...' : 'Crear Usuario'}
             </button>
             <button
               type="button"
               className="jefa-screen__btn-cancel"
-              onClick={handleClose}
+              onClick={() => handleClose(false)}
+              disabled={isSubmitting}
             >
               Cancelar
             </button>

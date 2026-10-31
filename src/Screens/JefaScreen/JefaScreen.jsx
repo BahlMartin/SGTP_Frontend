@@ -277,6 +277,7 @@ export default function JefaScreen() {
       await createStaff(newStaffPayload, userData?.rol, (msg) => {
         showToast(msg, 'success', 'Personal Incorporado')
       })
+      setShowAddStaffModal(false)
     } catch (err) {
       showToast(err.message || 'Error al incorporar personal.', 'error', 'Error al Crear Personal')
       throw err
