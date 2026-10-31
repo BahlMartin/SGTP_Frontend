@@ -16,7 +16,8 @@ export default function ActiveStaffCard({
   const todayStr = getTodayLocalDateString()
   const isToday = !selectedDate || selectedDate === todayStr
   const visibleStaff = staffList.filter((staffMember) => staffMember.rol !== 'Admin')
-  const activeStaffCount = visibleStaff.filter((staffMember) =>
+  const activeStaff = visibleStaff.filter((staffMember) => staffMember.activo !== false)
+  const activeStaffCount = activeStaff.filter((staffMember) =>
     staffMember.disponible ?? staffMember.activo
   ).length
 
@@ -26,7 +27,7 @@ export default function ActiveStaffCard({
     clearSearch,
     filteredStaff,
     isSearching
-  } = useStaffSearchFilter(staffList)
+  } = useStaffSearchFilter(staffList, { hideInactiveByDefault: true })
 
   return (
     <div className="jefa-screen__staff-card">
@@ -34,7 +35,9 @@ export default function ActiveStaffCard({
         <div className="jefa-screen__staff-header-left">
           <span className="jefa-screen__section-title">Personal y carga</span>
           <span className="jefa-screen__staff-count">
-            {activeStaffCount} disponibles / {visibleStaff.length} integrantes
+            {isSearching
+              ? `${filteredStaff.length} ${filteredStaff.length === 1 ? 'resultado' : 'resultados'}`
+              : `${activeStaffCount} disponibles / ${activeStaff.length} integrantes`}
           </span>
         </div>
         <div className="jefa-screen__date-controls">
@@ -165,7 +168,7 @@ export default function ActiveStaffCard({
               </button>
             </span>
           ) : (
-            'No hay personal registrado.'
+            'No hay personal activo registrado.'
           )}
         </p>
       )}
