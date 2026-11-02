@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { computeDailyReportMetrics, fetchMetricasDiariasApi } from '../services/reportService'
+import { computePerformedStudySummaries } from '../utils/studyReportUtils'
 import { getTodayLocalDateString } from '../utils/formatters'
 import { useExportReportPdf } from './useExportReportPdf'
 import { useExportReportExcel } from './useExportReportExcel'
@@ -31,6 +32,10 @@ export function useSecretariaReport({ tickets = null, userData = null }) {
     () => computeDailyReportMetrics(availableTickets, jornadaDate, jornadaEndDate),
     [availableTickets, jornadaDate, jornadaEndDate]
   )
+  const localStudySummaries = useMemo(
+    () => computePerformedStudySummaries(localMetrics.tickets),
+    [localMetrics.tickets]
+  )
 
   // Asegurar fechas por defecto si quedan vacías
   useEffect(() => {
@@ -56,8 +61,13 @@ export function useSecretariaReport({ tickets = null, userData = null }) {
 
   const reportMetrics = useMemo(() => {
     if (tickets === null) return metrics
-    return { ...metrics, triageDistribution: localMetrics.triageDistribution }
-  }, [tickets, metrics, localMetrics.triageDistribution])
+    return {
+      ...metrics,
+      triageDistribution: localMetrics.triageDistribution,
+      resumenEstudiosRealizadosPorSeccion: localStudySummaries.bySection,
+      resumenEstudiosRealizadosPorMuestra: localStudySummaries.bySample
+    }
+  }, [tickets, metrics, localMetrics.triageDistribution, localStudySummaries])
 
   const refreshMetrics = useCallback(async () => {
     if (!jornadaDate) return

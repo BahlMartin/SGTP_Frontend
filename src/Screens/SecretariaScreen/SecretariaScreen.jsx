@@ -185,11 +185,13 @@ export default function SecretariaScreen() {
         <div className="secretaria-screen__study-summaries">
           <StudiesLollipopCard
             items={metrics.resumenEstudiosRealizadosPorSeccion ?? []}
-            error={!Array.isArray(metrics.resumenEstudiosRealizadosPorSeccion)}
+            loading={reportTickets === null && !reportTicketsError}
+            error={Boolean(reportTicketsError) || !Array.isArray(metrics.resumenEstudiosRealizadosPorSeccion)}
           />
           <StudiesSamplesBarsCard
             items={metrics.resumenEstudiosRealizadosPorMuestra ?? []}
-            error={!Array.isArray(metrics.resumenEstudiosRealizadosPorMuestra)}
+            loading={reportTickets === null && !reportTicketsError}
+            error={Boolean(reportTicketsError) || !Array.isArray(metrics.resumenEstudiosRealizadosPorMuestra)}
           />
         </div>
 

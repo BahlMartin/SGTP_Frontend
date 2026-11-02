@@ -34,6 +34,7 @@ export default function StudiesSamplesBarsCard({
   labelKey = 'nombre_muestra',
   keyKey = 'muestra_key',
   valueKey = 'total_estudios',
+  loading = false,
   error = false,
   emptyMessage = 'No hay estudios realizados para esta jornada.',
   errorMessage = 'El resumen no está disponible para esta jornada.',
@@ -73,9 +74,10 @@ export default function StudiesSamplesBarsCard({
       </header>
 
       {error && <ChartState kind="error" message={errorMessage} />}
+      {loading && !error && <ChartState kind="empty" message="Cargando estudios realizados..." />}
       {isEmpty && <ChartState kind="empty" message={emptyMessage} />}
 
-      {!error && !isEmpty && (
+      {!error && !loading && !isEmpty && (
         <>
           {/* Barras: el valor va escrito encima de cada una. El resumen accesible está en aria-label. */}
           <div className="studies-samples-card__plot" role="img" aria-label={chartLabel}>
