@@ -20,6 +20,11 @@ const decFormat = new Intl.NumberFormat('es-AR', {
 })
 
 const formatMinutes = (val) => `${decFormat.format(Number(val) || 0)} min`
+const argentinaHourFormatter = new Intl.DateTimeFormat('en-US', {
+  hour: '2-digit',
+  hourCycle: 'h23',
+  timeZone: 'America/Argentina/Buenos_Aires'
+})
 
 const normalizeCategoryKey = (value) =>
   String(value ?? '')
@@ -51,7 +56,10 @@ export default function TriageDistributionCard({
   triageDistribution,
   slaTriage = [],
   franjasHorarias = [],
-  error = false
+  attendedTickets = null,
+  loading = false,
+  error = false,
+  errorMessage = 'La distribución por triage no está disponible para esta jornada.'
 }) {
   const titleId = useId()
   const [selectedKey, setSelectedKey] = useState('guardia')
@@ -112,28 +120,44 @@ export default function TriageDistributionCard({
       { id: 'tarde', label: 'Tarde', range: '16:00 - 23:59', count: 0 }
     ]
 
-    if (!Array.isArray(franjasHorarias) || franjasHorarias.length === 0) {
-      return defaultSlots
-    }
+    const slots =
+      Array.isArray(franjasHorarias) && franjasHorarias.length > 0
+        ? franjasHorarias
+        : defaultSlots
 
-    return franjasHorarias.map((slot) => {
-      const dist = Array.isArray(slot.distribucion_triage) ? slot.distribucion_triage : []
-      const match = dist.find(
-        (d) => (d.triage_key || normalizeCategoryKey(d.clasificacion_triage)) === selectedRow.key
-      )
-      const shortName = String(slot.nombre || '').split('/')[0].trim() || slot.id
-      const shortRange = String(slot.rango_display || '')
+    return slots.map((slot, index) => {
+      const shortName = String(slot.nombre || slot.label || '').split('/')[0].trim() || slot.id
+      const shortRange = String(slot.rango_display || slot.range || '')
         .replace(':00:00', ':00')
         .replace(':59:59', ':59')
+      let count = 0
+
+      if (Array.isArray(attendedTickets)) {
+        const slotId = normalizeCategoryKey(slot.id || defaultSlots[index]?.id)
+        count = attendedTickets.filter((ticket) => {
+          if (normalizeCategoryKey(ticket.clasificacion_triage) !== selectedRow.key) return false
+          const date = new Date(ticket.fecha_hora_admision)
+          if (Number.isNaN(date.getTime())) return false
+          const hour = Number(argentinaHourFormatter.format(date))
+          const ticketSlotId = hour < 8 ? 'noche' : hour < 16 ? 'manana' : 'tarde'
+          return ticketSlotId === slotId
+        }).length
+      } else {
+        const dist = Array.isArray(slot.distribucion_triage) ? slot.distribucion_triage : []
+        const match = dist.find(
+          (d) => (d.triage_key || normalizeCategoryKey(d.clasificacion_triage)) === selectedRow.key
+        )
+        count = toCount(match?.cantidad)
+      }
 
       return {
         id: slot.id || shortName,
         label: shortName,
         range: shortRange,
-        count: toCount(match?.cantidad)
+        count
       }
     })
-  }, [selectedRow, franjasHorarias])
+  }, [selectedRow, franjasHorarias, attendedTickets])
 
   const maxSlotCount = Math.max(1, ...selectedSlotBreakdown.map((s) => s.count))
 
@@ -149,13 +173,13 @@ export default function TriageDistributionCard({
             Distribución y SLA por triage
           </h2>
           <p className="triage-distribution-card__subtitle">
-            Seleccioná una prioridad para inspeccionar su gráfico de cumplimiento SLA y demanda por turno
+            Seleccioná una prioridad para inspeccionar el cumplimiento SLA y los pacientes atendidos por turno
           </p>
         </div>
         {!error && (
           <span className="triage-distribution-card__total">
             <strong>{formatCount(total)}</strong>
-            {total === 1 ? 'paciente' : 'pacientes'}
+            {total === 1 ? 'paciente atendido' : 'pacientes atendidos'}
           </span>
         )}
       </header>
@@ -163,7 +187,12 @@ export default function TriageDistributionCard({
       {error ? (
         <ChartState
           kind="error"
-          message="La distribución por triage no está disponible para esta jornada."
+          message={errorMessage}
+        />
+      ) : loading ? (
+        <ChartState
+          kind="empty"
+          message="Cargando pacientes para calcular los atendidos por triage..."
         />
       ) : (
         <>
@@ -335,7 +364,7 @@ export default function TriageDistributionCard({
                 <div className="triage-distribution-card__chart-box">
                   <div className="triage-distribution-card__chart-box-header">
                     <span className="triage-distribution-card__chart-box-title">
-                      Ingresos de «{selectedRow.shortLabel}» por franja horaria
+                      Atendidos de «{selectedRow.shortLabel}» por franja horaria
                     </span>
                     <span className="triage-distribution-card__chart-box-meta">
                       Distribución en los 3 turnos

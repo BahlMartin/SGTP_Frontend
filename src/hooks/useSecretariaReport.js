@@ -13,7 +13,8 @@ const EMPTY_TICKETS = []
  * reales desde el backend (por día, semana, mes o rango de fechas) y delegar
  * la exportación en PDF, Excel y el despacho de correos.
  */
-export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }) {
+export function useSecretariaReport({ tickets = null, userData = null }) {
+  const availableTickets = tickets ?? EMPTY_TICKETS
   const [jornadaDate, setJornadaDate] = useState(() => getTodayLocalDateString())
   const [jornadaEndDate, setJornadaEndDate] = useState(() => getTodayLocalDateString())
   const [periodMode, setPeriodMode] = useState('dia') // 'dia' | 'semana' | 'mes' | 'rango'
@@ -23,8 +24,13 @@ export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }
   const ticketsRef = useRef(tickets)
 
   useEffect(() => {
-    ticketsRef.current = tickets
-  }, [tickets])
+    ticketsRef.current = availableTickets
+  }, [availableTickets])
+
+  const localMetrics = useMemo(
+    () => computeDailyReportMetrics(availableTickets, jornadaDate, jornadaEndDate),
+    [availableTickets, jornadaDate, jornadaEndDate]
+  )
 
   // Asegurar fechas por defecto si quedan vacías
   useEffect(() => {
@@ -45,8 +51,13 @@ export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }
   }, [])
 
   const [metrics, setMetrics] = useState(() =>
-    computeDailyReportMetrics(tickets, jornadaDate, jornadaEndDate)
+    computeDailyReportMetrics(availableTickets, jornadaDate, jornadaEndDate)
   )
+
+  const reportMetrics = useMemo(() => {
+    if (tickets === null) return metrics
+    return { ...metrics, triageDistribution: localMetrics.triageDistribution }
+  }, [tickets, metrics, localMetrics.triageDistribution])
 
   const refreshMetrics = useCallback(async () => {
     if (!jornadaDate) return
@@ -87,13 +98,13 @@ export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }
 
   // Total de pacientes para proporciones visuales
   const totalPacientes = useMemo(() => {
-    const countsList = Object.values(metrics.triageDistribution || {})
+    const countsList = Object.values(reportMetrics.triageDistribution || {})
     const sum = countsList.reduce(
       (accumulatedTotal, currentCategoryCount) => accumulatedTotal + currentCategoryCount,
       0
     )
     return sum || 1
-  }, [metrics.triageDistribution])
+  }, [reportMetrics.triageDistribution])
 
   // Porcentaje proporcional para visualización de barras
   const getPercentage = useCallback(
@@ -147,7 +158,12 @@ export function useSecretariaReport({ tickets = EMPTY_TICKETS, userData = null }
     emailError,
     clearEmailError,
     isSendingEmail,
-    metrics,
+    metrics: reportMetrics,
+    attendedTickets: tickets === null
+      ? null
+      : localMetrics.tickets.filter(
+          (ticket) => ticket.estado === 'Atendido' || ticket.estado === 'Finalizado'
+        ),
     totalPacientes,
     getPercentage,
     handleExportPdf,
