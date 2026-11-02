@@ -209,8 +209,8 @@ export async function deleteTicketApi(ticketId) {
  * Búsqueda asistencial de antecedentes de pacientes.
  */
 export async function searchPatientsApi(query) {
-  if (!query || !query.trim()) return []
-  const cleanDni = query.replace(/\D/g, '')
+  const cleanDni = String(query || '').replace(/\D/g, '')
+  if (!cleanDni) return []
 
   if (cleanDni.length >= 4) {
     try {
@@ -235,14 +235,11 @@ export async function searchPatientsApi(query) {
   try {
     const allPatients = await apiClient.get('/patients/')
     const list = Array.isArray(allPatients) ? allPatients : allPatients.results || []
-    const q = query.toLowerCase().trim()
+    const q = cleanDni
     return list
       .filter((p) =>
         String(p.dni).includes(q) ||
-        (p.nombre && p.nombre.toLowerCase().includes(q)) ||
-        (p.apellidos && p.apellidos.toLowerCase().includes(q)) ||
-        (p.obra_social && p.obra_social.toLowerCase().includes(q)) ||
-        (p.num_obra_social && p.num_obra_social.toLowerCase().includes(q))
+        String(p.num_obra_social || '').includes(q)
       )
       .sort((a, b) => {
         const aStarts = String(a.dni).startsWith(q) ? 1 : 0
