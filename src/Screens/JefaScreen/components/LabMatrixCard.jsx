@@ -262,7 +262,9 @@ export default function LabMatrixCard({
                     </div>
                     <div className="jefa-screen__matrix-stat">
                       <span className="jefa-screen__matrix-total">{study.total}</span>
-                      <span className="jefa-screen__matrix-total-label">estudios</span>
+                      <span className="jefa-screen__matrix-total-label">
+                        {study.total === 1 ? 'estudio' : 'estudios'}
+                      </span>
                     </div>
                   </li>
                 )
