@@ -1,0 +1,648 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import {
+  Download,
+  RefreshCw,
+  ListFilter,
+  UserCheck,
+  AlertCircle,
+  Bell,
+  X
+} from 'lucide-react'
+import Navbar from '../../components/Navbar/Navbar'
+import { useAuth } from '../../context/AuthContext'
+import { useWebSocket } from '../../hooks/useWebSocket'
+import {
+  fetchEventosAuditoriaApi,
+  fetchEventoAuditoriaDetalleApi,
+  fetchAuditoriaResumenKpisApi,
+  descargarAuditoriaExcelApi
+} from '../../services/auditService'
+
+import './actividadTokens.css'
+import './ActividadScreen.css'
+
+import ActividadKpis from './components/ActividadKpis'
+import AlertasBanner from './components/AlertasBanner'
+import DashboardChartsCard from './components/DashboardChartsCard'
+import RecentFeedCard from './components/RecentFeedCard'
+import FiltrosActividad from './components/FiltrosActividad'
+import EventosTable from './components/EventosTable'
+import EventDrawer from './components/EventDrawer'
+import EmpleadoJornadaView from './components/EmpleadoJornadaView'
+import DbUsageIndicator from './components/DbUsageIndicator'
+import DbIpAttribution from './components/DbIpAttribution'
+
+export default function ActividadScreen() {
+  const { userData: currentUser } = useAuth()
+  const isAdmin = currentUser?.rol === 'Admin'
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // 1. Estado de Navegación y Pestañas
+  const activeTab = searchParams.get('tab') === 'jornada' ? 'jornada' : 'general'
+
+  // 2. Filtros de la Tabla
+  const filtros = useMemo(() => {
+    return {
+      periodo: searchParams.get('periodo') || 'hoy',
+      desde: searchParams.get('desde') || '',
+      hasta: searchParams.get('hasta') || '',
+      q: searchParams.get('q') || '',
+      rol: searchParams.get('rol') || '',
+      categoria: searchParams.get('categoria') || '',
+      accion: searchParams.get('accion') || '',
+      resultado: searchParams.get('resultado') || '',
+      solo_alertas: searchParams.get('solo_alertas') === 'true',
+      personal_activo: searchParams.get('personal_activo') === 'true',
+      ocr: searchParams.get('ocr') === 'true',
+      page: Number(searchParams.get('page')) || 1,
+      page_size: Number(searchParams.get('page_size')) || 50
+    }
+  }, [searchParams])
+
+  // 3. Estados de Datos
+  const hasActiveFilters = Boolean(
+    filtros.q || filtros.rol || filtros.categoria || filtros.accion ||
+    filtros.resultado || filtros.solo_alertas || filtros.personal_activo ||
+    filtros.ocr || (filtros.periodo && filtros.periodo !== 'hoy')
+  )
+  const [mostrarTablaCompleta, setMostrarTablaCompleta] = useState(() => hasActiveFilters)
+  const [eventosData, setEventosData] = useState({ count: 0, results: [] })
+  const [kpisData, setKpisData] = useState({})
+  const [selectedEventId, setSelectedEventId] = useState(
+    searchParams.get('evento_id') ? Number(searchParams.get('evento_id')) : null
+  )
+  const [selectedEventDetail, setSelectedEventDetail] = useState(null)
+  const [nuevosEventosPendientes, setNuevosEventosPendientes] = useState([])
+  const [alertasVistasIds, setAlertasVistasIds] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('sgtp_alertas_vistas')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
+
+  const [loadingTable, setLoadingTable] = useState(false)
+  const [loadingExport, setLoadingExport] = useState(false)
+  const [errorMsg, setErrorMsg] = useState(null)
+
+  // Actualizar URL search params helper
+  const updateParams = useCallback((newParams) => {
+    setSearchParams((prev) => {
+      const updated = new URLSearchParams(prev)
+      Object.entries(newParams).forEach(([key, val]) => {
+        if (val === undefined || val === null || val === '') {
+          updated.delete(key)
+        } else {
+          updated.set(key, String(val))
+        }
+      })
+      return updated
+    }, { replace: true })
+  }, [setSearchParams])
+
+  // Cargar métricas / KPIs y feed reciente según filtros activos
+  const loadKpis = useCallback(async () => {
+    try {
+      const data = await fetchAuditoriaResumenKpisApi({
+        periodo: filtros.periodo,
+        desde: filtros.desde,
+        hasta: filtros.hasta,
+        q: filtros.q,
+        rol: filtros.rol,
+        categoria: filtros.categoria,
+        accion: filtros.accion,
+        resultado: filtros.resultado,
+        solo_alertas: filtros.solo_alertas,
+        personal_activo: filtros.personal_activo,
+        ocr: filtros.ocr
+      })
+      setKpisData(data || {})
+    } catch (err) {
+      console.warn('Error al cargar KPIs de auditoría:', err)
+    }
+  }, [filtros])
+
+  // Cerrar modal al presionar Escape
+  useEffect(() => {
+    if (!mostrarTablaCompleta) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setMostrarTablaCompleta(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [mostrarTablaCompleta])
+
+  // Cargar listado de eventos
+  const loadEventos = useCallback(async () => {
+    setLoadingTable(true)
+    setErrorMsg(null)
+    try {
+      const data = await fetchEventosAuditoriaApi({
+        periodo: filtros.periodo,
+        desde: filtros.desde,
+        hasta: filtros.hasta,
+        q: filtros.q,
+        rol: filtros.rol,
+        categoria: filtros.categoria,
+        accion: filtros.accion,
+        resultado: filtros.resultado,
+        solo_alertas: filtros.solo_alertas,
+        personal_activo: filtros.personal_activo,
+        ocr: filtros.ocr,
+        page: filtros.page,
+        page_size: filtros.page_size
+      })
+      setEventosData(data || { count: 0, results: [] })
+      setNuevosEventosPendientes([])
+    } catch (err) {
+      console.error('Error al consultar eventos de auditoría:', err)
+      setErrorMsg(err.message || 'No se pudieron recuperar los eventos de auditoría.')
+    } finally {
+      setLoadingTable(false)
+    }
+  }, [filtros])
+
+  // Cargar detalle del evento seleccionado para el Drawer
+  useEffect(() => {
+    if (!selectedEventId) {
+      setSelectedEventDetail(null)
+      return
+    }
+
+    let isMounted = true
+    async function loadDetail() {
+      try {
+        const detail = await fetchEventoAuditoriaDetalleApi(selectedEventId)
+        if (isMounted) setSelectedEventDetail(detail)
+      } catch (err) {
+        console.error('Error cargando detalle de evento:', err)
+      }
+    }
+    loadDetail()
+
+    return () => {
+      isMounted = false
+    }
+  }, [selectedEventId])
+
+  // Carga inicial y ante cambios de filtros
+  useEffect(() => {
+    if (activeTab === 'general') {
+      loadEventos()
+      loadKpis()
+    }
+  }, [activeTab, loadEventos, loadKpis])
+
+  // =========================================================================
+  // 4. Conexión WebSocket en Tiempo Real para Auditoría Operacional
+  // =========================================================================
+  const handleWsMessage = useCallback((msg) => {
+    if (!msg || typeof msg !== 'object') return
+    const eventType = msg.event || msg.action
+
+    if (eventType === 'AUDIT_EVENT_CREATED') {
+      const nuevoEvento = msg.data
+      if (!nuevoEvento || !nuevoEvento.id) return
+
+      // 1. Refrescar contadores KPI en segundo plano
+      loadKpis()
+
+      // 2. Determinar si la vista actual puede recibir el evento directamente arriba
+      const estaEnVistaHoyLimpia =
+        activeTab === 'general' &&
+        filtros.periodo === 'hoy' &&
+        filtros.page === 1 &&
+        !filtros.q &&
+        !filtros.rol &&
+        !filtros.categoria &&
+        !filtros.resultado &&
+        !filtros.solo_alertas
+
+      if (estaEnVistaHoyLimpia) {
+        setEventosData((prev) => {
+          const yaExiste = prev.results.some((e) => e.id === nuevoEvento.id)
+          if (yaExiste) return prev
+          return {
+            count: prev.count + 1,
+            results: [nuevoEvento, ...prev.results]
+          }
+        })
+      } else {
+        // Si el usuario está en fecha pasada o página > 1 o con filtros, acumular en aviso flotante
+        setNuevosEventosPendientes((prev) => {
+          if (prev.some((e) => e.id === nuevoEvento.id)) return prev
+          return [nuevoEvento, ...prev]
+        })
+      }
+    } else if (eventType === 'AUDIT_EVENT_GEO_UPDATED') {
+      const geoData = msg.data
+      if (!geoData || !geoData.id) return
+
+      // Actualizar información GPS en la tabla
+      setEventosData((prev) => ({
+        ...prev,
+        results: prev.results.map((ev) =>
+          ev.id === geoData.id ? { ...ev, ...geoData } : ev
+        )
+      }))
+
+      // Si está abierto en el Drawer lateral, actualizarlo en vivo
+      setSelectedEventDetail((prev) => {
+        if (prev && prev.id === geoData.id) {
+          return { ...prev, ...geoData }
+        }
+        return prev
+      })
+    }
+  }, [activeTab, filtros, loadKpis])
+
+  const { isConnected, isAuthenticated } = useWebSocket('auditoria', {
+    onMessage: handleWsMessage,
+    autoReconnect: true
+  })
+
+  // Handlers de Filtros
+  const handleFiltroChange = (partial) => {
+    updateParams({
+      ...partial,
+      page: 1
+    })
+  }
+
+  const handleResetFiltros = () => {
+    updateParams({
+      periodo: 'hoy',
+      desde: '',
+      hasta: '',
+      q: '',
+      rol: '',
+      categoria: '',
+      accion: '',
+      resultado: '',
+      solo_alertas: '',
+      personal_activo: '',
+      ocr: '',
+      page: 1
+    })
+  }
+
+  const handleKpiClick = (filterKey, filterVal) => {
+    if (!filterKey) {
+      handleResetFiltros()
+      return
+    }
+    const isAlreadyActive = filtros[filterKey] === filterVal
+    handleFiltroChange({
+      [filterKey]: isAlreadyActive ? '' : filterVal
+    })
+  }
+
+  const handleVerNuevosEventos = () => {
+    handleResetFiltros()
+    setMostrarTablaCompleta(true)
+    setNuevosEventosPendientes([])
+  }
+
+  // Handlers de Selección en Drawer
+  const handleSelectEvent = (id) => {
+    setSelectedEventId(id)
+    updateParams({ evento_id: id })
+  }
+
+  const handleSelectAlerta = useCallback((eventoId) => {
+    if (!eventoId) return
+    setSelectedEventId(eventoId)
+    // Asegurar explícitamente permanecer en tab=general al abrir una alerta de auditoría
+    updateParams({ evento_id: eventoId, tab: 'general' })
+    setAlertasVistasIds((prev) => {
+      if (prev.includes(eventoId)) return prev
+      const next = [...prev, eventoId]
+      try {
+        sessionStorage.setItem('sgtp_alertas_vistas', JSON.stringify(next))
+      } catch (err) {
+        console.warn('Error guardando alertas vistas:', err)
+      }
+      return next
+    })
+  }, [updateParams])
+
+  const alertasVisibles = useMemo(() => {
+    const list = kpisData.alertas_recientes || []
+    return list.filter((al) => !alertasVistasIds.includes(al.evento_id))
+  }, [kpisData.alertas_recientes, alertasVistasIds])
+
+  const handleCloseDrawer = () => {
+    setSelectedEventId(null)
+    setSelectedEventDetail(null)
+    updateParams({ evento_id: '' })
+  }
+
+  // Navegación Anterior / Siguiente en Drawer
+  const currentIndex = eventosData.results.findIndex((e) => e.id === selectedEventId)
+  const hasPrev = currentIndex > 0
+  const hasNext = currentIndex >= 0 && currentIndex < eventosData.results.length - 1
+
+  const handlePrevEvent = () => {
+    if (hasPrev) {
+      handleSelectEvent(eventosData.results[currentIndex - 1].id)
+    }
+  }
+
+  const handleNextEvent = () => {
+    if (hasNext) {
+      handleSelectEvent(eventosData.results[currentIndex + 1].id)
+    }
+  }
+
+  // Descarga de Excel
+  const handleExportarExcel = async () => {
+    setLoadingExport(true)
+    try {
+      await descargarAuditoriaExcelApi({
+        periodo: filtros.periodo,
+        desde: filtros.desde,
+        hasta: filtros.hasta,
+        q: filtros.q,
+        rol: filtros.rol,
+        categoria: filtros.categoria,
+        resultado: filtros.resultado,
+        solo_alertas: filtros.solo_alertas
+      })
+    } catch (err) {
+      console.error('Error al exportar libro Excel:', err)
+      alert('Ocurrió un error al generar la exportación a Excel.')
+    } finally {
+      setLoadingExport(false)
+    }
+  }
+
+  return (
+    <div className="actividad-screen">
+      <Navbar />
+
+      <main className="actividad-screen__main">
+        {/* Cabecera Principal */}
+        <header className="actividad-screen__header">
+          <div className="actividad-screen__header-left">
+            <h1 className="actividad-screen__title">
+              Actividad del Personal
+            </h1>
+            <p className="actividad-screen__subtitle">
+              Supervisión de accesos, trazabilidad operativa y auditoría de seguridad clínica.
+            </p>
+          </div>
+
+          <div className="actividad-screen__header-right">
+            {isAdmin && <DbUsageIndicator />}
+
+            {/* Indicador de Estado WebSocket En Vivo */}
+            <div
+              className={`actividad-screen__ws-badge ${
+                isConnected && isAuthenticated
+                  ? 'actividad-screen__ws-badge--connected'
+                  : isConnected
+                  ? 'actividad-screen__ws-badge--connecting'
+                  : 'actividad-screen__ws-badge--disconnected'
+              }`}
+              title={
+                isConnected && isAuthenticated
+                  ? 'Conexión WebSocket activa en tiempo real.'
+                  : isConnected
+                  ? 'Autenticando canal WebSocket...'
+                  : 'WebSocket desconectado. Intentando reconectar...'
+              }
+            >
+              <span className="actividad-screen__ws-dot" />
+              <span>
+                {isConnected && isAuthenticated
+                  ? 'En vivo'
+                  : isConnected
+                  ? 'Conectando...'
+                  : 'Reconectando...'}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className="actividad-screen__btn-tool"
+              onClick={() => {
+                loadEventos()
+                loadKpis()
+              }}
+              title="Refrescar datos manualmente"
+              disabled={loadingTable}
+            >
+              <RefreshCw size={14} className={loadingTable ? 'actividad-screen__spin-icon' : ''} />
+              <span>Refrescar</span>
+            </button>
+
+            <button
+              type="button"
+              className="actividad-screen__btn-export"
+              onClick={handleExportarExcel}
+              disabled={loadingExport}
+              title="Descargar libro Excel con filtros aplicados"
+            >
+              <Download size={14} />
+              <span>{loadingExport ? 'Generando...' : 'Exportar Excel'}</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Selector de Pestañas */}
+        <nav className="actividad-screen__tabs-nav" aria-label="Secciones de actividad">
+          <button
+            type="button"
+            className={`actividad-screen__tab-btn ${activeTab === 'general' ? 'actividad-screen__tab-btn--active' : ''}`}
+            onClick={() => updateParams({ tab: 'general' })}
+          >
+            <ListFilter size={16} />
+            <span>1. Auditoría General</span>
+          </button>
+
+          <button
+            type="button"
+            className={`actividad-screen__tab-btn ${activeTab === 'jornada' ? 'actividad-screen__tab-btn--active' : ''}`}
+            onClick={() => updateParams({ tab: 'jornada' })}
+          >
+            <UserCheck size={16} />
+            <span>2. Jornada por Empleado</span>
+          </button>
+        </nav>
+
+        {/* Mensaje de Error Global */}
+        {errorMsg && (
+          <div className="actividad-screen__error-banner" role="alert">
+            <AlertCircle size={18} />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {/* Pestaña 1: Auditoría General */}
+        {activeTab === 'general' && (
+          <div className="actividad-screen__content-layout">
+            <div className="actividad-screen__primary-column">
+              {/* 1. KPIs de Cabecera */}
+              <ActividadKpis
+                kpis={kpisData}
+                activeFilter={filtros}
+                onKpiClick={handleKpiClick}
+              />
+
+              {/* 2. Fila Dashboard: Requieren revisión + Gráficos (Actividad por hora / Cancelaciones) */}
+              <div className="actividad-screen__dashboard-row">
+                <AlertasBanner
+                  alertas={alertasVisibles}
+                  onSelectEvent={handleSelectAlerta}
+                  onFilterAlerts={() => {
+                    setMostrarTablaCompleta(true)
+                    handleFiltroChange({ solo_alertas: true })
+                  }}
+                />
+
+                <DashboardChartsCard
+                  actividadPorHora={kpisData.actividad_por_hora}
+                  cancelacionesPorMotivo={kpisData.cancelaciones_por_motivo}
+                  cancelacionesDesglose={kpisData.cancelaciones_desglose}
+                />
+              </div>
+
+              {/* 3. Feed Reciente (últimos 20 eventos según filtro activo) */}
+              <RecentFeedCard
+                feed={kpisData.feed_reciente}
+                filtros={filtros}
+                mostrarTablaCompleta={mostrarTablaCompleta}
+                onToggleTablaCompleta={() => setMostrarTablaCompleta((prev) => !prev)}
+                onSelectEvent={handleSelectEvent}
+              />
+
+              {/* 4. Modal / Overlay de Tabla Completa (con z-index y cierre al hacer click afuera o en X) */}
+              {mostrarTablaCompleta && (
+                <div
+                  className="actividad-screen__modal-backdrop"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      setMostrarTablaCompleta(false)
+                    }
+                  }}
+                >
+                  <div
+                    className="actividad-screen__modal-container"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="modal-audit-title"
+                  >
+                    <div className="actividad-screen__modal-header">
+                      <div>
+                        <h3 id="modal-audit-title" className="actividad-screen__modal-title">
+                          Registro Completo de Auditoría Operacional
+                        </h3>
+                        <p className="actividad-screen__modal-subtitle">
+                          Consola forense con filtros temáticos, búsqueda de personal y paginación
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="actividad-screen__modal-close-btn"
+                        onClick={() => setMostrarTablaCompleta(false)}
+                        title="Cerrar modal (Esc o click afuera)"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+
+                    {/* Filtros avanzados aplicables a la tabla */}
+                    <FiltrosActividad
+                      filtros={filtros}
+                      onFiltroChange={handleFiltroChange}
+                      onResetFiltros={handleResetFiltros}
+                      isAdmin={isAdmin}
+                    />
+
+                    {/* Píldora de Nuevos Eventos en Vivo */}
+                    {nuevosEventosPendientes.length > 0 && (
+                      <div className="actividad-screen__new-events-banner">
+                        <div className="actividad-screen__new-events-info">
+                          <Bell size={16} className="actividad-screen__new-events-icon" />
+                          <span>
+                            Hay <strong>{nuevosEventosPendientes.length}</strong> evento(s) nuevo(s) registrado(s) en vivo.
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="actividad-screen__new-events-btn"
+                          onClick={handleVerNuevosEventos}
+                        >
+                          Ver en tabla ahora
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Tabla de Eventos */}
+                    <EventosTable
+                      eventos={eventosData.results || []}
+                      totalCount={eventosData.count || 0}
+                      page={filtros.page}
+                      pageSize={filtros.page_size}
+                      onPageChange={(newPage) => updateParams({ page: newPage })}
+                      onPageSizeChange={(newSize) => updateParams({ page_size: newSize, page: 1 })}
+                      selectedEventId={selectedEventId}
+                      onSelectEvent={handleSelectEvent}
+                      loading={loadingTable}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <DbIpAttribution />
+            </div>
+
+            {/* Panel Lateral Drawer (Sticky 440px) */}
+            {selectedEventId && (
+              <EventDrawer
+                evento={selectedEventDetail}
+                onClose={handleCloseDrawer}
+                onPrev={handlePrevEvent}
+                onNext={handleNextEvent}
+                hasPrev={hasPrev}
+                hasNext={hasNext}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Pestaña 2: Jornada por Empleado */}
+        {activeTab === 'jornada' && (
+          <div className="actividad-screen__content-layout">
+            <div className="actividad-screen__primary-column">
+              <EmpleadoJornadaView
+                currentUser={currentUser}
+                onSelectEvent={handleSelectEvent}
+                initialEmpleadoId={searchParams.get('usuario')}
+                initialFecha={searchParams.get('fecha')}
+                onParamsChange={updateParams}
+              />
+              <DbIpAttribution />
+            </div>
+
+            {/* Panel Lateral Drawer si se selecciona un evento en la jornada */}
+            {selectedEventId && (
+              <EventDrawer
+                evento={selectedEventDetail}
+                onClose={handleCloseDrawer}
+                onPrev={handlePrevEvent}
+                onNext={handleNextEvent}
+                hasPrev={hasPrev}
+                hasNext={hasNext}
+              />
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}

@@ -160,9 +160,9 @@
   cursor: pointer;
 }
 
-.box-control-card__status-btn:hover:not(:disabled) {
+/* .box-control-card__status-btn:hover:not(:disabled) {
   background: #f8fafc;
-}
+} */
 
 .box-control-card__status-btn:disabled {
   opacity: 0.6;

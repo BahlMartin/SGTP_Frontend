@@ -8,10 +8,15 @@ import ENVIRONMENT from '../config/enviroment.config'
 
 const BASE_URL = ENVIRONMENT.URL_API.replace(/\/$/, '')
 
-async function handleResponse(response, endpoint = '') {
+async function handleResponse(response, endpoint = '', responseType = null) {
   const contentType = response.headers.get('content-type') || ''
+  const isBinaryContentType =
+    contentType.includes('application/pdf') ||
+    contentType.includes('application/octet-stream') ||
+    contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+    contentType.includes('application/vnd.ms-excel')
 
-  if (contentType.includes('application/pdf') || contentType.includes('application/octet-stream')) {
+  if (isBinaryContentType || (response.ok && responseType === 'blob')) {
     if (!response.ok) {
       throw new Error(`Error en descarga (${response.status}): ${response.statusText}`)
     }
@@ -74,7 +79,7 @@ async function handleResponse(response, endpoint = '') {
 
 export async function request(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
-  const { headers = {}, body, ...customConfig } = options
+  const { headers = {}, body, responseType = null, ...customConfig } = options
 
   const defaultHeaders = {}
   let processedBody = body
@@ -99,7 +104,7 @@ export async function request(endpoint, options = {}) {
   }
 
   const response = await fetch(url, config)
-  return handleResponse(response, endpoint)
+  return handleResponse(response, endpoint, responseType)
 }
 
 export const apiClient = {
@@ -110,7 +115,8 @@ export const apiClient = {
   delete: (endpoint, options = {}) => request(endpoint, { ...options, method: 'DELETE' }),
   upload: (endpoint, formData, options = {}) =>
     request(endpoint, { ...options, method: 'POST', body: formData }),
-  download: (endpoint, options = {}) => request(endpoint, { ...options, method: 'GET' })
+  download: (endpoint, options = {}) =>
+    request(endpoint, { ...options, method: 'GET', responseType: 'blob' })
 }
 
 export default apiClient

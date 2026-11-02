@@ -11,7 +11,8 @@ const NAV_TABS = [
   { label: 'Admisión', path: '/admision', roleKey: 'Admision', allowedRoles: ['Admision'] },
   { label: 'Técnico/Box', path: '/box', roleKey: 'Box', allowedRoles: ['Box'] },
   { label: 'Supervisión', path: '/supervision', roleKey: 'Jefa', allowedRoles: ['Jefa', 'Admin'] },
-  { label: 'Reportes', path: '/reportes', roleKey: 'Secretaria', allowedRoles: ['Secretaria', 'Jefa', 'Admin'] }
+  { label: 'Reportes', path: '/reportes', roleKey: 'Secretaria', allowedRoles: ['Secretaria', 'Jefa', 'Admin'] },
+  { label: 'Actividad', path: '/auditoria', roleKey: 'Auditoria', allowedRoles: ['Jefa', 'Admin'] }
 ]
 
 export default function Navbar() {
@@ -35,11 +36,11 @@ export default function Navbar() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isProfileModalOpen])
 
-  // Pestañas visibles según rol (Jefa y Admin ven y navegan libremente entre Supervisión y Reportes)
+  // Pestañas visibles según rol (Jefa y Admin ven y navegan libremente entre Supervisión, Reportes y Actividad)
   const visibleTabs = NAV_TABS.filter((tab) => {
     if (!userData?.rol) return false
     if (userData.rol === 'Jefa' || userData.rol === 'Admin') {
-      return tab.path === '/supervision' || tab.path === '/reportes'
+      return tab.path === '/supervision' || tab.path === '/reportes' || tab.path === '/auditoria'
     }
     return tab.allowedRoles.includes(userData.rol)
   })

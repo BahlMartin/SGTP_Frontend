@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { RefreshCw, ShieldCheck, Users } from 'lucide-react'
+import { RefreshCw, ShieldCheck, Users, Clock } from 'lucide-react'
 import JefaLayout from './components/JefaLayout'
 import JefaHeader from './components/JefaHeader'
 import LabMatrixCard from './components/LabMatrixCard'
 import ActiveStaffCard from './components/ActiveStaffCard'
 import StaffShiftsCard from './components/StaffShiftsCard'
 import StaffSecurityCard from './components/StaffSecurityCard/StaffSecurityCard'
+import SlaConfigCard from './components/SlaConfigCard/SlaConfigCard'
 import AddStaffModal from './components/AddStaffModal'
 import EditStaffModal from './components/EditStaffModal'
 import AuthorizeOvertimeModal from './components/AuthorizeOvertimeModal'
@@ -276,6 +277,7 @@ export default function JefaScreen() {
       await createStaff(newStaffPayload, userData?.rol, (msg) => {
         showToast(msg, 'success', 'Personal Incorporado')
       })
+      setShowAddStaffModal(false)
     } catch (err) {
       showToast(err.message || 'Error al incorporar personal.', 'error', 'Error al Crear Personal')
       throw err
@@ -419,6 +421,7 @@ export default function JefaScreen() {
                 isLoading={loadingStudies}
                 filterMode={studiesFilter}
                 onFilterChange={setStudiesFilter}
+                onNotice={showNotice}
               />
             </div>
           </div>
@@ -454,6 +457,18 @@ export default function JefaScreen() {
                 <ShieldCheck className="jefa-screen__view-tab-icon" />
                 <span>Seguridad y Bloqueo de Cuentas</span>
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeCenterTab === 'sla'}
+                className={`jefa-screen__view-tab ${
+                  activeCenterTab === 'sla' ? 'jefa-screen__view-tab--active' : ''
+                }`}
+                onClick={() => setActiveCenterTab('sla')}
+              >
+                <Clock className="jefa-screen__view-tab-icon" />
+                <span>Tiempos de espera (SLA)</span>
+              </button>
             </div>
             {activeCenterTab === 'shifts' ? (
               <StaffShiftsCard
@@ -467,7 +482,7 @@ export default function JefaScreen() {
                 onUnlockStaff={handleUnlockStaff}
                 onReactivateStaff={handleReactivateStaff}
               />
-            ) : (
+            ) : activeCenterTab === 'security' ? (
               <StaffSecurityCard
                 staffList={staffList}
                 currentUserRole={userData?.rol}
@@ -475,6 +490,8 @@ export default function JefaScreen() {
                 onUnlockStaff={handleUnlockStaff}
                 onLockStaff={handleLockStaff}
               />
+            ) : (
+              <SlaConfigCard onNotice={showNotice} />
             )}
           </div>
         }
@@ -509,6 +526,18 @@ export default function JefaScreen() {
                 <ShieldCheck className="jefa-screen__view-tab-icon" />
                 <span>Seguridad y Bloqueo de Cuentas</span>
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeCenterTab === 'sla'}
+                className={`jefa-screen__view-tab ${
+                  activeCenterTab === 'sla' ? 'jefa-screen__view-tab--active' : ''
+                }`}
+                onClick={() => setActiveCenterTab('sla')}
+              >
+                <Clock className="jefa-screen__view-tab-icon" />
+                <span>Tiempos de espera (SLA)</span>
+              </button>
             </div>
             {activeCenterTab === 'shifts' ? (
               <StaffShiftsCard
@@ -522,7 +551,7 @@ export default function JefaScreen() {
                 onUnlockStaff={handleUnlockStaff}
                 onReactivateStaff={handleReactivateStaff}
               />
-            ) : (
+            ) : activeCenterTab === 'security' ? (
               <StaffSecurityCard
                 staffList={staffList}
                 currentUserRole={userData?.rol}
@@ -530,6 +559,8 @@ export default function JefaScreen() {
                 onUnlockStaff={handleUnlockStaff}
                 onLockStaff={handleLockStaff}
               />
+            ) : (
+              <SlaConfigCard onNotice={showNotice} />
             )}
           </div>
         }

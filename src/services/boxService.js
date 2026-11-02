@@ -178,7 +178,8 @@ export async function cerrarAtencionBoxApi(boxIdentifier, motivoCierre = 'Finali
   return {
     mensaje: response.mensaje,
     box: response.box ? normalizeBox(response.box) : null,
-    asignacion: response.asignacion
+    asignacion: response.asignacion,
+    ticket: response.ticket ? normalizeTicket(response.ticket) : null
   }
 }
 

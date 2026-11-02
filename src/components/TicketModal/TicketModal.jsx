@@ -23,7 +23,12 @@ export default function TicketModal({ ticket, onClose, title = '', className = '
   if (!ticket) return null
 
   const handlePrint = () => {
-    printThermalTicket('printable-ticket')
+    try {
+      printThermalTicket('printable-ticket')
+    } catch (err) {
+      console.warn('Aviso en impresión térmica, usando fallback:', err)
+      window.print()
+    }
   }
 
   const handleBackdropClick = (event) => {
@@ -32,8 +37,8 @@ export default function TicketModal({ ticket, onClose, title = '', className = '
     }
   }
 
-  const isHistorico = ticket.estado === 'Atendido' || ticket.estado === 'Finalizado'
-  const badgeText = title || (isHistorico ? 'Comprobante Asistencial de Historial' : 'Ticket Asistencial Emitido')
+  const isAtendido = ticket.estado === 'Atendido' || ticket.estado === 'Finalizado' || ticket.estado_backend === 'Finalizado'
+  const badgeText = title || (isAtendido ? 'Comprobante de Retiro de Estudios' : 'Ticket de Turno para Sala de Espera')
 
   return createPortal(
     <div

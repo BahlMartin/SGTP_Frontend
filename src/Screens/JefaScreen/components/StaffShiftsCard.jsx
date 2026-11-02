@@ -22,7 +22,7 @@ export default function StaffShiftsCard({
     clearSearch,
     filteredStaff,
     isSearching
-  } = useStaffSearchFilter(staffList)
+  } = useStaffSearchFilter(staffList, { hideInactiveByDefault: true })
 
   return (
     <div className="jefa-screen__shifts-card">
@@ -229,7 +229,7 @@ export default function StaffShiftsCard({
                       </button>
                     </span>
                   ) : (
-                    'No hay personal registrado.'
+                    'No hay personal activo registrado.'
                   )}
                 </td>
               </tr>

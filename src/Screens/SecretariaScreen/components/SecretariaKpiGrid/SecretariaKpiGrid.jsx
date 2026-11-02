@@ -8,6 +8,8 @@ export default function SecretariaKpiGrid({
   cancelados = 0,
   ingresos = 0,
   enCurso = 0,
+  tasaCompletitud = 0,
+  tasaDesercion = 0,
   esperaPromedio = '—',
   atencionPromedio = '—',
   criticos = 0
@@ -17,6 +19,8 @@ export default function SecretariaKpiGrid({
     cancelados,
     ingresos,
     enCurso,
+    tasaCompletitud,
+    tasaDesercion,
     esperaPromedio,
     atencionPromedio,
     criticos
@@ -31,6 +35,7 @@ export default function SecretariaKpiGrid({
           metricTitle={kpiDefinitionItem.title}
           metricValue={kpiDefinitionItem.getValue(currentMetrics)}
           metricSubtext={kpiDefinitionItem.getSubtext(currentMetrics)}
+          metricRates={kpiDefinitionItem.getRates ? kpiDefinitionItem.getRates(currentMetrics) : null}
         />
       ))}
     </div>

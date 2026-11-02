@@ -7,10 +7,11 @@ import { useState, useMemo, useCallback } from 'react'
  * @param {Array} staffList - Lista de colaboradores.
  * @param {Object} options - Configuración de filtrado.
  * @param {boolean} options.filterAdmin - Si debe excluir el rol 'Admin' (default: true).
+ * @param {boolean} options.hideInactiveByDefault - Si debe ocultar deshabilitados por defecto y mostrarlos solo al buscar (default: false).
  * @returns {Object} Estado de búsqueda y lista de personal filtrada.
  */
 export function useStaffSearchFilter(staffList = [], options = {}) {
-  const { filterAdmin = true } = options
+  const { filterAdmin = true, hideInactiveByDefault = false } = options
   const [searchTerm, setSearchTerm] = useState('')
 
   // Filtrar Admin por defecto para la vista de Jefa
@@ -24,13 +25,20 @@ export function useStaffSearchFilter(staffList = [], options = {}) {
   // Filtrado reactivo en memoria (latencia 0)
   const filteredStaff = useMemo(() => {
     const term = searchTerm.trim().toLowerCase()
-    if (!term) return baseList
+    if (!term) {
+      if (hideInactiveByDefault) {
+        return baseList.filter((member) => member?.activo !== false)
+      }
+      return baseList
+    }
 
     return baseList.filter((member) => {
       const matchName = String(member?.nombre || '').toLowerCase().includes(term)
       const matchPrimerNombre = String(member?.primerNombre || '').toLowerCase().includes(term)
       const matchApellidos = String(member?.apellidos || '').toLowerCase().includes(term)
       const matchMatricula = String(member?.matricula || '').toLowerCase().includes(term)
+      const matchDni = String(member?.dni || '').toLowerCase().includes(term)
+      const matchEmail = String(member?.email || '').toLowerCase().includes(term)
       const matchRol = String(member?.rol || '').toLowerCase().includes(term)
       const matchTurno = String(member?.turno || '').toLowerCase().includes(term)
 
@@ -39,11 +47,13 @@ export function useStaffSearchFilter(staffList = [], options = {}) {
         matchPrimerNombre ||
         matchApellidos ||
         matchMatricula ||
+        matchDni ||
+        matchEmail ||
         matchRol ||
         matchTurno
       )
     })
-  }, [baseList, searchTerm])
+  }, [baseList, searchTerm, hideInactiveByDefault])
 
   const clearSearch = useCallback(() => {
     setSearchTerm('')

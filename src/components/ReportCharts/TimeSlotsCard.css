@@ -1,0 +1,255 @@
+.time-slots-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px 22px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 24px;
+}
+
+.time-slots-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.time-slots-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.time-slots-card__subtitle {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.time-slots-card__total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.time-slots-card__total strong {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #0f172a;
+}
+
+.time-slots-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.time-slots-card__column {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-top: 3px solid var(--slot-accent, #0f766e);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.time-slots-card__col-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.time-slots-card__col-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.time-slots-card__col-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--slot-tint, #ccfbf1);
+  color: var(--slot-accent, #0f766e);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.time-slots-card__col-title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.time-slots-card__col-range {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.time-slots-card__col-volume {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.time-slots-card__col-emitidos {
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #0f172a;
+}
+
+.time-slots-card__col-share {
+  margin-top: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.time-slots-card__flow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.time-slots-card__bar {
+  height: 8px;
+  width: 100%;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+}
+
+.time-slots-card__bar-seg {
+  height: 100%;
+  transition: width 0.25s ease;
+}
+
+.time-slots-card__bar-seg--attended {
+  background: #0f766e;
+}
+
+.time-slots-card__bar-seg--active {
+  background: #0284c7;
+}
+
+.time-slots-card__bar-seg--cancelled {
+  background: #e11d48;
+}
+
+.time-slots-card__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.time-slots-card__count-pill {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.time-slots-card__count-pill--attended {
+  background: #ccfbf1;
+  color: #115e59;
+}
+
+.time-slots-card__count-pill--cancelled {
+  background: #ffe4e6;
+  color: #9f1239;
+}
+
+.time-slots-card__count-pill--active {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.time-slots-card__times {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.time-slots-card__time-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.time-slots-card__time-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.time-slots-card__time-val {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.time-slots-card__triage-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.time-slots-card__triage-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.time-slots-card__triage-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+@media (max-width: 960px) {
+  .time-slots-card__grid {
+    grid-template-columns: 1fr;
+  }
+}
+

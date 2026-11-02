@@ -5,17 +5,31 @@ import { TRIAGE_LIST, TRIAGE_CATEGORIES, getTriageInfo } from '../constants/tria
 /**
  * Cálculo asistencial local de métricas a partir del conjunto de tickets.
  */
-export function computeDailyReportMetrics(tickets = [], targetDate = new Date()) {
-  let targetDateStr = ''
+export function computeDailyReportMetrics(tickets = [], targetDate = new Date(), targetEndDate = null) {
+  let startDateStr = ''
   if (targetDate instanceof Date) {
-    targetDateStr = getArgentinaDateString(targetDate)
+    startDateStr = getArgentinaDateString(targetDate)
   } else if (typeof targetDate === 'string') {
-    targetDateStr = targetDate.slice(0, 10)
+    startDateStr = targetDate.slice(0, 10)
+  }
+
+  let endDateStr = startDateStr
+  if (targetEndDate instanceof Date) {
+    endDateStr = getArgentinaDateString(targetEndDate)
+  } else if (typeof targetEndDate === 'string' && targetEndDate.trim()) {
+    endDateStr = targetEndDate.slice(0, 10)
+  }
+
+  if (endDateStr < startDateStr) {
+    const tmp = startDateStr
+    startDateStr = endDateStr
+    endDateStr = tmp
   }
 
   const dayTickets = tickets.filter((ticket) => {
     if (!ticket.fecha_hora_admision) return false
-    return getArgentinaDateString(ticket.fecha_hora_admision) === targetDateStr
+    const ticketDateStr = getArgentinaDateString(ticket.fecha_hora_admision)
+    return ticketDateStr >= startDateStr && ticketDateStr <= endDateStr
   })
 
   let atendidos = 0
@@ -49,15 +63,25 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
     }
   })
 
+  const totalIngresos = dayTickets.length || ingresos
+  const tasaCompletitud = totalIngresos > 0 ? Number(((atendidos / totalIngresos) * 100).toFixed(1)) : 0
+  const tasaDesercion = totalIngresos > 0 ? Number(((cancelados / totalIngresos) * 100).toFixed(1)) : 0
+
   return {
     atendidos,
     cancelados,
+    canceladosAdmision: 0,
+    canceladosBox: cancelados,
     enCurso,
-    ingresos: dayTickets.length || ingresos,
+    ingresos: totalIngresos,
     criticos,
+    tasaCompletitud,
+    tasaDesercion,
     esperaPromedio: '—',
     atencionPromedio: '—',
     triageDistribution: triageCounts,
+    slaTriage: [],
+    franjasHorarias: [],
     resumenEstudiosRealizadosPorSeccion: null,
     resumenEstudiosRealizadosPorMuestra: null,
     tickets: dayTickets
@@ -65,10 +89,15 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date())
 }
 
 /**
- * Consulta las métricas consolidadas del reporte diario en el backend.
+ * Consulta las métricas consolidadas del reporte diario o por rango en el backend.
  */
-export async function fetchMetricasDiariasApi(fechaStr) {
-  const query = `?fecha=${fechaStr || getTodayLocalDateString()}&_t=${Date.now()}`
+export async function fetchMetricasDiariasApi(fechaStr, fechaHastaStr = null) {
+  const desde = fechaStr || getTodayLocalDateString()
+  const hasta = fechaHastaStr || desde
+  const query =
+    desde === hasta
+      ? `?fecha=${desde}&_t=${Date.now()}`
+      : `?fecha_desde=${desde}&fecha_hasta=${hasta}&_t=${Date.now()}`
   const data = await apiClient.get(`/reports/metricas-diarias/${query}`)
 
   const resumenEstudiosRealizadosPorSeccion = Array.isArray(data.resumen_estudios_realizados_por_seccion)
@@ -123,23 +152,59 @@ export async function fetchMetricasDiariasApi(fechaStr) {
       .toLowerCase()
       .replace(/[\s.-]+/g, '_')
 
+  const resolveCategoryId = (rawValue) => {
+    const categoryKey = normalizeCategory(rawValue)
+    const matched = TRIAGE_LIST.find((category) =>
+      [category.id, category.key, category.label, category.code].some(
+        (value) => normalizeCategory(value) === categoryKey
+      )
+    )
+    return matched ? matched.id : categoryKey || String(rawValue ?? '')
+  }
+
   if (Array.isArray(data.distribucion_triage)) {
     data.distribucion_triage.forEach((item) => {
-      const categoryKey = normalizeCategory(item.clasificacion_triage)
-      const matched = TRIAGE_LIST.find((category) =>
-        [category.id, category.key, category.label, category.code].some(
-          (value) => normalizeCategory(value) === categoryKey
-        )
-      )
+      const resolvedId = resolveCategoryId(item.clasificacion_triage)
       const quantity = Number(item.cantidad) || 0
 
-      if (matched) {
-        triageMap[matched.id] += quantity
+      if (resolvedId in triageMap) {
+        triageMap[resolvedId] += quantity
       } else {
-        triageMap[item.clasificacion_triage] = quantity
+        triageMap[resolvedId] = quantity
       }
     })
   }
+
+  const slaTriage = Array.isArray(data.sla_triage)
+    ? data.sla_triage.map((item) => ({
+        ...item,
+        triage_key: resolveCategoryId(item.clasificacion_triage),
+        total_pacientes: Number(item.total_pacientes) || 0,
+        promedio_espera_minutos: Number(item.promedio_espera_minutos) || 0,
+        tiempo_objetivo_minutos:
+          item.tiempo_objetivo_minutos !== undefined && item.tiempo_objetivo_minutos !== null
+            ? Number(item.tiempo_objetivo_minutos)
+            : undefined
+      }))
+    : []
+
+  const franjasHorarias = Array.isArray(data.franjas_horarias)
+    ? data.franjas_horarias.map((slot) => ({
+        ...slot,
+        total_emitidos: Number(slot.total_emitidos) || 0,
+        total_atendidos: Number(slot.total_atendidos) || 0,
+        total_cancelados: Number(slot.total_cancelados) || 0,
+        promedio_espera_minutos: Number(slot.promedio_espera_minutos) || 0,
+        promedio_atencion_minutos: Number(slot.promedio_atencion_minutos) || 0,
+        distribucion_triage: Array.isArray(slot.distribucion_triage)
+          ? slot.distribucion_triage.map((tItem) => ({
+              ...tItem,
+              triage_key: resolveCategoryId(tItem.clasificacion_triage),
+              cantidad: Number(tItem.cantidad) || 0
+            }))
+          : []
+      }))
+    : []
 
   const enCurso = Math.max(
     0,
@@ -150,23 +215,22 @@ export async function fetchMetricasDiariasApi(fechaStr) {
     atendidos: data.total_atendidos || 0,
     ingresos: data.total_emitidos || 0,
     cancelados: data.total_cancelados || 0,
+    canceladosAdmision: data.total_cancelados_admision || 0,
+    canceladosBox: data.total_cancelados_box || 0,
     enCurso,
     criticos: data.total_criticos_atendidos || 0,
-    tasaCompletitud: data.tasa_completitud_porcentaje || 0,
-    tasaDesercion: data.tasa_desercion_porcentaje || 0,
+    tasaCompletitud: Number(data.tasa_completitud_porcentaje) || 0,
+    tasaDesercion: Number(data.tasa_desercion_porcentaje) || 0,
     esperaPromedio: data.promedio_espera_minutos ? formatDurationHuman(Math.round(data.promedio_espera_minutos)) : '—',
     atencionPromedio: data.promedio_atencion_minutos ? formatDurationHuman(Math.round(data.promedio_atencion_minutos)) : '—',
     triageDistribution: triageMap,
-    slaTriage: data.sla_triage || [],
-    franjasHorarias: data.franjas_horarias || [],
+    slaTriage,
+    franjasHorarias,
     resumenSecciones: data.resumen_secciones || [],
     resumenEstudiosRealizadosPorSeccion,
     resumenEstudiosRealizadosPorMuestra,
     insumosTubos: data.insumos_tubos || [],
     auditoriaBox: data.auditoria_box || {},
-    rendimientoAdmision: data.rendimiento_admision || [],
-    rendimientoBox: data.rendimiento_box || [],
-    rendimientoPersonal: data.rendimiento_personal || [],
     totalEstudios: data.total_estudios || 0,
     raw: data
   }
@@ -175,14 +239,22 @@ export async function fetchMetricasDiariasApi(fechaStr) {
 /**
  * Descarga el archivo PDF oficial compilado en tiempo real por el backend.
  */
-export async function downloadReportePdfApi(fechaStr) {
-  const query = fechaStr ? `?fecha=${fechaStr}` : ''
+export async function downloadReportePdfApi(fechaStr, fechaHastaStr = null) {
+  const desde = fechaStr || ''
+  const hasta = fechaHastaStr || desde
+  let query = ''
+  if (desde && hasta && desde !== hasta) {
+    query = `?fecha_desde=${desde}&fecha_hasta=${hasta}`
+  } else if (desde) {
+    query = `?fecha=${desde}`
+  }
   const blob = await apiClient.download(`/reports/descargar-pdf/${query}`)
+  const fileLabel = desde && hasta && desde !== hasta ? `${desde}_a_${hasta}` : desde || 'hoy'
 
   const url = window.URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = `Reporte_Asistencial_${fechaStr || 'hoy'}.pdf`
+  anchor.download = `Reporte_Asistencial_${fileLabel}.pdf`
   document.body.appendChild(anchor)
   anchor.click()
   document.body.removeChild(anchor)
@@ -192,17 +264,54 @@ export async function downloadReportePdfApi(fechaStr) {
 }
 
 /**
- * Dispara el despacho manual del reporte diario vía correo institucional SMTP.
+ * Descarga el libro Excel (.xlsx) oficial de 6 hojas compilado en tiempo real por el backend.
  */
-export async function dispararEnvioReporteApi(fechaStr) {
-  return await apiClient.post('/reports/disparar-envio/', { fecha: fechaStr })
+export async function downloadReporteExcelApi(fechaStr, fechaHastaStr = null) {
+  const desde = fechaStr || ''
+  const hasta = fechaHastaStr || desde
+  let query = ''
+  if (desde && hasta && desde !== hasta) {
+    query = `?fecha_desde=${desde}&fecha_hasta=${hasta}`
+  } else if (desde) {
+    query = `?fecha=${desde}`
+  }
+  const blob = await apiClient.download(`/reports/descargar-excel/${query}`)
+  const fileLabel = desde && hasta && desde !== hasta ? `${desde}_a_${hasta}` : desde || 'hoy'
+
+  const url = window.URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `Reporte_Asistencial_${fileLabel}.xlsx`
+  document.body.appendChild(anchor)
+  anchor.click()
+  document.body.removeChild(anchor)
+  window.URL.revokeObjectURL(url)
+
+  return true
 }
 
-export async function sendDailyReportEmailApi(fechaStr) {
-  const response = await dispararEnvioReporteApi(fechaStr)
+/**
+ * Dispara el despacho manual del reporte diario o por rango vía correo institucional SMTP.
+ */
+export async function dispararEnvioReporteApi(fechaStr, emailDestinatario, fechaHastaStr = null) {
+  const desde = fechaStr
+  const hasta = fechaHastaStr || desde
+  const payload =
+    desde && hasta && desde !== hasta
+      ? { fecha_desde: desde, fecha_hasta: hasta }
+      : { fecha: desde }
+  if (emailDestinatario !== undefined && emailDestinatario !== null) {
+    payload.email_destinatario = emailDestinatario
+  }
+  return await apiClient.post('/reports/disparar-envio/', payload)
+}
+
+export async function sendDailyReportEmailApi(fechaStr, emailDestinatario, fechaHastaStr = null) {
+  const response = await dispararEnvioReporteApi(fechaStr, emailDestinatario, fechaHastaStr)
   return {
     success: true,
-    message: response.mensaje || 'Reporte asistencial despachado exitosamente por correo institucional.'
+    message: response.mensaje || 'Reporte asistencial despachado exitosamente por correo institucional.',
+    resultado: response.resultado
   }
 }
 

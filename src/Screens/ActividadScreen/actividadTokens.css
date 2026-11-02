@@ -1,0 +1,49 @@
+/* Tokens CSS de Auditoría y Actividad del Personal Hospitalario (SGTP) */
+:root {
+  --auditoria-bg-card: #ffffff;
+  --auditoria-bg-subtle: #f4f8fb;
+  --auditoria-surface-hover: #dff3fa;
+  --auditoria-surface-selected: #eff8fc;
+  
+  --auditoria-text-primary: #275369;
+  --auditoria-text-secondary: #647a85;
+  --auditoria-text-light: #94a3a8;
+  
+  --auditoria-border-card: #d9e5ea;
+  --auditoria-border-subtle: #edf2f5;
+  --auditoria-border-focus: #1687c9;
+  
+  --auditoria-primary: #1687c9;
+  --auditoria-primary-hover: #1175ae;
+  --auditoria-primary-light: #e0f2fe;
+
+  /* Categorías de Auditoría */
+  --cat-acceso-fg: #4338ca;
+  --cat-acceso-bg: #eef0fd;
+  --cat-admision-fg: #0f766e;
+  --cat-admision-bg: #e6f4f2;
+  --cat-box-fg: #be185d;
+  --cat-box-bg: #fbe8f1;
+  --cat-gestion-fg: #92400e;
+  --cat-gestion-bg: #f6ece3;
+  --cat-reportes-fg: #334155;
+  --cat-reportes-bg: #e8ecf1;
+  --cat-sla-fg: #0284c7;
+  --cat-sla-bg: #e0f2fe;
+
+  /* Estados y Severidades (Accesibilidad WCAG AA) */
+  --status-error-fg: #b91c1c;
+  --status-error-bg: #fef2f2;
+  --status-error-border: #fecaca;
+  --status-warn-fg: #92400e;
+  --status-warn-bg: #fdf3e7;
+  --status-warn-border: #e8c9a4;
+  --status-ok-fg: #15803d;
+  --status-ok-bg: #f0fdf4;
+  --status-ok-border: #bbf7d0;
+
+  --auditoria-shadow-sm: 0 1px 3px rgba(24, 59, 74, 0.06);
+  --auditoria-shadow-md: 0 4px 10px rgba(24, 59, 74, 0.08);
+  --auditoria-shadow-drawer: -8px 0 24px -4px rgba(24, 59, 74, 0.14);
+}
+

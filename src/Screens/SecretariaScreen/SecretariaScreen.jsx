@@ -1,11 +1,13 @@
-import React, { useCallback, useRef } from 'react'
-import { CheckCircle2 } from 'lucide-react'
+import React, { useCallback, useRef, useState } from 'react'
+import { CheckCircle2, AlertCircle } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import { useAuth } from '../../context/AuthContext'
 import { useSecretariaReport } from '../../hooks/useSecretariaReport'
 import SecretariaJornadaBar from './components/SecretariaJornadaBar/SecretariaJornadaBar'
+import SendReportEmailModal from './components/SendReportEmailModal/SendReportEmailModal'
 import SecretariaKpiGrid from './components/SecretariaKpiGrid/SecretariaKpiGrid'
 import TriageDistributionCard from '../../components/ReportCharts/TriageDistributionCard'
+import TimeSlotsCard from '../../components/ReportCharts/TimeSlotsCard'
 import StudiesLollipopCard from '../../components/ReportCharts/StudiesLollipopCard'
 import StudiesSamplesBarsCard from '../../components/ReportCharts/StudiesSamplesBarsCard'
 import StaffSecurityCard from '../JefaScreen/components/StaffSecurityCard/StaffSecurityCard'
@@ -20,17 +22,27 @@ export default function SecretariaScreen() {
     staffList,
     loadingStaff,
     staffError,
+    loadStaff,
     unlockStaff,
     lockStaff
   } = useStaffManagement()
 
+  const [isThirdPartyEmailModalOpen, setIsThirdPartyEmailModalOpen] = useState(false)
+
   const {
     jornadaDate,
+    jornadaEndDate,
+    periodMode,
     setJornadaDate,
+    applyPeriodRange,
     notice,
+    errorNotice,
+    emailError,
+    clearEmailError,
     isSendingEmail,
     metrics,
     handleExportPdf,
+    handleExportExcel,
     handleSendEmail,
     showNotice,
     refreshMetrics
@@ -49,6 +61,12 @@ export default function SecretariaScreen() {
   const handleWsEvent = useCallback(
     (msg) => {
       const evt = msg?.event || msg?.action || msg?.tipo_evento
+
+      if (evt === 'STAFF_UPDATED') {
+        loadStaff().catch((err) => console.error('Error al actualizar personal por WS:', err))
+        return
+      }
+
       const isRelevant = [
         'REALTIME_METRICS_UPDATED',
         'REFRESH_REPORTS',
@@ -56,13 +74,19 @@ export default function SecretariaScreen() {
         'NEW_TICKET',
         'TICKET_UPDATED',
         'TICKET_LLAMADO',
-        'reporte_actualizado'
+        'reporte_actualizado',
+        'RECEPTION_UPDATED',
+        'TURNO_CREATED',
+        'TURNO_CALLED',
+        'TURNO_CANCELLED',
+        'TURNO_FINALIZED'
       ].includes(evt)
 
       if (!isRelevant) return
 
       const today = getTodayLocalDateString()
-      if (jornadaDate === today) {
+      const endDate = jornadaEndDate || jornadaDate
+      if (today >= jornadaDate && today <= endDate) {
         const now = Date.now()
         if (now - lastRefreshRef.current > 400) {
           lastRefreshRef.current = now
@@ -70,7 +94,7 @@ export default function SecretariaScreen() {
         }
       }
     },
-    [jornadaDate, refreshMetrics]
+    [jornadaDate, jornadaEndDate, refreshMetrics, loadStaff]
   )
 
   // Implementación de WebSocket para actualización de métricas en tiempo real
@@ -94,12 +118,34 @@ export default function SecretariaScreen() {
           </div>
         )}
 
+        {errorNotice && !isThirdPartyEmailModalOpen && (
+          <div className="secretaria-screen__notice secretaria-screen__notice--error" role="alert">
+            <AlertCircle className="secretaria-screen__notice-icon" />
+            <span className="secretaria-screen__notice-text">{errorNotice}</span>
+          </div>
+        )}
+
         <SecretariaJornadaBar
           jornadaDate={jornadaDate}
+          jornadaEndDate={jornadaEndDate}
+          periodMode={periodMode}
           onDateChange={(selectedDateValue) => setJornadaDate(selectedDateValue)}
+          onApplyPeriod={applyPeriodRange}
           onExportPdf={handleExportPdf}
-          onSendEmail={handleSendEmail}
+          onExportExcel={handleExportExcel}
+          onSendEmail={() => handleSendEmail()}
+          onOpenThirdPartyEmailModal={() => setIsThirdPartyEmailModalOpen(true)}
+          userEmail={userData?.email || ''}
           isSendingEmail={isSendingEmail}
+        />
+
+        <SendReportEmailModal
+          isOpen={isThirdPartyEmailModalOpen}
+          onClose={() => setIsThirdPartyEmailModalOpen(false)}
+          onConfirmSend={(customEmail) => handleSendEmail(customEmail)}
+          isSending={isSendingEmail}
+          backendError={emailError}
+          onClearError={clearEmailError}
         />
 
         <SecretariaKpiGrid
@@ -107,10 +153,14 @@ export default function SecretariaScreen() {
           cancelados={metrics.cancelados}
           ingresos={metrics.ingresos}
           enCurso={metrics.enCurso}
+          tasaCompletitud={metrics.tasaCompletitud}
+          tasaDesercion={metrics.tasaDesercion}
           esperaPromedio={metrics.esperaPromedio}
           atencionPromedio={metrics.atencionPromedio}
           criticos={metrics.criticos}
         />
+
+        <TimeSlotsCard franjasHorarias={metrics.franjasHorarias} />
 
         <div className="secretaria-screen__study-summaries">
           <StudiesLollipopCard
@@ -123,7 +173,11 @@ export default function SecretariaScreen() {
           />
         </div>
 
-        <TriageDistributionCard triageDistribution={metrics.triageDistribution} />
+        <TriageDistributionCard
+          triageDistribution={metrics.triageDistribution}
+          slaTriage={metrics.slaTriage}
+          franjasHorarias={metrics.franjasHorarias}
+        />
 
         <section className="secretaria-screen__security-section" aria-labelledby="secretaria-security-title">
           <h2 id="secretaria-security-title" className="secretaria-screen__section-title">

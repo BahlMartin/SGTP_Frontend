@@ -2,7 +2,7 @@ import React from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { adjustTime } from '../../../utils/shiftTime.utils'
 
-export default function ShiftTimeInput({ id, label, value, onChange }) {
+export default function ShiftTimeInput({ id, label, value, onChange, disabled = false }) {
   return (
     <div className="jefa-screen__modal-field">
       <label htmlFor={id}>{label}</label>
@@ -19,12 +19,14 @@ export default function ShiftTimeInput({ id, label, value, onChange }) {
           required
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          disabled={disabled}
         />
         <div className="jefa-screen__time-stepper">
           <button
             type="button"
             aria-label={`Avanzar 30 minutos: ${label.toLowerCase()}`}
             onClick={() => onChange(adjustTime(value, 30))}
+            disabled={disabled}
           >
             <ChevronUp aria-hidden="true" />
           </button>
@@ -32,6 +34,7 @@ export default function ShiftTimeInput({ id, label, value, onChange }) {
             type="button"
             aria-label={`Retroceder 30 minutos: ${label.toLowerCase()}`}
             onClick={() => onChange(adjustTime(value, -30))}
+            disabled={disabled}
           >
             <ChevronDown aria-hidden="true" />
           </button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Upload,
   Check,
@@ -26,6 +26,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   const [ocrError, setOcrError] = useState(null)
   const [ocrResult, setOcrResult] = useState(null)
   const [selectedStudies, setSelectedStudies] = useState([])
+  const [showFloatingAlert, setShowFloatingAlert] = useState(false)
 
   // Manejar subida o selección de archivo
   const handleFileChange = (e) => {
@@ -64,6 +65,15 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     }
   }, [handlePasteEvent])
 
+  // Auto-ocultar la alerta flotante luego de unos segundos para despejar la vista en móvil
+  useEffect(() => {
+    if (!showFloatingAlert) return
+    const timer = setTimeout(() => {
+      setShowFloatingAlert(false)
+    }, 4500)
+    return () => clearTimeout(timer)
+  }, [showFloatingAlert])
+
   // Iniciar procesamiento completo con PaddleOCR PP-OCRv5 -> Django Mapeo
   const handleProcessOcr = async () => {
     if (!file && !imagePreview) return
@@ -79,6 +89,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
 
       setOcrResult(res)
       setSelectedStudies(res.suggestedStudies || [])
+      setShowFloatingAlert(true)
     } catch (err) {
       console.error('Error al procesar receta OCR:', err)
       setOcrError(err.message || 'No se pudo procesar la receta médica.')
@@ -124,12 +135,18 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     onClose()
   }
 
-  // Estudios sugeridos identificados por PaddleOCR
-  const displayedStudies = ocrResult?.suggestedStudies || []
+  // Estudios mostrados en la grilla: combina los sugeridos por OCR + los agregados desde sugerencias contextuales
+  // para que si el usuario agrega una sugerencia contextual, aparezca en la grilla y pueda desmarcarla si se equivocó.
+  const displayedStudies = useMemo(() => {
+    const baseStudies = ocrResult?.suggestedStudies || []
+    const baseIds = new Set(baseStudies.map((s) => s.id))
+    const addedContextualStudies = selectedStudies.filter((s) => !baseIds.has(s.id))
+    return [...baseStudies, ...addedContextualStudies]
+  }, [ocrResult, selectedStudies])
 
   return (
     <div className="ocr-modal" role="dialog" aria-modal="true" aria-labelledby="ocr-modal-title">
-      <div className="ocr-modal__card">
+      <div className={`ocr-modal__card ${ocrResult ? 'ocr-modal__card--review' : ''}`}>
         <button
           className="ocr-modal__close-btn"
           onClick={onClose}
@@ -137,6 +154,33 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         >
           <X size={20} />
         </button>
+
+        {/* Alerta Flotante (Toast) de Prácticas Reconocidas */}
+        {ocrResult && showFloatingAlert && (
+          <div className="ocr-modal__floating-toast" role="status">
+            <Check size={15} className="ocr-modal__alert-icon" />
+            <div className="ocr-modal__alert-content">
+              {ocrResult.totalSugerencias > 0 ? (
+                <>
+                  <strong>{ocrResult.totalSugerencias} prácticas reconocidas</strong>
+                  <span className="ocr-modal__alert-subtext">
+                    — Valide las selecciones
+                  </span>
+                </>
+              ) : (
+                <span>No se detectaron estudios coincidentes automáticamente.</span>
+              )}
+            </div>
+            <button
+              type="button"
+              className="ocr-modal__toast-close"
+              onClick={() => setShowFloatingAlert(false)}
+              aria-label="Cerrar aviso"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         <div className="ocr-modal__header">
           <div className="ocr-modal__chip-ai">
@@ -160,60 +204,62 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
 
         {!ocrResult ? (
           <div className="ocr-modal__step-upload">
-            {imagePreview ? (
-              <div className="ocr-modal__preview-container">
-                <img src={imagePreview} alt="Receta médica cargada" className="ocr-modal__preview-image" />
-                <button
-                  type="button"
-                  className="ocr-modal__reupload-btn"
-                  onClick={() => {
-                    setImagePreview(null)
-                    setFile(null)
-                  }}
-                >
-                  <RefreshCw size={14} />
-                  Cambiar o volver a cargar imagen
-                </button>
-              </div>
-            ) : (
-              <div className="ocr-modal__dropzone">
-                <ClipboardPaste size={42} className="ocr-modal__dropzone-icon" />
-                <p className="ocr-modal__dropzone-text">
-                  <strong>Arrastre una foto</strong> de la receta, selecciónela de su equipo o presione{' '}
-                  <kbd className="ocr-modal__kbd">Ctrl + V</kbd> si su escáner copió la imagen al portapapeles.
-                </p>
-                <div className="ocr-modal__dropzone-buttons">
-                  <label className="ocr-modal__browse-btn">
-                    <Upload size={16} />
-                    Seleccionar Archivo
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      style={{ display: 'none' }}
+            <div className="ocr-modal__upload-body">
+              {imagePreview ? (
+                <div className="ocr-modal__preview-container">
+                  <img src={imagePreview} alt="Receta médica cargada" className="ocr-modal__preview-image" />
+                  <button
+                    type="button"
+                    className="ocr-modal__reupload-btn"
+                    onClick={() => {
+                      setImagePreview(null)
+                      setFile(null)
+                    }}
+                  >
+                    <RefreshCw size={14} />
+                    Cambiar o volver a cargar imagen
+                  </button>
+                </div>
+              ) : (
+                <div className="ocr-modal__dropzone">
+                  <ClipboardPaste size={42} className="ocr-modal__dropzone-icon" />
+                  <p className="ocr-modal__dropzone-text">
+                    <strong>Arrastre una foto</strong> de la receta, selecciónela de su equipo o presione{' '}
+                    <kbd className="ocr-modal__kbd">Ctrl + V</kbd> si su escáner copió la imagen al portapapeles.
+                  </p>
+                  <div className="ocr-modal__dropzone-buttons">
+                    <label className="ocr-modal__browse-btn">
+                      <Upload size={16} />
+                      Seleccionar Archivo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Barra de Progreso Dinámica */}
+              {analyzing && (
+                <div className="ocr-modal__progress-box">
+                  <div className="ocr-modal__progress-header">
+                    <span className="ocr-modal__progress-label">{progressInfo.message}</span>
+                    <span className="ocr-modal__progress-value">{progressInfo.percent}%</span>
+                  </div>
+                  <div className="ocr-modal__progress-bar-track">
+                    <div
+                      className="ocr-modal__progress-bar-fill"
+                      style={{ width: `${Math.max(5, progressInfo.percent)}%` }}
                     />
-                  </label>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Barra de Progreso Dinámica */}
-            {analyzing && (
-              <div className="ocr-modal__progress-box">
-                <div className="ocr-modal__progress-header">
-                  <span className="ocr-modal__progress-label">{progressInfo.message}</span>
-                  <span className="ocr-modal__progress-value">{progressInfo.percent}%</span>
-                </div>
-                <div className="ocr-modal__progress-bar-track">
-                  <div
-                    className="ocr-modal__progress-bar-fill"
-                    style={{ width: `${Math.max(5, progressInfo.percent)}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Acciones de la fase de captura */}
+            {/* Acciones de la fase de captura (Footer fijo) */}
             <div className="ocr-modal__actions">
               <button
                 type="button"
@@ -236,188 +282,219 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
             </div>
           </div>
         ) : (
-          /* Vista de Revisión Human-in-the-Loop */
+          /* Vista de Revisión Human-in-the-Loop (Split-View en Desktop / Scroll Único en Móvil) */
           <div className="ocr-modal__step-review">
-            <div className="ocr-modal__alert">
-              <Check size={18} className="ocr-modal__alert-icon" />
-              <div className="ocr-modal__alert-content">
-                <strong>Revisión Asistida de Prácticas (Human-in-the-Loop)</strong>
-                <p>
-                  {ocrResult.totalSugerencias > 0
-                    ? `Se reconocieron ${ocrResult.totalSugerencias} prácticas clínicas. Valide las selecciones antes de transferirlas al ticket:`
-                    : 'No se detectaron estudios coincidentes automáticamente.'}
-                </p>
-              </div>
-            </div>
+            <div className="ocr-modal__review-body">
+              {/* Panel Izquierdo: Inspección visual de receta y metadatos */}
+              <aside className="ocr-modal__sidebar">
+                <div className="ocr-modal__review-preview">
+                  <div className="ocr-modal__review-image-wrapper">
+                    <img
+                      src={viewMode === 'processed' && ocrResult.preprocessedDataUrl ? ocrResult.preprocessedDataUrl : imagePreview}
+                      alt="Vista de la orden"
+                      className="ocr-modal__review-thumbnail"
+                    />
+                  </div>
 
-            {/* Banner de Combo o Batería de Rutina detectada */}
-            {ocrResult.comboDetectado && (
-              <div className="ocr-modal__combo-banner">
-                <div className="ocr-modal__combo-badge">📦 Combo Detectado</div>
-                <div className="ocr-modal__combo-content">
-                  <strong className="ocr-modal__combo-title">{ocrResult.comboDetectado}</strong>
-                  <p className="ocr-modal__combo-desc">
-                    Se preseleccionaron automáticamente las prácticas correspondientes a este perfil de rutina.
-                  </p>
+                  <div className="ocr-modal__sidebar-controls">
+                    {/* Alternar vista de imagen original vs realzada */}
+                    {ocrResult.preprocessedDataUrl && (
+                      <div className="ocr-modal__view-toggle">
+                        <span className="ocr-modal__toggle-label">
+                          <SlidersHorizontal size={13} /> Filtro:
+                        </span>
+                        <button
+                          type="button"
+                          className={`ocr-modal__toggle-btn ${viewMode === 'original' ? 'ocr-modal__toggle-btn--active' : ''}`}
+                          onClick={() => setViewMode('original')}
+                        >
+                          <Eye size={13} /> Original
+                        </button>
+                        <button
+                          type="button"
+                          className={`ocr-modal__toggle-btn ${viewMode === 'processed' ? 'ocr-modal__toggle-btn--active' : ''}`}
+                          onClick={() => setViewMode('processed')}
+                        >
+                          <Sparkles size={13} /> Contraste
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="ocr-modal__review-info">
+                      <span className="ocr-modal__info-chip">
+                        Líneas leídas: {ocrResult.detectedLines?.length || 0}
+                      </span>
+                      {ocrResult.confidence > 0 && (
+                        <span className="ocr-modal__info-chip">
+                          Confianza: {Math.round(ocrResult.confidence)}%
+                        </span>
+                      )}
+                      {ocrResult.engineUsed && (
+                        <span className="ocr-modal__info-chip ocr-modal__info-chip--engine">
+                          {ocrResult.engineUsed}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {/* Alternar vista de imagen original vs realzada */}
-            {ocrResult.preprocessedDataUrl && (
-              <div className="ocr-modal__view-toggle">
-                <span className="ocr-modal__toggle-label">
-                  <SlidersHorizontal size={14} /> Filtro Canvas:
-                </span>
-                <button
-                  type="button"
-                  className={`ocr-modal__toggle-btn ${viewMode === 'original' ? 'ocr-modal__toggle-btn--active' : ''}`}
-                  onClick={() => setViewMode('original')}
-                >
-                  <Eye size={13} /> Original
-                </button>
-                <button
-                  type="button"
-                  className={`ocr-modal__toggle-btn ${viewMode === 'processed' ? 'ocr-modal__toggle-btn--active' : ''}`}
-                  onClick={() => setViewMode('processed')}
-                >
-                  <Sparkles size={13} /> Optimizada (Contraste)
-                </button>
-              </div>
-            )}
-
-            {/* Vista previa compacta */}
-            <div className="ocr-modal__review-preview">
-              <img
-                src={viewMode === 'processed' && ocrResult.preprocessedDataUrl ? ocrResult.preprocessedDataUrl : imagePreview}
-                alt="Vista de la orden"
-                className="ocr-modal__review-thumbnail"
-              />
-              <div className="ocr-modal__review-info">
-                <span className="ocr-modal__info-chip">
-                  Líneas leídas: {ocrResult.detectedLines?.length || 0}
-                </span>
-                {ocrResult.confidence > 0 && (
-                  <span className="ocr-modal__info-chip">
-                    Confianza promedio: {Math.round(ocrResult.confidence)}%
-                  </span>
+                {/* Banner de Combo o Batería de Rutina detectada (compacto) */}
+                {ocrResult.comboDetectado && (
+                  <div className="ocr-modal__combo-banner">
+                    <div className="ocr-modal__combo-header">
+                      <span className="ocr-modal__combo-badge">📦 Combo</span>
+                      <strong className="ocr-modal__combo-title">{ocrResult.comboDetectado}</strong>
+                    </div>
+                    <p className="ocr-modal__combo-desc">
+                      Prácticas del perfil preseleccionadas automáticamente.
+                    </p>
+                  </div>
                 )}
-                {ocrResult.engineUsed && (
-                  <span className="ocr-modal__info-chip ocr-modal__info-chip--engine">
-                    {ocrResult.engineUsed}
-                  </span>
-                )}
-              </div>
-            </div>
+              </aside>
 
-            {/* Grilla de Prácticas Detectadas */}
-            {displayedStudies.length > 0 ? (
-              <div className="ocr-modal__studies-grid">
-                {displayedStudies.map((study) => {
-                  const isSelected = selectedStudies.some((s) => s.id === study.id)
-                  const scoreNumber = Number(study.score) || 0
+              {/* Panel Derecho: Lista de estudios y sugerencias contextuales */}
+              <div className="ocr-modal__main-panel">
+                {/* Alerta estática visible en Desktop; en móvil usa el Toast Flotante para no tapar la imagen/confianza */}
+                <div className="ocr-modal__alert ocr-modal__alert--desktop">
+                  <Check size={15} className="ocr-modal__alert-icon" />
+                  <div className="ocr-modal__alert-content">
+                    {ocrResult.totalSugerencias > 0 ? (
+                      <>
+                        <strong>{ocrResult.totalSugerencias} prácticas reconocidas</strong>
+                        <span className="ocr-modal__alert-subtext">
+                          — Valide las selecciones antes de confirmar
+                        </span>
+                      </>
+                    ) : (
+                      <span>No se detectaron estudios coincidentes automáticamente.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Grilla de Prácticas Detectadas + Agregadas (2 columnas en PC, 1 en móvil, sin scroll anidado) */}
+                {displayedStudies.length > 0 ? (
+                  <div className="ocr-modal__studies-grid">
+                    {displayedStudies.map((study) => {
+                      const isSelected = selectedStudies.some((s) => s.id === study.id)
+                      const scoreNumber = Number(study.score) || 0
+
+                      return (
+                        <label
+                          key={study.id}
+                          className={`ocr-modal__study-item ${isSelected ? 'ocr-modal__study-item--selected' : ''}`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="ocr-modal__study-checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleStudy(study)}
+                          />
+                          <div className="ocr-modal__study-details">
+                            <span className="ocr-modal__study-name">{study.nombre}</span>
+                            <div className="ocr-modal__study-meta">
+                              {study.codigoPractica && (
+                                <span className="ocr-modal__study-code">{study.codigoPractica}</span>
+                              )}
+                              {study.origenDeteccion !== 'VALIDADO_POR_CONTEXTO' && (
+                                <span className="ocr-modal__motor-badge ocr-modal__motor-badge--paddle">
+                                  🎯 PaddleOCR
+                                </span>
+                              )}
+                              {study.origenDeteccion === 'COMBO_RUTINA' ? (
+                                <span className="ocr-modal__origin-badge ocr-modal__origin-badge--combo">
+                                  Combo de Rutina
+                                </span>
+                              ) : study.origenDeteccion === 'MEMORIA_APRENDIDA' ? (
+                                <span className="ocr-modal__origin-badge ocr-modal__origin-badge--memory">
+                                  Memoria del equipo
+                                </span>
+                              ) : study.origenDeteccion === 'VALIDADO_POR_CONTEXTO' ? (
+                                <span className="ocr-modal__origin-badge ocr-modal__origin-badge--context">
+                                  ✨ Agregado por sugerencia
+                                </span>
+                              ) : scoreNumber > 0 ? (
+                                <span
+                                  className={`ocr-modal__study-score ${
+                                    scoreNumber >= 85 ? 'ocr-modal__study-score--high' : 'ocr-modal__study-score--medium'
+                                  }`}
+                                >
+                                  {scoreNumber}% coincidencia
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="ocr-modal__no-studies-msg">
+                    <AlertCircle size={16} />
+                    <span>
+                      No se identificaron prácticas automáticamente con PaddleOCR en la imagen cargada.
+                    </span>
+                  </div>
+                )}
+
+                {/* Sugerencias contextuales de estudios co-ocurrentes */}
+                {ocrResult.sugerenciasContextuales?.length > 0 && (() => {
+                  const visibleSuggestions = ocrResult.sugerenciasContextuales.filter(
+                    (sug) => !selectedStudies.some((s) => s.id === sug.id_estudio)
+                  )
+                  if (visibleSuggestions.length === 0) return null
 
                   return (
-                    <label
-                      key={study.id}
-                      className={`ocr-modal__study-item ${isSelected ? 'ocr-modal__study-item--selected' : ''}`}
-                      onClick={() => toggleStudy(study)}
-                    >
-                      <input
-                        type="checkbox"
-                        className="ocr-modal__study-checkbox"
-                        checked={isSelected}
-                        onChange={() => {}}
-                      />
-                      <div className="ocr-modal__study-details">
-                        <span className="ocr-modal__study-name">{study.nombre}</span>
-                        <div className="ocr-modal__study-meta">
-                          <span className="ocr-modal__study-code">{study.codigoPractica}</span>
-                          <span className="ocr-modal__motor-badge ocr-modal__motor-badge--paddle">
-                            🎯 PaddleOCR
-                          </span>
-                          {study.origenDeteccion === 'COMBO_RUTINA' ? (
-                            <span className="ocr-modal__origin-badge ocr-modal__origin-badge--combo">
-                              Combo de Rutina
-                            </span>
-                          ) : study.origenDeteccion === 'MEMORIA_APRENDIDA' ? (
-                            <span className="ocr-modal__origin-badge ocr-modal__origin-badge--memory">
-                              Memoria del equipo
-                            </span>
-                          ) : study.origenDeteccion === 'VALIDADO_POR_CONTEXTO' ? (
-                            <span className="ocr-modal__origin-badge ocr-modal__origin-badge--context">
-                              Validado por contexto
-                            </span>
-                          ) : scoreNumber > 0 ? (
-                            <span
-                              className={`ocr-modal__study-score ${
-                                scoreNumber >= 85 ? 'ocr-modal__study-score--high' : 'ocr-modal__study-score--medium'
-                              }`}
-                            >
-                              {scoreNumber}% coincidencia
-                            </span>
-                          ) : null}
-                        </div>
+                    <div className="ocr-modal__contextual-box">
+                      <div className="ocr-modal__contextual-header">
+                        <Sparkles size={14} className="ocr-modal__contextual-icon" />
+                        <span>Prácticas solicitadas habitualmente en conjunto:</span>
                       </div>
-                    </label>
+                      <div className="ocr-modal__contextual-chips">
+                        {visibleSuggestions.map((sug) => (
+                          <button
+                            key={sug.id_estudio}
+                            type="button"
+                            className="ocr-modal__contextual-chip"
+                            title={sug.motivo || 'Estudio frecuente en este combo'}
+                            onClick={() => {
+                              setSelectedStudies((prev) => [
+                                ...prev,
+                                {
+                                  id: sug.id_estudio,
+                                  nombre: sug.nombre,
+                                  categoria: 'Sugerencia Contextual',
+                                  codigoPractica: sug.codigo_practica || '',
+                                  score: Math.round((sug.indice_afinidad || 0.8) * 100),
+                                  textoOrigen: 'Sugerencia contextual',
+                                  origenDeteccion: 'VALIDADO_POR_CONTEXTO'
+                                }
+                              ])
+                            }}
+                          >
+                            <Plus size={13} />
+                            <span>{sug.nombre}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )
-                })}
+                })()}
               </div>
-            ) : (
-              <div className="ocr-modal__no-studies-msg">
-                <AlertCircle size={16} />
-                <span>
-                  No se identificaron prácticas automáticamente con PaddleOCR en la imagen cargada.
-                </span>
-              </div>
-            )}
+            </div>
 
-            {/* Sugerencias contextuales de estudios co-ocurrentes */}
-            {ocrResult.sugerenciasContextuales?.length > 0 && (() => {
-              const visibleSuggestions = ocrResult.sugerenciasContextuales.filter(
-                (sug) => !selectedStudies.some((s) => s.id === sug.id_estudio)
-              )
-              if (visibleSuggestions.length === 0) return null
-
-              return (
-                <div className="ocr-modal__contextual-box">
-                  <div className="ocr-modal__contextual-header">
-                    <Sparkles size={14} className="ocr-modal__contextual-icon" />
-                    <span>Prácticas solicitadas habitualmente en conjunto:</span>
-                  </div>
-                  <div className="ocr-modal__contextual-chips">
-                    {visibleSuggestions.map((sug) => (
-                      <button
-                        key={sug.id_estudio}
-                        type="button"
-                        className="ocr-modal__contextual-chip"
-                        title={sug.motivo || 'Estudio frecuente en este combo'}
-                        onClick={() => {
-                          setSelectedStudies((prev) => [
-                            ...prev,
-                            {
-                              id: sug.id_estudio,
-                              nombre: sug.nombre,
-                              categoria: 'Sugerencia Contextual',
-                              codigoPractica: sug.codigo_practica || '',
-                              score: Math.round((sug.indice_afinidad || 0.8) * 100),
-                              textoOrigen: 'Sugerencia contextual',
-                              origenDeteccion: 'VALIDADO_POR_CONTEXTO'
-                            }
-                          ])
-                        }}
-                      >
-                        <Plus size={13} />
-                        <span>{sug.nombre}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )
-            })()}
-
-            {/* Acciones finales */}
+            {/* Acciones finales (Footer fijo siempre visible) */}
             <div className="ocr-modal__actions">
+              <button
+                type="button"
+                className="ocr-modal__cancel-btn"
+                onClick={() => {
+                  setOcrResult(null)
+                  setShowFloatingAlert(false)
+                  setProgressInfo({ percent: 0, message: '' })
+                }}
+              >
+                Volver a Cargar
+              </button>
               <button
                 type="button"
                 className="ocr-modal__confirm-btn"
@@ -425,16 +502,6 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                 disabled={selectedStudies.length === 0}
               >
                 Confirmar Estudios ({selectedStudies.length})
-              </button>
-              <button
-                type="button"
-                className="ocr-modal__cancel-btn"
-                onClick={() => {
-                  setOcrResult(null)
-                  setProgressInfo({ percent: 0, message: '' })
-                }}
-              >
-                Volver a Cargar
               </button>
             </div>
           </div>
