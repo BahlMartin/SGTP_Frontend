@@ -4,7 +4,7 @@
 
 export const AVAILABLE_STUDIES = [
   'Hemograma',
-  'Bioquimica',
+  'Bioquímica',
   'Orina',
   'Cultivo',
   'Glucemia',
@@ -27,7 +27,7 @@ export const INITIAL_ADMISSION_FORM_STATE = {
   obraSocial: 'IOMA',
   prefijoLlamado: 'Ext',
   numeroLlamado: '',
-  selectedTriage: 'Extraccion sin turno',
+  selectedTriage: 'Extracción sin turno',
   justificacionOtro: '',
   selectedStudies: []
 }

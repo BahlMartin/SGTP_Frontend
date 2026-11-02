@@ -9,35 +9,35 @@ const TRIAGE_VISUALS = {
     bg: '#ffe4e6',
     border: '#fecdd3',
     textColor: '#9f1239',
-    tag: 'Urgencia Inmediata'
+    tag: 'Urgencia inmediata'
   },
   medicos: {
     color: '#0284c7',
     bg: '#e0f2fe',
     border: '#bae6fd',
     textColor: '#0369a1',
-    tag: 'Personal Sanitario'
+    tag: 'Personal sanitario'
   },
   discapacidad: {
     color: '#d97706',
     bg: '#fef3c7',
     border: '#fde68a',
     textColor: '#92400e',
-    tag: 'Prioridad Asistencial'
+    tag: 'Prioridad asistencial'
   },
   oncologia: {
     color: '#7c3aed',
     bg: '#f3e8ff',
     border: '#e9d5ff',
     textColor: '#6b21a8',
-    tag: 'Protocolo Oncológico'
+    tag: 'Protocolo oncológico'
   },
   'extraccion con turno': {
     color: '#2563eb',
     bg: '#dbeafe',
     border: '#bfdbfe',
     textColor: '#1e40af',
-    tag: 'Turno Programado'
+    tag: 'Turno programado'
   },
   'extraccion sin turno': {
     color: '#059669',
@@ -51,7 +51,7 @@ const TRIAGE_VISUALS = {
     bg: '#f1f5f9',
     border: '#e2e8f0',
     textColor: '#334155',
-    tag: 'Atención Especial'
+    tag: 'Atención especial'
   }
 }
 
@@ -297,4 +297,3 @@ export default function SlaConfigCard({ onNotice = () => {} }) {
     </div>
   )
 }
-

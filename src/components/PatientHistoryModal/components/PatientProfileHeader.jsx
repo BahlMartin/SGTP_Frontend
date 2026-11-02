@@ -56,7 +56,7 @@ export default function PatientProfileHeader({
         )}
         <div className="patient-history-modal__patient-kpi">
           <span className="patient-history-modal__patient-kpi-num">{totalVisits}</span>
-          <span className="patient-history-modal__patient-kpi-lbl">Total Atenciones</span>
+          <span className="patient-history-modal__patient-kpi-lbl">Total de atenciones</span>
         </div>
       </div>
     </div>

@@ -84,7 +84,7 @@ export default function PatientSearch({ onSelectPatient }) {
 
   return (
     <div className="patient-search" ref={searchContainerRef}>
-      <h3 className="patient-search__title">Busqueda de paciente</h3>
+      <h3 className="patient-search__title">Búsqueda de paciente</h3>
       <div className="patient-search__input-wrapper">
         <input
           type="text"

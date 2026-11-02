@@ -4,8 +4,8 @@ import { validatePersonName, validateDni } from '../utils/validators'
 
 const PREFIX_TO_TRIAGE_MAP = {
   G: 'Guardia',
-  Med: 'Medicos',
-  Ext: 'Extraccion sin turno',
+  Med: 'Médicos',
+  Ext: 'Extracción sin turno',
   Csl: 'Otro'
 }
 
