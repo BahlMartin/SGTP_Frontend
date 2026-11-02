@@ -1,5 +1,6 @@
 import apiClient from './apiClient'
 import { normalizeTicket } from './ticketService'
+import { normalizePersonFields } from '../utils/personName.utils'
 
 let cachedBoxes = []
 
@@ -46,8 +47,8 @@ function normalizeBox(rawBox) {
     estado: normalizeBoxStatus(rawBox.estado, isActive),
     activo: isActive,
     discapacidad: Boolean(rawBox.discapacidad),
-    personal_actual: rawBox.personal_actual_detalle || rawBox.personal_actual || null,
-    paciente_actual: rawBox.paciente_actual_detalle || rawBox.paciente_actual || null
+    personal_actual: normalizePersonFields(rawBox.personal_actual_detalle || rawBox.personal_actual || null),
+    paciente_actual: normalizePersonFields(rawBox.paciente_actual_detalle || rawBox.paciente_actual || null)
   }
 }
 

@@ -1,4 +1,5 @@
 import apiClient from './apiClient'
+import { normalizePersonFields } from '../utils/personName.utils'
 
 /**
  * Servicio para gestión y búsqueda clínica de Pacientes.
@@ -8,16 +9,30 @@ import apiClient from './apiClient'
 export async function fetchPatientsApi() {
   const response = await apiClient.get('/patients/')
   // DRF puede retornar array directo o paginado { results: [...] }
-  return Array.isArray(response) ? response : response.results || []
+  const patients = Array.isArray(response) ? response : response.results || []
+  return patients.map(normalizePersonFields)
 }
 
 export async function fetchPatientByIdApi(idPaciente) {
-  return await apiClient.get(`/patients/${idPaciente}/`)
+  return normalizePersonFields(await apiClient.get(`/patients/${idPaciente}/`))
 }
 
 export async function fetchPatientHistoryApi(idPaciente) {
   try {
-    return await apiClient.get(`/patients/${idPaciente}/historial/`)
+    const response = await apiClient.get(`/patients/${idPaciente}/historial/`)
+    if (Array.isArray(response)) return response.map(normalizePersonFields)
+
+    return {
+      ...response,
+      paciente: normalizePersonFields(response?.paciente),
+      atenciones: Array.isArray(response?.atenciones)
+        ? response.atenciones.map((visit) => ({
+            ...normalizePersonFields(visit),
+            paciente: normalizePersonFields(visit?.paciente),
+            paciente_detalle: normalizePersonFields(visit?.paciente_detalle)
+          }))
+        : response?.atenciones
+    }
   } catch (error) {
     if (error.status === 404) {
       throw new Error(
@@ -36,11 +51,12 @@ export async function createPatientApi(patientData) {
     obra_social: String(patientData.obra_social || patientData.obraSocial || 'Particular').trim(),
     num_obra_social: String(patientData.num_obra_social || patientData.numObraSocial || '').trim()
   }
-  return await apiClient.post('/patients/', payload)
+  return normalizePersonFields(await apiClient.post('/patients/', normalizePersonFields(payload)))
 }
 
 export async function updatePatientApi(idPaciente, partialData) {
-  return await apiClient.patch(`/patients/${idPaciente}/`, partialData)
+  const normalizedData = normalizePersonFields(partialData)
+  return normalizePersonFields(await apiClient.patch(`/patients/${idPaciente}/`, normalizedData))
 }
 
 export async function deletePatientApi(idPaciente) {
@@ -53,7 +69,7 @@ export async function searchPatientByDniApi(dni) {
 
   try {
     const data = await apiClient.post('/patients/buscar-por-dni/', { dni: cleanDni })
-    return {
+    return normalizePersonFields({
       id: data.id_paciente,
       id_paciente: data.id_paciente,
       dni: data.dni,
@@ -64,7 +80,7 @@ export async function searchPatientByDniApi(dni) {
       obra_social: data.obra_social,
       numObraSocial: data.num_obra_social,
       numeroAfiliado: data.num_obra_social
-    }
+    })
   } catch (err) {
     if (err.status === 404) {
       return null

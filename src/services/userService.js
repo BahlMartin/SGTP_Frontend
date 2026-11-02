@@ -1,36 +1,38 @@
 import apiClient from './apiClient'
 import { getTodayLocalDateString } from '../utils/formatters'
+import { normalizePersonFields, normalizePersonName } from '../utils/personName.utils'
 
 function normalizeStaffUser(rawStaffMember) {
   if (!rawStaffMember) return null
-  const idPersonal = rawStaffMember.id_personal || rawStaffMember.id
-  const nombreCompleto = `${rawStaffMember.nombre || ''} ${rawStaffMember.apellidos || ''}`.trim() || rawStaffMember.email
-  const turnoDesc = rawStaffMember.inicio_turno && rawStaffMember.fin_turno
-    ? `${String(rawStaffMember.inicio_turno).slice(0, 5)} - ${String(rawStaffMember.fin_turno).slice(0, 5)}`
-    : (rawStaffMember.turno || 'Sin franja')
+  const normalizedStaffMember = normalizePersonFields(rawStaffMember)
+  const idPersonal = normalizedStaffMember.id_personal || normalizedStaffMember.id
+  const nombreCompleto = `${normalizedStaffMember.nombre || ''} ${normalizedStaffMember.apellidos || ''}`.trim() || normalizedStaffMember.email
+  const turnoDesc = normalizedStaffMember.inicio_turno && normalizedStaffMember.fin_turno
+    ? `${String(normalizedStaffMember.inicio_turno).slice(0, 5)} - ${String(normalizedStaffMember.fin_turno).slice(0, 5)}`
+    : (normalizedStaffMember.turno || 'Sin franja')
 
   return {
-    ...rawStaffMember,
+    ...normalizedStaffMember,
     id: idPersonal,
     id_personal: idPersonal,
     nombre: nombreCompleto,
-    primerNombre: rawStaffMember.nombre || nombreCompleto,
-    apellidos: rawStaffMember.apellidos || '',
-    email: rawStaffMember.email,
-    matricula: rawStaffMember.matricula || '',
-    rol: rawStaffMember.rol,
+    primerNombre: normalizedStaffMember.nombre || nombreCompleto,
+    apellidos: normalizedStaffMember.apellidos || '',
+    email: normalizedStaffMember.email,
+    matricula: normalizedStaffMember.matricula || '',
+    rol: normalizedStaffMember.rol,
     turno: turnoDesc,
-    inicio_turno: rawStaffMember.inicio_turno,
-    fin_turno: rawStaffMember.fin_turno,
-    dias_laborales_detalle: Array.isArray(rawStaffMember.dias_laborales_detalle)
-      ? rawStaffMember.dias_laborales_detalle
+    inicio_turno: normalizedStaffMember.inicio_turno,
+    fin_turno: normalizedStaffMember.fin_turno,
+    dias_laborales_detalle: Array.isArray(normalizedStaffMember.dias_laborales_detalle)
+      ? normalizedStaffMember.dias_laborales_detalle
       : [0, 1, 2, 3, 4],
-    habilitaciones_activas_hoy: Array.isArray(rawStaffMember.habilitaciones_activas_hoy)
-      ? rawStaffMember.habilitaciones_activas_hoy
+    habilitaciones_activas_hoy: Array.isArray(normalizedStaffMember.habilitaciones_activas_hoy)
+      ? normalizedStaffMember.habilitaciones_activas_hoy
       : [],
-    activo: rawStaffMember.activo !== false,
-    cant_intentos: rawStaffMember.cant_intentos || 0,
-    area: rawStaffMember.rol === 'Box' ? 'Área Asistencial' : 'Administración / Triage'
+    activo: normalizedStaffMember.activo !== false,
+    cant_intentos: normalizedStaffMember.cant_intentos || 0,
+    area: normalizedStaffMember.rol === 'Box' ? 'Área Asistencial' : 'Administración / Triage'
   }
 }
 
@@ -64,8 +66,10 @@ export async function createStaffUserApi(currentUserRole, newUserPayload) {
     email: newUserPayload.email.trim().toLowerCase(),
     password: newUserPayload.password || 'SeguridadHospital2026!',
     dni: Number(String(newUserPayload.dni).replace(/\D/g, '')),
-    nombre: newUserPayload.nombre.trim(),
-    apellidos: (newUserPayload.apellidos || newUserPayload.apellido || '').trim(),
+    nombre: normalizePersonName(newUserPayload.nombre.trim()),
+    apellidos: normalizePersonName(
+      (newUserPayload.apellidos || newUserPayload.apellido || '').trim()
+    ),
     matricula: newUserPayload.matricula.trim(),
     rol: newUserPayload.rol || 'Box',
     inicio_turno: `${newUserPayload.inicio_turno || '07:00'}:00`,
@@ -80,7 +84,7 @@ export async function createStaffUserApi(currentUserRole, newUserPayload) {
 }
 
 export async function updateStaffUserApi(userId, patchData) {
-  const response = await apiClient.patch(`/users/${userId}/`, patchData)
+  const response = await apiClient.patch(`/users/${userId}/`, normalizePersonFields(patchData))
   return normalizeStaffUser(response)
 }
 
@@ -184,5 +188,3 @@ export async function createPlanificacionHorasExtrasApi(dataPlanificacion) {
 export async function deletePlanificacionHorasExtrasApi(planificacionId) {
   return await apiClient.delete(`/users/planificaciones-horas-extras/${planificacionId}/`)
 }
-
-

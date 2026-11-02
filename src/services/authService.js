@@ -1,4 +1,5 @@
 import apiClient from './apiClient'
+import { normalizePersonFields } from '../utils/personName.utils'
 
 /**
  * Servicio de autenticación asistencial contra SGTP Backend.
@@ -17,7 +18,7 @@ export async function loginApi(email, password) {
   // El backend retorna: { mensaje: "...", usuario: { id_personal, email, matricula, nombre, apellidos, rol, inicio_turno, fin_turno } }
   const usuario = response.usuario || {}
   
-  const normalizedUser = {
+  const normalizedUser = normalizePersonFields({
     id: usuario.id_personal,
     id_personal: usuario.id_personal,
     email: usuario.email || sanitizedEmail,
@@ -28,7 +29,7 @@ export async function loginApi(email, password) {
     inicio_turno: usuario.inicio_turno,
     fin_turno: usuario.fin_turno,
     dentro_horario: true 
-  }
+  })
 
   return {
     user: normalizedUser,
