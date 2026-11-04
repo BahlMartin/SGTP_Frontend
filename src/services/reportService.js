@@ -44,9 +44,9 @@ export function computeDailyReportMetrics(tickets = [], targetDate = new Date(),
 
   dayTickets.forEach((ticket) => {
     const triageInfo = getTriageInfo(ticket.clasificacion_triage)
-    triageCounts[triageInfo.id] = (triageCounts[triageInfo.id] || 0) + 1
 
     if (ticket.estado === 'Atendido' || ticket.estado === 'Finalizado') {
+      triageCounts[triageInfo.id] = (triageCounts[triageInfo.id] || 0) + 1
       atendidos++
       if (
         triageInfo.id === TRIAGE_CATEGORIES.GUARDIA.id ||

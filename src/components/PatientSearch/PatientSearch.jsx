@@ -35,9 +35,10 @@ export default function PatientSearch({ onSelectPatient }) {
   }, [])
 
   const handleSearch = async (searchValue) => {
-    setQuery(searchValue)
+    const numericValue = searchValue.replace(/\D/g, '')
+    setQuery(numericValue)
     setSearchError('')
-    if (!searchValue.trim()) {
+    if (!numericValue) {
       setResults([])
       setShowDropdown(false)
       return
@@ -45,7 +46,7 @@ export default function PatientSearch({ onSelectPatient }) {
 
     setIsSearching(true)
     try {
-      const data = await searchPatientsApi(searchValue)
+      const data = await searchPatientsApi(numericValue)
       setResults(data)
       setShowDropdown(true)
     } catch (err) {
@@ -84,10 +85,12 @@ export default function PatientSearch({ onSelectPatient }) {
 
   return (
     <div className="patient-search" ref={searchContainerRef}>
-      <h3 className="patient-search__title">Busqueda de paciente</h3>
+      <h3 className="patient-search__title">Búsqueda de paciente</h3>
       <div className="patient-search__input-wrapper">
         <input
           type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           className="patient-search__input"
           placeholder="DNI o número de afiliado"
           value={query}

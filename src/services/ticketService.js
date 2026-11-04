@@ -1,12 +1,27 @@
 import apiClient from './apiClient'
 import { getTriageApiValue, getTriageInfo } from '../constants/triage.constants'
+import { normalizePersonFields, normalizePersonName } from '../utils/personName.utils'
+
+function normalizeTicketPersonNames(ticket) {
+  if (!ticket) return ticket
+
+  return {
+    ...normalizePersonFields(ticket),
+    ...(ticket.paciente_detalle
+      ? { paciente_detalle: normalizePersonFields(ticket.paciente_detalle) }
+      : {}),
+    ...(ticket.paciente && typeof ticket.paciente === 'object'
+      ? { paciente: normalizePersonFields(ticket.paciente) }
+      : {})
+  }
+}
 
 /**
  * Normaliza los tickets devueltos por DRF a la estructura estándar consumida en React.
  */
 export function normalizeTicket(t) {
   if (!t) return null
-  const paciente = t.paciente_detalle || {}
+  const paciente = normalizePersonFields(t.paciente_detalle || {})
   const rawEstudios = Array.isArray(t.estudios) ? t.estudios : []
   const estudiosActivosObj = rawEstudios.filter((e) => {
     if (typeof e === 'string') return true
@@ -38,16 +53,17 @@ export function normalizeTicket(t) {
     fecha_hora_admision: t.fecha_hora_admision,
     mat_admision: t.personal_admision_matricula || t.mat_admision || '',
     personal_admision_matricula: t.personal_admision_matricula || t.mat_admision || '',
-    personal_admision_nombre: t.personal_admision_nombre || '',
-    personal_box_nombre: t.personal_box_nombre || '',
+    personal_admision_nombre: normalizePersonName(t.personal_admision_nombre || ''),
+    personal_box_nombre: normalizePersonName(t.personal_box_nombre || ''),
     personal_box_matricula: t.personal_box_matricula || '',
     fecha_hora_atencion_box: t.fecha_hora_atencion_box || null,
     motivo_cierre_box: t.motivo_cierre_box || '',
     observaciones_cierre_box: t.observaciones_cierre_box || '',
     paciente_id: t.paciente,
     paciente_dni: paciente.dni ? String(paciente.dni) : (t.paciente_dni || ''),
-    paciente_nombre: paciente.nombre || t.paciente_nombre || '',
-    paciente_apellido: paciente.apellidos || t.paciente_apellido || '',
+    ...(t.paciente_detalle ? { paciente_detalle: paciente } : {}),
+    paciente_nombre: normalizePersonName(paciente.nombre || t.paciente_nombre || ''),
+    paciente_apellido: normalizePersonName(paciente.apellidos || t.paciente_apellido || ''),
     paciente_obra_social: paciente.obra_social || t.paciente_obra_social || 'Particular',
     paciente_numero_afiliado: paciente.num_obra_social || t.paciente_numero_afiliado || '',
     clasificacion_triage: getTriageInfo(t.clasificacion_triage).key,
@@ -139,8 +155,8 @@ export async function createTicketApi(ticketData) {
   } else {
     payload.paciente_datos = {
       dni: Number(String(ticketData.paciente_dni || ticketData.dni).replace(/\D/g, '')),
-      nombre: ticketData.paciente_nombre || ticketData.nombre || 'Sin Nombre',
-      apellidos: ticketData.paciente_apellido || ticketData.apellido || 'Sin Apellido',
+      nombre: normalizePersonName(ticketData.paciente_nombre || ticketData.nombre || 'Sin Nombre'),
+      apellidos: normalizePersonName(ticketData.paciente_apellido || ticketData.apellido || 'Sin Apellido'),
       obra_social: ticketData.paciente_obra_social || ticketData.obra_social || ticketData.obraSocial || 'IOMA',
       num_obra_social: String(
         ticketData.paciente_numero_afiliado || ticketData.numeroAfiliado || ''
@@ -154,7 +170,12 @@ export async function createTicketApi(ticketData) {
     ...normalized,
     mat_admision: response.personal_admision_matricula || normalized.mat_admision || ticketData.mat_admision || '',
     personal_admision_matricula: response.personal_admision_matricula || normalized.personal_admision_matricula || ticketData.mat_admision || '',
-    personal_admision_nombre: response.personal_admision_nombre || normalized.personal_admision_nombre || ticketData.personal_admision_nombre || ''
+    personal_admision_nombre: normalizePersonName(
+      response.personal_admision_nombre ||
+      normalized.personal_admision_nombre ||
+      ticketData.personal_admision_nombre ||
+      ''
+    )
   }
 }
 
@@ -188,8 +209,8 @@ export async function deleteTicketApi(ticketId) {
  * Búsqueda asistencial de antecedentes de pacientes.
  */
 export async function searchPatientsApi(query) {
-  if (!query || !query.trim()) return []
-  const cleanDni = query.replace(/\D/g, '')
+  const cleanDni = String(query || '').replace(/\D/g, '')
+  if (!cleanDni) return []
 
   if (cleanDni.length >= 4) {
     try {
@@ -198,8 +219,8 @@ export async function searchPatientsApi(query) {
         return [
           {
             dni: String(found.dni),
-            nombre: found.nombre,
-            apellido: found.apellidos,
+            nombre: normalizePersonName(found.nombre),
+            apellido: normalizePersonName(found.apellidos),
             num_obra_social: found.num_obra_social || '',
             numeroAfiliado: found.num_obra_social || '',
             id_paciente: found.id_paciente
@@ -214,14 +235,11 @@ export async function searchPatientsApi(query) {
   try {
     const allPatients = await apiClient.get('/patients/')
     const list = Array.isArray(allPatients) ? allPatients : allPatients.results || []
-    const q = query.toLowerCase().trim()
+    const q = cleanDni
     return list
       .filter((p) =>
         String(p.dni).includes(q) ||
-        (p.nombre && p.nombre.toLowerCase().includes(q)) ||
-        (p.apellidos && p.apellidos.toLowerCase().includes(q)) ||
-        (p.obra_social && p.obra_social.toLowerCase().includes(q)) ||
-        (p.num_obra_social && p.num_obra_social.toLowerCase().includes(q))
+        String(p.num_obra_social || '').includes(q)
       )
       .sort((a, b) => {
         const aStarts = String(a.dni).startsWith(q) ? 1 : 0
@@ -231,8 +249,8 @@ export async function searchPatientsApi(query) {
       })
       .map((p) => ({
         dni: String(p.dni),
-        nombre: p.nombre,
-        apellido: p.apellidos,
+        nombre: normalizePersonName(p.nombre),
+        apellido: normalizePersonName(p.apellidos),
         num_obra_social: p.num_obra_social || '',
         numeroAfiliado: p.num_obra_social || '',
         id_paciente: p.id_paciente
@@ -280,5 +298,13 @@ export async function fetchResumenEstudiosApi({ fechaStr, search = '', top = nul
  */
 export async function fetchTicketsByStaffApi(idPersonal, fechaStr = null) {
   const query = fechaStr ? `?fecha=${fechaStr}` : ''
-  return await apiClient.get(`/tickets/personal/${idPersonal}/${query}`)
+  const response = await apiClient.get(`/tickets/personal/${idPersonal}/${query}`)
+  if (Array.isArray(response)) return response.map(normalizeTicketPersonNames)
+  if (Array.isArray(response?.tickets)) {
+    return { ...response, tickets: response.tickets.map(normalizeTicketPersonNames) }
+  }
+  if (Array.isArray(response?.results)) {
+    return { ...response, results: response.results.map(normalizeTicketPersonNames) }
+  }
+  return response
 }

@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useCallback, useContext } from 'react'
 import { loginApi, logoutApi, fetchCurrentSessionApi } from '../services/authService'
+import { normalizePersonFields } from '../utils/personName.utils'
 
 const STORAGE_KEY = 'sgtp_session_user'
 const TOKEN_KEY = 'token'
@@ -15,7 +16,7 @@ export const AuthContextProvider = ({ children }) => {
   const [userData, setUserData] = useState(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
-      return stored ? JSON.parse(stored) : null
+      return stored ? normalizePersonFields(JSON.parse(stored)) : null
     } catch {
       return null
     }
@@ -72,7 +73,7 @@ export const AuthContextProvider = ({ children }) => {
       }
 
       try {
-        const nextUserData = JSON.parse(event.newValue)
+        const nextUserData = normalizePersonFields(JSON.parse(event.newValue))
         if (!nextUserData || typeof nextUserData !== 'object' || !nextUserData.id) {
           throw new Error('Los datos de sesión no contienen un usuario válido.')
         }

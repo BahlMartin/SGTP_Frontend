@@ -9,14 +9,14 @@ export const TRIAGE_CATEGORIES = {
     key: 'Guardia',
     code: '1',
     label: '1. Guardia',
-    subtitle: 'Maxima urgencia',
+    subtitle: 'Máxima urgencia',
     priority: 1
   },
   MEDICOS: {
     id: 'medicos',
-    key: 'Medicos',
+    key: 'Médicos',
     code: '2',
-    label: '2. Medicos',
+    label: '2. Médicos',
     subtitle: 'Urgente',
     priority: 2
   },
@@ -30,26 +30,26 @@ export const TRIAGE_CATEGORIES = {
   },
   ONCOLOGIA: {
     id: 'oncologia',
-    key: 'Oncologia',
+    key: 'Oncología',
     code: '4',
-    label: '4. Oncologia',
+    label: '4. Oncología',
     subtitle: 'Programado',
     priority: 4
   },
   EXTRACCION_CON_TURNO: {
     id: 'extraccion_con_turno',
-    key: 'Extraccion con turno',
+    key: 'Extracción con turno',
     code: '5',
-    label: '5. Extraccion con turno',
-    subtitle: 'Demanda Espontanea',
+    label: '5. Extracción con turno',
+    subtitle: 'Demanda espontánea',
     priority: 5
   },
   EXTRACCION_SIN_TURNO: {
     id: 'extraccion_sin_turno',
-    key: 'Extraccion sin turno',
+    key: 'Extracción sin turno',
     code: '6',
-    label: '6. Extraccion sin turno',
-    subtitle: 'Demanda Espontanea',
+    label: '6. Extracción sin turno',
+    subtitle: 'Demanda espontánea',
     priority: 6
   },
   OTRO: {
@@ -57,7 +57,7 @@ export const TRIAGE_CATEGORIES = {
     key: 'Otro',
     code: '7',
     label: '7. Otro',
-    subtitle: 'Requiere Justificacion',
+    subtitle: 'Requiere justificación',
     priority: 7,
     requiresJustification: true
   }

@@ -24,6 +24,7 @@ export default function StudiesLollipopCard({
   keyKey = 'seccion_key',
   valueKey = 'total_estudios',
   scrollAfter = 16,
+  loading = false,
   error = false,
   emptyMessage = 'No hay estudios realizados para esta jornada.',
   errorMessage = 'El resumen no está disponible para esta jornada.',
@@ -62,9 +63,10 @@ export default function StudiesLollipopCard({
       </header>
 
       {error && <ChartState kind="error" message={errorMessage} />}
+      {loading && !error && <ChartState kind="empty" message="Cargando estudios realizados..." />}
       {isEmpty && <ChartState kind="empty" message={emptyMessage} />}
 
-      {!error && !isEmpty && (
+      {!error && !loading && !isEmpty && (
         <ul
           className={`studies-lollipop-card__list${scrolls ? ' studies-lollipop-card__list--scroll' : ''}`}
           style={scrolls ? { '--visible-rows': scrollAfter } : undefined}

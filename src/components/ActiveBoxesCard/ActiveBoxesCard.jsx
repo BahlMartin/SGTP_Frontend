@@ -255,7 +255,7 @@ export default function ActiveBoxesCard({
                     {isDisponible && <CheckCircle2 size={11} aria-hidden="true" />}
                     {isEnAtencion && <Activity size={11} aria-hidden="true" />}
                     {isFuera && <AlertTriangle size={11} aria-hidden="true" />}
-                    {estadoActual}
+                    {isEnAtencion ? 'En atención' : estadoActual}
                   </span>
                 </div>
 

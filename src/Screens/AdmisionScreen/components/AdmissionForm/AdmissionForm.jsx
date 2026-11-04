@@ -100,7 +100,7 @@ export default function AdmissionForm({
       <div className="admission-form-card__header">
         <div className="admission-form-card__header-title-group">
           <UserPlus size={24} className="admission-form-card__icon" />
-          <h2 className="admission-form-card__title">Ingreso y clasificacion de pacientes</h2>
+          <h2 className="admission-form-card__title">Ingreso y clasificación de pacientes</h2>
         </div>
         <div className="admission-form-card__header-actions">
           <button

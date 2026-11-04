@@ -154,7 +154,7 @@ export default function BoxControlCard({
               : undefined
           }
         >
-          En atencion
+          En atención
         </button>
         <button
           type="button"

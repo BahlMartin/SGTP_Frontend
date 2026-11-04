@@ -1,5 +1,5 @@
-import React from 'react'
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import React, { useLayoutEffect } from 'react'
+import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { AuthContextProvider } from './context/AuthContext'
 import { TriageQueueContextProvider } from './context/TriageQueueContext'
 import { BoxContextProvider } from './context/BoxContext'
@@ -27,6 +27,12 @@ function TriageQueueWrapper() {
 }
 
 export default function App() {
+  const { pathname } = useLocation()
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
   return (
     <AuthContextProvider>
       <BoxContextProvider>

@@ -77,7 +77,7 @@ export default function AuditTraceabilityCard({
                         : 'jefa-screen__state-pill--wait'
                     }`}
                   >
-                    {ticketItem.estado}
+                    {ticketItem.estado === 'En atencion' ? 'En atención' : ticketItem.estado}
                   </span>
                 </td>
                 <td className="jefa-screen__audit-mat">

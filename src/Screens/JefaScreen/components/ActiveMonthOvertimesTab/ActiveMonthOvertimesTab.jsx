@@ -346,9 +346,9 @@ export default function ActiveMonthOvertimesTab({
   const handlePedirRevocarTodas = () => {
     if (totalDiasActivos === 0) return
     setModalConfirmacion({
-      title: `Revocar Todas las Horas Extras (${MESES_NOMBRES[mes - 1]} ${anio})`,
+      title: `Revocar todas las horas extras (${MESES_NOMBRES[mes - 1]} ${anio})`,
       descripcion: `Se revocarán todas las autorizaciones vigentes de este mes (${totalDiasActivos} días, ${totalHorasMes} hs acumuladas) para ${staffMember?.nombre}. Esta acción no se puede deshacer.`,
-      textoBoton: `Revocar Todo el Mes (${totalDiasActivos} días)`,
+      textoBoton: `Revocar todo el mes (${totalDiasActivos} días)`,
       esPeligroso: true,
       accion: async () => {
         if (onBulkRevoke) {

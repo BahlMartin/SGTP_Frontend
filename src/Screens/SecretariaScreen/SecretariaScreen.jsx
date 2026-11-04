@@ -1,8 +1,9 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import { useAuth } from '../../context/AuthContext'
 import { useSecretariaReport } from '../../hooks/useSecretariaReport'
+import { fetchTicketsApi } from '../../services/ticketService'
 import SecretariaJornadaBar from './components/SecretariaJornadaBar/SecretariaJornadaBar'
 import SendReportEmailModal from './components/SendReportEmailModal/SendReportEmailModal'
 import SecretariaKpiGrid from './components/SecretariaKpiGrid/SecretariaKpiGrid'
@@ -18,6 +19,8 @@ import { useWebSocket } from '../../hooks/useWebSocket'
 
 export default function SecretariaScreen() {
   const { userData } = useAuth()
+  const [reportTickets, setReportTickets] = useState(null)
+  const [reportTicketsError, setReportTicketsError] = useState('')
   const {
     staffList,
     loadingStaff,
@@ -28,6 +31,21 @@ export default function SecretariaScreen() {
   } = useStaffManagement()
 
   const [isThirdPartyEmailModalOpen, setIsThirdPartyEmailModalOpen] = useState(false)
+
+  const refreshReportTickets = useCallback(async () => {
+    try {
+      const loadedTickets = await fetchTicketsApi()
+      setReportTickets(loadedTickets)
+      setReportTicketsError('')
+    } catch (err) {
+      console.error('Error al cargar tickets para la distribución por triage:', err)
+      setReportTicketsError('No se pudieron cargar los tickets para calcular la distribución por triage.')
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshReportTickets()
+  }, [refreshReportTickets])
 
   const {
     jornadaDate,
@@ -41,12 +59,13 @@ export default function SecretariaScreen() {
     clearEmailError,
     isSendingEmail,
     metrics,
+    attendedTickets,
     handleExportPdf,
     handleExportExcel,
     handleSendEmail,
     showNotice,
     refreshMetrics
-  } = useSecretariaReport({ userData })
+  } = useSecretariaReport({ userData, tickets: reportTickets })
 
   const handleUnlockStaff = (staffMemberId) => {
     unlockStaff(staffMemberId, showNotice)
@@ -84,6 +103,7 @@ export default function SecretariaScreen() {
 
       if (!isRelevant) return
 
+      refreshReportTickets()
       const today = getTodayLocalDateString()
       const endDate = jornadaEndDate || jornadaDate
       if (today >= jornadaDate && today <= endDate) {
@@ -94,7 +114,7 @@ export default function SecretariaScreen() {
         }
       }
     },
-    [jornadaDate, jornadaEndDate, refreshMetrics, loadStaff]
+    [jornadaDate, jornadaEndDate, refreshMetrics, refreshReportTickets, loadStaff]
   )
 
   // Implementación de WebSocket para actualización de métricas en tiempo real
@@ -165,11 +185,13 @@ export default function SecretariaScreen() {
         <div className="secretaria-screen__study-summaries">
           <StudiesLollipopCard
             items={metrics.resumenEstudiosRealizadosPorSeccion ?? []}
-            error={!Array.isArray(metrics.resumenEstudiosRealizadosPorSeccion)}
+            loading={reportTickets === null && !reportTicketsError}
+            error={Boolean(reportTicketsError) || !Array.isArray(metrics.resumenEstudiosRealizadosPorSeccion)}
           />
           <StudiesSamplesBarsCard
             items={metrics.resumenEstudiosRealizadosPorMuestra ?? []}
-            error={!Array.isArray(metrics.resumenEstudiosRealizadosPorMuestra)}
+            loading={reportTickets === null && !reportTicketsError}
+            error={Boolean(reportTicketsError) || !Array.isArray(metrics.resumenEstudiosRealizadosPorMuestra)}
           />
         </div>
 
@@ -177,6 +199,10 @@ export default function SecretariaScreen() {
           triageDistribution={metrics.triageDistribution}
           slaTriage={metrics.slaTriage}
           franjasHorarias={metrics.franjasHorarias}
+          attendedTickets={attendedTickets}
+          loading={reportTickets === null && !reportTicketsError}
+          error={Boolean(reportTicketsError)}
+          errorMessage={reportTicketsError}
         />
 
         <section className="secretaria-screen__security-section" aria-labelledby="secretaria-security-title">

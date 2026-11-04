@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RefreshCw, ShieldCheck, Users, Clock } from 'lucide-react'
 import JefaLayout from './components/JefaLayout'
 import JefaHeader from './components/JefaHeader'
@@ -21,9 +21,10 @@ import { useFeedbackNotice } from '../../hooks/useFeedbackNotice'
 import { useWebSocket } from '../../hooks/useWebSocket'
 import {
   fetchRendimientoPersonalApi,
-  fetchResumenEstudiosApi
+  fetchTicketsApi
 } from '../../services/ticketService'
 import { getTodayLocalDateString } from '../../utils/formatters'
+import { computePerformedStudySummaries } from '../../utils/studyReportUtils'
 
 export default function JefaScreen() {
   const { userData } = useAuth()
@@ -78,12 +79,33 @@ export default function JefaScreen() {
   const [studiesDate, setStudiesDate] = useState(() => getTodayLocalDateString())
   const [studiesSearch, setStudiesSearch] = useState('')
   const [studiesFilter, setStudiesFilter] = useState('all') // 'all' | 'top5'
-  const [labStudies, setLabStudies] = useState([])
+  const [studyTickets, setStudyTickets] = useState([])
   const [loadingStudies, setLoadingStudies] = useState(false)
   const [isRefreshingAll, setIsRefreshingAll] = useState(false)
   const [lastRefreshedAt, setLastRefreshedAt] = useState(() => new Date())
 
   const isGlobalRefreshing = isRefreshingAll || loadingStaffWorkload || loadingStudies || boxesLoading
+
+  const labStudies = useMemo(() => {
+    const studies = computePerformedStudySummaries(studyTickets, studiesDate).byStudy
+    const query = studiesSearch.trim().toLocaleLowerCase('es')
+    return query
+      ? studies.filter((study) => study.nombre.toLocaleLowerCase('es').includes(query))
+      : studies
+  }, [studyTickets, studiesDate, studiesSearch])
+
+  const refreshLabStudies = useCallback(async () => {
+    setLoadingStudies(true)
+    try {
+      setStudyTickets(await fetchTicketsApi())
+    } catch (error) {
+      console.error('Error al cargar tickets para estudios realizados:', error)
+      setStudyTickets([])
+      showNotice(error.message || 'No se pudieron cargar los estudios realizados.')
+    } finally {
+      setLoadingStudies(false)
+    }
+  }, [showNotice])
 
   // 1. PANEL "PERSONAL Y CARGA": Reaccionar a cambios en Tickets, Reportes, Cola o Boxes
   useEffect(() => {
@@ -146,21 +168,10 @@ export default function JefaScreen() {
         'LAB_RESULT_READY'
       ].includes(eventName)
     ) {
-      fetchResumenEstudiosApi({
-        fechaStr: studiesDate,
-        search: studiesSearch,
-        top: null
-      })
-        .then((data) => {
-          // Soporta tanto si la API retorna una lista directa [...] como si retorna { estudios: [...] }
-          const listaEstudios = Array.isArray(data) ? data : (data?.estudios || data?.results || [])
-          setLabStudies(listaEstudios)
-        })
-        .catch((err) => console.error('Error al actualizar laboratorio por WS:', err))
-
+      refreshLabStudies()
       setLastRefreshedAt(new Date())
     }
-  }, [wsMessage, studiesDate, studiesSearch])
+  }, [wsMessage, refreshLabStudies])
 
 
   const handleRefreshAll = async () => {
@@ -184,17 +195,7 @@ export default function JefaScreen() {
         refreshBoxes().catch((error) => {
           console.error('Error al actualizar boxes:', error)
         }),
-        fetchResumenEstudiosApi({
-          fechaStr: studiesDate,
-          search: studiesSearch,
-          top: null
-        })
-          .then((data) => {
-            setLabStudies(data.estudios || [])
-          })
-          .catch((error) => {
-            console.error('Error al actualizar estudios:', error)
-          })
+        refreshLabStudies()
       ])
       setLastRefreshedAt(new Date())
       showNotice('Personal, boxes y estudios actualizados.')
@@ -240,37 +241,10 @@ export default function JefaScreen() {
     }
   }, [staffDate, showNotice])
 
-  // Carga reactiva de estudios de laboratorio
+  // Carga reactiva de tickets para contar solo estudios de pacientes atendidos.
   useEffect(() => {
-    let isMounted = true
-    setLoadingStudies(true)
-
-    const timer = setTimeout(() => {
-      fetchResumenEstudiosApi({
-        fechaStr: studiesDate,
-        search: studiesSearch,
-        top: null
-      })
-        .then((data) => {
-          if (!isMounted) return
-          setLabStudies(data.estudios || [])
-        })
-        .catch((error) => {
-          console.error('Error al consultar estudios de laboratorio:', error)
-          if (isMounted) {
-            showNotice(error.message || 'No se pudo cargar el resumen de estudios.')
-          }
-        })
-        .finally(() => {
-          if (isMounted) setLoadingStudies(false)
-        })
-    }, studiesSearch ? 250 : 0)
-
-    return () => {
-      isMounted = false
-      clearTimeout(timer)
-    }
-  }, [studiesDate, studiesSearch, showNotice])
+    refreshLabStudies()
+  }, [studiesDate, refreshLabStudies])
 
   const handleCreateStaff = async (newStaffPayload) => {
     try {
