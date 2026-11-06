@@ -367,6 +367,11 @@ export default function TotemScreen() {
                   </div>
                 </div>
 
+                <div className="totem-ticket-card__print-notice" role="status">
+                  <CheckCircle2 size={22} />
+                  <span>¡Su ticket se imprimió correctamente!</span>
+                </div>
+
                 <div className="totem-ticket-card__details">
                   <div className="totem-ticket-card__detail-item">
                     <span>DNI ingresado:</span>
@@ -414,4 +419,3 @@ export default function TotemScreen() {
     </div>
   )
 }
-
