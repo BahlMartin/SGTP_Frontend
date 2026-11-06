@@ -478,6 +478,27 @@
   line-height: 1;
 }
 
+.totem-ticket-card__print-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  border-radius: 14px;
+  background: rgba(34, 197, 94, 0.14);
+  color: #bbf7d0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.totem-ticket-card__print-notice svg {
+  flex-shrink: 0;
+  color: #22c55e;
+}
+
 .totem-ticket-card__details {
   display: flex;
   justify-content: space-around;
@@ -575,4 +596,3 @@
     font-size: 3.8rem;
   }
 }
-
