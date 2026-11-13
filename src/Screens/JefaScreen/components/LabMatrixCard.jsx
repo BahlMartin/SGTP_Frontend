@@ -66,7 +66,13 @@ export default function LabMatrixCard({
   }, [viewMode, catalogSearch])
 
   const displayedStudies = activeFilter === 'top5'
-    ? labStudies.slice(0, 5)
+    ? [...labStudies]
+        .sort(
+          (a, b) =>
+            (Number(b.total) || 0) - (Number(a.total) || 0) ||
+            String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es')
+        )
+        .slice(0, 5)
     : labStudies
 
   const isSearchActive = viewMode === 'activity'
