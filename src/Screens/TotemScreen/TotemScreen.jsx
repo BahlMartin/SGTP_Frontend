@@ -13,6 +13,10 @@ import {
 } from 'lucide-react'
 import receptionService from '../../services/receptionService'
 import Logo from '../../components/Logo/Logo'
+import { printThermalTicket } from '../../utils/ticketPrint.utils'
+import { formatDateDDMMAAAA, formatTimeHHMM } from '../../utils/formatters'
+import '../../components/TicketModal/TicketModal.css'
+import '../../components/TicketModal/components/TicketReceipt.css'
 import './TotemScreen.css'
 
 const CATEGORIAS = [
@@ -59,6 +63,7 @@ export default function TotemScreen() {
   const [horaActual, setHoraActual] = useState(new Date())
 
   const countdownIntervalRef = useRef(null)
+  const lastPrintedTicketKeyRef = useRef(null)
 
   // Reloj de cabecera
   useEffect(() => {
@@ -111,6 +116,27 @@ export default function TotemScreen() {
     }
   }, [paso])
 
+  // Impresión térmica automática al emitir el turno (en paralelo con el contador)
+  useEffect(() => {
+    if (paso !== 'ticket' || !ticketEmitido) return
+
+    const ticketKey = ticketEmitido.id || `${ticketEmitido.numero_llamado}-${ticketEmitido.created_at}`
+    if (lastPrintedTicketKeyRef.current === ticketKey) return
+
+    const printTimer = setTimeout(() => {
+      if (lastPrintedTicketKeyRef.current === ticketKey) return
+      lastPrintedTicketKeyRef.current = ticketKey
+      try {
+        printThermalTicket('printable-ticket')
+      } catch (err) {
+        console.warn('Aviso en impresión térmica del tótem, usando fallback:', err)
+        window.print()
+      }
+    }, 50)
+
+    return () => clearTimeout(printTimer)
+  }, [paso, ticketEmitido])
+
   const handleKeyPress = (num) => {
     if (dni.length < 9) {
       setDni((prev) => prev + num)
@@ -161,6 +187,7 @@ export default function TotemScreen() {
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current)
     }
+    lastPrintedTicketKeyRef.current = null
     setDni('')
     setPaso('dni')
     setCategoriaSeleccionada(null)
@@ -407,6 +434,51 @@ export default function TotemScreen() {
                 >
                   Finalizar y dejar disponible
                 </button>
+              </div>
+            </div>
+
+            {/* Comprobante térmico 80mm oculto en pantalla (visible únicamente al imprimir) */}
+            <div className="ticket-modal__receipt totem-printable-receipt" id="printable-ticket" aria-hidden="true">
+              <div className="ticket-modal__receipt-header">
+                <h4 className="ticket-modal__hospital-name">HOSPITAL PÚBLICO SGTP</h4>
+                <p className="ticket-modal__hospital-sub">Laboratorio Central &amp; Triage</p>
+              </div>
+
+              <div className="ticket-modal__call-box">
+                <span className="ticket-modal__call-label">TURNO DE RECEPCIÓN</span>
+                <span className="ticket-modal__call-number">{ticketEmitido.numero_llamado || 'S/N'}</span>
+                <span className="ticket-modal__totem-id">
+                  Motivo: {categoriaSeleccionada?.titulo || ticketEmitido.categoria_label || 'Atención'}
+                </span>
+              </div>
+
+              <div className="ticket-modal__details">
+                <div className="ticket-modal__row">
+                  <span className="ticket-modal__row-label">DNI:</span>
+                  <span className="ticket-modal__row-value">{formatearDniVisual(ticketEmitido.dni)}</span>
+                </div>
+                <div className="ticket-modal__row">
+                  <span className="ticket-modal__row-label">Motivo de visita:</span>
+                  <span className="ticket-modal__row-value">
+                    {categoriaSeleccionada?.titulo || ticketEmitido.categoria_label || 'Atención'}
+                  </span>
+                </div>
+                <div className="ticket-modal__row">
+                  <span className="ticket-modal__row-label">Fecha y Hora:</span>
+                  <span className="ticket-modal__row-value">
+                    {`${formatDateDDMMAAAA(ticketEmitido.created_at)} ${formatTimeHHMM(ticketEmitido.created_at)}`}
+                  </span>
+                </div>
+                <div className="ticket-modal__row">
+                  <span className="ticket-modal__row-label">Sector destino:</span>
+                  <span className="ticket-modal__row-value">Mostrador de Recepción</span>
+                </div>
+              </div>
+
+              <div className="ticket-modal__receipt-footer">
+                <p>
+                  Por favor aguarde en la sala de espera a ser llamado por su número hacia el Mostrador de Recepción. Conserve este comprobante.
+                </p>
               </div>
             </div>
           </div>
