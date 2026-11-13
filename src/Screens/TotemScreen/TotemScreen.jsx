@@ -123,18 +123,24 @@ export default function TotemScreen() {
     const ticketKey = ticketEmitido.id || `${ticketEmitido.numero_llamado}-${ticketEmitido.created_at}`
     if (lastPrintedTicketKeyRef.current === ticketKey) return
 
-    const printTimer = setTimeout(() => {
-      if (lastPrintedTicketKeyRef.current === ticketKey) return
-      lastPrintedTicketKeyRef.current = ticketKey
-      try {
-        printThermalTicket('printable-ticket')
-      } catch (err) {
-        console.warn('Aviso en impresión térmica del tótem, usando fallback:', err)
-        window.print()
-      }
-    }, 50)
+    let raf2 = null
+    const raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => {
+        if (lastPrintedTicketKeyRef.current === ticketKey) return
+        lastPrintedTicketKeyRef.current = ticketKey
+        try {
+          printThermalTicket('printable-ticket')
+        } catch (err) {
+          console.warn('Aviso en impresión térmica del tótem, usando fallback:', err)
+          window.print()
+        }
+      })
+    })
 
-    return () => clearTimeout(printTimer)
+    return () => {
+      window.cancelAnimationFrame(raf1)
+      if (raf2) window.cancelAnimationFrame(raf2)
+    }
   }, [paso, ticketEmitido])
 
   const handleKeyPress = (num) => {

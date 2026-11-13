@@ -602,14 +602,20 @@
   display: none;
 }
 
-body.ticket-printing .totem-container {
+body.ticket-printing .totem-container,
+body.ticket-printing .totem-step,
+body.ticket-printing .ticket-print-ancestor {
   background: #ffffff !important;
   color: #1c1917 !important;
   min-height: 0 !important;
+  animation: none !important;
+  opacity: 1 !important;
 }
 
 body.ticket-printing .totem-printable-receipt {
   display: block !important;
   background: #ffffff !important;
   color: #1c1917 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
