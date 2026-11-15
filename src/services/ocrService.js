@@ -18,9 +18,10 @@ export { recognizeRecipePaddle }
  * 5. Sugerencias complementarias de estudios asociados.
  *
  * @param {string[]} textos Líneas de texto detectadas en la receta
+ * @param {string[]} [firmasVisuales] Huellas visuales opcionales paralelas a cada renglón
  * @returns {Promise<{ mensaje: string, totalSugerencias: number, comboDetectado: string|null, sugerencias: Array, suggestedStudies: Array, sugerenciasContextuales: Array }>}
  */
-export async function mapStudiesFromTextApi(textos = []) {
+export async function mapStudiesFromTextApi(textos = [], firmasVisuales = []) {
   if (!Array.isArray(textos) || textos.length === 0) {
     return {
       mensaje: 'No se detectaron textos legibles.',
@@ -33,7 +34,10 @@ export async function mapStudiesFromTextApi(textos = []) {
     }
   }
 
-  const response = await apiClient.post('/ocr/escanear-receta/', { textos })
+  const response = await apiClient.post('/ocr/escanear-receta/', {
+    textos,
+    firmas_visuales: Array.isArray(firmasVisuales) ? firmasVisuales : []
+  })
 
   const sugerencias = response.sugerencias || []
   return {
@@ -104,7 +108,8 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
         message: 'Mapeando prácticas con el nomenclador clínico...'
       })
     }
-    mapping = await mapStudiesFromTextApi(paddleOutput.lines)
+    const firmasVisuales = (paddleOutput.richLines || []).map((l) => l.visualHash || '')
+    mapping = await mapStudiesFromTextApi(paddleOutput.lines, firmasVisuales)
   }
 
   const suggestedStudies = (mapping.suggestedStudies || []).map((s) => ({
@@ -118,6 +123,7 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
     rowIndex: idx + 1,
     colIndex: 1,
     totalColsInRow: 1,
+    visualHash: '',
     cropDataUrl: null,
     cropStorageDataUrl: null
   }))
@@ -137,6 +143,7 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
         rowIndex: richLine.rowIndex || idx + 1,
         colIndex: richLine.colIndex || 1,
         totalColsInRow: richLine.totalColsInRow || 1,
+        visualHash: richLine.visualHash || '',
         cropDataUrl: richLine.cropDataUrl || null,
         cropStorageDataUrl: richLine.cropStorageDataUrl || null,
         comboDetectado: backendLine?.combo_detectado || null,

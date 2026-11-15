@@ -112,20 +112,25 @@ function computeOtsuThreshold(grayscaleData, totalPixels) {
  *
  * @param {File|Blob|string|HTMLImageElement|HTMLVideoElement} imageSource
  * @param {Object} options
- * @param {number} [options.targetWidth=1600] Ancho objetivo recomendado para recetas
- * @param {boolean} [options.binarize=true] Si se aplica binarización estricta blanco y negro
- * @returns {Promise<{ canvas: HTMLCanvasElement, dataUrl: string, blob: Blob }>}
+ * @param {number} [options.targetWidth=1600] Ancho máximo recomendado para recetas
+ * @param {number} [options.minWidth=1200] Ancho mínimo objetivo (amplía recortes pequeños)
+ * @param {boolean} [options.binarize=false] Si se aplica binarización estricta blanco y negro
+ * @returns {Promise<{ canvas: HTMLCanvasElement, dataUrl: string, blob: Blob, width: number, height: number, thresholdUsed: number|null }>}
  */
 export async function preprocessRecipeImage(imageSource, options = {}) {
-  const { targetWidth = 1600, binarize = false } = options
+  const { targetWidth = 1600, minWidth = 1200, binarize = false } = options
   const img = await loadImageElement(imageSource)
 
-  // 1. Escalar preservando aspecto
+  // 1. Escalar preservando aspecto (reduce fotos grandes y amplía recortes chicos para cursiva)
   let width = img.naturalWidth || img.width
   let height = img.naturalHeight || img.height
 
   if (width > targetWidth) {
     const scale = targetWidth / width
+    width = Math.round(width * scale)
+    height = Math.round(height * scale)
+  } else if (width > 0 && width < minWidth) {
+    const scale = Math.min(3.5, minWidth / width)
     width = Math.round(width * scale)
     height = Math.round(height * scale)
   }
@@ -134,21 +139,21 @@ export async function preprocessRecipeImage(imageSource, options = {}) {
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
 
-  // Dibujar imagen original
+  // Dibujar imagen original escalada
   ctx.drawImage(img, 0, 0, width, height)
 
   const imageData = ctx.getImageData(0, 0, width, height)
   const data = imageData.data
   const totalPixels = width * height
   const grayscale = new Uint8ClampedArray(totalPixels)
-  const histogram = new Int32Array(256)
 
-  // 2. Escala de grises (Luminancia ponderada ITU-R BT.601) y cálculo de histograma
+  // 2. Escala de grises (Luminancia ponderada ITU-R BT.601)
   for (let i = 0, j = 0; i < data.length; i += 4, j++) {
     const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2])
     grayscale[j] = gray
-    histogram[gray]++
   }
 
   let thresholdUsed = null
@@ -164,53 +169,60 @@ export async function preprocessRecipeImage(imageSource, options = {}) {
       data[i + 3] = 255
     }
   } else {
-    // Modo 2 (Recomendado para recetas y cursiva): Escala de Grises Adaptativa.
-    // Utiliza corte por percentiles (2% para tinta oscura, 95% para papel de fondo).
-    // Blanquea sombras de papel y fondos sucios pero MANTIENE los trazos continuos
-    // del bolígrafo con degradados antialiased, impidiendo que Tesseract descarte las palabras.
-    const lowLimit = Math.floor(totalPixels * 0.02)
-    const highLimit = Math.floor(totalPixels * 0.95)
+    // Modo 2: Normalización Local Adaptativa de Fondo por Imagen Integral.
+    // Remueve sombras, arrugas de papel e iluminación despareja comparando cada píxel contra
+    // la media local, blanqueando el fondo (255) y preservando los trazos cursivos oscuros.
+    const stride = width + 1
+    const integral = new Float64Array((height + 1) * stride)
 
-    let count = 0
-    let pLow = 0
-    let pHigh = 255
-
-    for (let t = 0; t < 256; t++) {
-      count += histogram[t]
-      if (count >= lowLimit && pLow === 0) {
-        pLow = t
-      }
-      if (count >= highLimit) {
-        pHigh = t
-        break
+    for (let y = 0; y < height; y++) {
+      let rowSum = 0
+      const srcRow = y * width
+      const dstRow = (y + 1) * stride
+      const prevRow = y * stride
+      for (let x = 0; x < width; x++) {
+        rowSum += grayscale[srcRow + x]
+        integral[dstRow + x + 1] = integral[prevRow + x + 1] + rowSum
       }
     }
 
-    if (pHigh <= pLow + 15) {
-      pLow = 0
-      pHigh = 255
-    }
+    const radius = Math.max(16, Math.round(Math.min(width, height) * 0.075))
+    const noiseFloor = 7
 
-    const range = pHigh - pLow
-    const lut = new Uint8ClampedArray(256)
-    for (let t = 0; t < 256; t++) {
-      if (t <= pLow) {
-        lut[t] = 0
-      } else if (t >= pHigh) {
-        lut[t] = 255
-      } else {
-        const norm = (t - pLow) / range
-        // Curva gamma (1.25) para dar cuerpo a la tinta de bolígrafo tenue
-        lut[t] = Math.round(Math.pow(norm, 1.25) * 255)
+    for (let y = 0; y < height; y++) {
+      const y1 = Math.max(0, y - radius)
+      const y2 = Math.min(height - 1, y + radius)
+      const r1 = y1 * stride
+      const r2 = (y2 + 1) * stride
+      const rowOffset = y * width
+
+      for (let x = 0; x < width; x++) {
+        const x1 = Math.max(0, x - radius)
+        const x2 = Math.min(width - 1, x + radius)
+        const count = (x2 - x1 + 1) * (y2 - y1 + 1)
+        const sum =
+          integral[r2 + x2 + 1] -
+          integral[r1 + x2 + 1] -
+          integral[r2 + x1] +
+          integral[r1 + x1]
+        const localMean = sum / count
+        const gray = grayscale[rowOffset + x]
+        const diff = localMean - gray
+
+        let val = 255
+        if (diff > noiseFloor && localMean > 45) {
+          const normInk = Math.min(1, (diff - noiseFloor) / Math.max(28, localMean * 0.38))
+          val = Math.max(0, Math.round(255 * (1 - Math.pow(normInk, 0.85))))
+        } else if (localMean <= 45) {
+          val = gray
+        }
+
+        const idx = (rowOffset + x) * 4
+        data[idx] = val
+        data[idx + 1] = val
+        data[idx + 2] = val
+        data[idx + 3] = 255
       }
-    }
-
-    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-      const val = lut[grayscale[j]]
-      data[i] = val
-      data[i + 1] = val
-      data[i + 2] = val
-      data[i + 3] = 255
     }
   }
 

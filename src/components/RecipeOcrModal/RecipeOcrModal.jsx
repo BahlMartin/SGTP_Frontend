@@ -141,6 +141,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         rowIndex: line.rowIndex || line.id + 1,
         colIndex: line.colIndex || 1,
         totalColsInRow: line.totalColsInRow || 1,
+        visualHash: line.visualHash || '',
         cropDataUrl: line.cropDataUrl || null,
         cropStorageDataUrl: line.cropStorageDataUrl || null,
         comboDetectado: line.comboDetectado || null,
@@ -284,7 +285,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         }))
 
       const lineasDescartadas = linesReview
-        .filter((line) => line.discarded)
+        .filter((line) => line.discarded && line.texto !== '[Manuscrito a revisar]')
         .map((line) => line.texto)
 
       reportOcrFeedbackApi({
