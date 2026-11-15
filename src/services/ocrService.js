@@ -9,6 +9,21 @@ export { recognizeRecipePaddle }
  * extraídas con el catálogo de estudios, combos de rutina y coocurrencias en Django.
  */
 
+function mapRecomendadoToCandidate(r, textoOrigen = '') {
+  return {
+    id: r.id_estudio,
+    nombre: r.nombre,
+    categoria: r.tipo_muestra || 'Otro',
+    codigoPractica: r.codigo_practica,
+    score: r.similitud_score,
+    textoOrigen: textoOrigen || r.texto_detectado_origen || '',
+    origenDeteccion: r.origen_deteccion || 'OCR_DIRECTO',
+    preseleccionado: r.preseleccionado ?? true,
+    vecesConfirmado: r.veces_confirmado || 0,
+    imagenMuestra: r.imagen_muestra || null
+  }
+}
+
 /**
  * Envía un array de textos extraídos al backend para realizar el pipeline de mapeo:
  * 1. Baterías de rutina (combos por IDs).
@@ -19,9 +34,10 @@ export { recognizeRecipePaddle }
  *
  * @param {string[]} textos Líneas de texto detectadas en la receta
  * @param {string[]} [firmasVisuales] Huellas visuales opcionales paralelas a cada renglón
+ * @param {string[]} [recortesImagen] Recortes DataURL livianos paralelos a cada renglón
  * @returns {Promise<{ mensaje: string, totalSugerencias: number, comboDetectado: string|null, sugerencias: Array, suggestedStudies: Array, sugerenciasContextuales: Array }>}
  */
-export async function mapStudiesFromTextApi(textos = [], firmasVisuales = []) {
+export async function mapStudiesFromTextApi(textos = [], firmasVisuales = [], recortesImagen = []) {
   if (!Array.isArray(textos) || textos.length === 0) {
     return {
       mensaje: 'No se detectaron textos legibles.',
@@ -36,7 +52,8 @@ export async function mapStudiesFromTextApi(textos = [], firmasVisuales = []) {
 
   const response = await apiClient.post('/ocr/escanear-receta/', {
     textos,
-    firmas_visuales: Array.isArray(firmasVisuales) ? firmasVisuales : []
+    firmas_visuales: Array.isArray(firmasVisuales) ? firmasVisuales : [],
+    recortes_imagen: Array.isArray(recortesImagen) ? recortesImagen : []
   })
 
   const sugerencias = response.sugerencias || []
@@ -48,17 +65,37 @@ export async function mapStudiesFromTextApi(textos = [], firmasVisuales = []) {
     sugerencias,
     renglones: response.renglones || [],
     sugerenciasContextuales: response.sugerencias_contextuales || [],
-    suggestedStudies: sugerencias.map((s) => ({
-      id: s.id_estudio,
-      nombre: s.nombre,
-      categoria: s.tipo_muestra || 'Otro',
-      codigoPractica: s.codigo_practica,
-      score: s.similitud_score,
-      textoOrigen: s.texto_detectado_origen,
-      origenDeteccion: s.origen_deteccion || 'OCR_DIRECTO',
-      preseleccionado: s.preseleccionado ?? true,
-      vecesConfirmado: s.veces_confirmado || 0,
-      imagenMuestra: s.imagen_muestra || null
+    suggestedStudies: sugerencias.map((s) => mapRecomendadoToCandidate(s))
+  }
+}
+
+/**
+ * Envía únicamente los recortes aislados seleccionados manualmente por Admisión
+ * para interpretarlos con el asistente de Visión IA (sin exponer jamás la receta completa).
+ *
+ * @param {Array<{ indice: number, texto_ocr: string, firma_visual: string, imagen_recorte: string }>} recortes
+ * @returns {Promise<{ totalProcesados: number, resultados: Array }>}
+ */
+export async function interpretSelectedCropsWithAiApi(recortes = []) {
+  if (!Array.isArray(recortes) || recortes.length === 0) {
+    return { totalProcesados: 0, resultados: [] }
+  }
+
+  const response = await apiClient.post('/ocr/interpretar-recortes/', {
+    recortes
+  })
+
+  const rawResultados = Array.isArray(response?.resultados) ? response.resultados : []
+  return {
+    totalProcesados: response?.total_procesados ?? rawResultados.length,
+    resultados: rawResultados.map((item) => ({
+      indice: item.indice,
+      textoOcrOriginal: item.texto_ocr_original || '',
+      textoTranscritoIa: item.texto_transcrito_ia || '',
+      comboDetectado: item.combo_detectado || null,
+      recomendados: (item.recomendados || []).map((r) =>
+        mapRecomendadoToCandidate(r, item.texto_ocr_original || '')
+      )
     }))
   }
 }
@@ -109,6 +146,7 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
       })
     }
     const firmasVisuales = (paddleOutput.richLines || []).map((l) => l.visualHash || '')
+    // Confidencialidad PHI: el escaneo inicial nunca envía recortes de imagen a servicios externos; solo texto local + hash
     mapping = await mapStudiesFromTextApi(paddleOutput.lines, firmasVisuales)
   }
 
@@ -136,9 +174,18 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
         backendRenglones[idx] ||
         null
 
+      const resolvedTexto =
+        richLine.text === '[Manuscrito a revisar]' &&
+        backendLine?.texto_renglon &&
+        backendLine.texto_renglon !== '[Manuscrito a revisar]'
+          ? backendLine.texto_renglon
+          : richLine.text
+
       return {
         id: idx,
-        texto: richLine.text,
+        texto: resolvedTexto,
+        textoOriginalOcr: richLine.text,
+        textoIa: null,
         confidence: richLine.confidence ?? 0,
         rowIndex: richLine.rowIndex || idx + 1,
         colIndex: richLine.colIndex || 1,
@@ -149,18 +196,9 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
         comboDetectado: backendLine?.combo_detectado || null,
         esRuidoAprendido: Boolean(backendLine?.es_ruido_aprendido),
         imagenMuestraConocida: backendLine?.imagen_muestra_conocida || null,
-        recomendados: (backendLine?.recomendados || []).map((r) => ({
-          id: r.id_estudio,
-          nombre: r.nombre,
-          categoria: r.tipo_muestra || 'Otro',
-          codigoPractica: r.codigo_practica,
-          score: r.similitud_score,
-          textoOrigen: richLine.text,
-          origenDeteccion: r.origen_deteccion || 'OCR_DIRECTO',
-          preseleccionado: r.preseleccionado ?? true,
-          vecesConfirmado: r.veces_confirmado || 0,
-          imagenMuestra: r.imagen_muestra || null
-        }))
+        recomendados: (backendLine?.recomendados || []).map((r) =>
+          mapRecomendadoToCandidate(r, richLine.text)
+        )
       }
     })
     .filter((line) => !line.esRuidoAprendido)

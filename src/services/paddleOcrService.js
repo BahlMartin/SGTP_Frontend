@@ -7,7 +7,10 @@
  * 2. Reconocimiento con SVTR: lectura secuencial profunda sin depender de cajas rígidas.
  * 3. Ejecución 100% en el navegador vía WebAssembly / WebGPU sin consumir RAM de Render.
  */
-import { preprocessRecipeImage } from '../utils/imagePreprocessor'
+import {
+  preprocessRecipeImage,
+  detectPaperVerticalBoundsFromGrayscale
+} from '../utils/imagePreprocessor'
 import { sanitizeRecipeLine } from '../utils/ocrSanitizer'
 
 let paddleInstance = null
@@ -163,26 +166,102 @@ export function cleanRecognizedOcrText(rawText) {
 }
 
 /**
- * Calcula una huella visual perceptual compacta (dHash 64 bits + relación de aspecto = 18 hex)
- * de un bloque manuscrito para reconocerlo en futuros escaneos aunque el texto OCR sea impreciso.
+ * Ajusta internamente un bounding box al rectángulo mínimo de píxeles de tinta oscuros
+ * para eliminar márgenes blancos variables y estabilizar recortes y huellas visuales.
+ *
+ * @param {HTMLCanvasElement|null} canvas
+ * @param {{ minX: number, minY: number, maxX: number, maxY: number }} bbox
+ * @param {number} [pad=4]
+ * @returns {{ startX: number, startY: number, endX: number, endY: number, cropW: number, cropH: number }|null}
+ */
+function trimBboxToInkBounds(canvas, bbox, pad = 4) {
+  if (!canvas || !bbox || !canvas.width || !canvas.height) return null
+  const { minX, minY, maxX, maxY } = bbox
+  if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+    return null
+  }
+
+  const initStartX = Math.max(0, Math.floor(minX - 6))
+  const initStartY = Math.max(0, Math.floor(minY - 6))
+  const initEndX = Math.min(canvas.width, Math.ceil(maxX + 6))
+  const initEndY = Math.min(canvas.height, Math.ceil(maxY + 6))
+  const initW = Math.max(1, initEndX - initStartX)
+  const initH = Math.max(1, initEndY - initStartY)
+
+  try {
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+    const { data } = ctx.getImageData(initStartX, initStartY, initW, initH)
+
+    let inkMinX = initW
+    let inkMinY = initH
+    let inkMaxX = -1
+    let inkMaxY = -1
+    let inkPixels = 0
+
+    for (let y = 0; y < initH; y++) {
+      const rowOff = y * initW
+      for (let x = 0; x < initW; x++) {
+        const idx = (rowOff + x) * 4
+        const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]
+        if (lum < 175) {
+          inkPixels++
+          if (x < inkMinX) inkMinX = x
+          if (x > inkMaxX) inkMaxX = x
+          if (y < inkMinY) inkMinY = y
+          if (y > inkMaxY) inkMaxY = y
+        }
+      }
+    }
+
+    if (inkPixels >= 12 && inkMaxX > inkMinX && inkMaxY > inkMinY) {
+      const startX = Math.max(0, initStartX + inkMinX - pad)
+      const startY = Math.max(0, initStartY + inkMinY - pad)
+      const endX = Math.min(canvas.width, initStartX + inkMaxX + 1 + pad)
+      const endY = Math.min(canvas.height, initStartY + inkMaxY + 1 + pad)
+      return {
+        startX,
+        startY,
+        endX,
+        endY,
+        cropW: Math.max(1, endX - startX),
+        cropH: Math.max(1, endY - startY)
+      }
+    }
+
+    return {
+      startX: initStartX,
+      startY: initStartY,
+      endX: initEndX,
+      endY: initEndY,
+      cropW: initW,
+      cropH: initH
+    }
+  } catch {
+    return {
+      startX: initStartX,
+      startY: initStartY,
+      endX: initEndX,
+      endY: initEndY,
+      cropW: initW,
+      cropH: initH
+    }
+  }
+}
+
+/**
+ * Calcula una huella visual perceptual compacta (dHash 64 bits + relación de aspecto + mapa morfológico 4x4 = 22 hex)
+ * de un bloque manuscrito recortado al límite exacto de su tinta para reconocerlo en futuros
+ * escaneos aunque el texto OCR sea impreciso.
  *
  * @param {HTMLCanvasElement|null} canvas
  * @param {{ minX: number, minY: number, maxX: number, maxY: number }} bbox
  * @returns {string}
  */
 export function computeBlockVisualSignature(canvas, bbox) {
-  if (!canvas || !bbox || !canvas.width || !canvas.height) return ''
-  const { minX, minY, maxX, maxY } = bbox
-  if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
-    return ''
-  }
-
-  const startX = Math.max(0, Math.floor(minX - 6))
-  const startY = Math.max(0, Math.floor(minY - 6))
-  const endX = Math.min(canvas.width, Math.ceil(maxX + 6))
-  const endY = Math.min(canvas.height, Math.ceil(maxY + 6))
-  const cropW = Math.max(1, endX - startX)
-  const cropH = Math.max(1, endY - startY)
+  const bounds = trimBboxToInkBounds(canvas, bbox, 4)
+  if (!bounds) return ''
+  const { startX, startY, cropW, cropH } = bounds
 
   try {
     const gridW = 9
@@ -218,8 +297,35 @@ export function computeBlockVisualSignature(canvas, bbox) {
       }
     }
 
+    // Mapa morfológico 4x4 (16 bits) de distribución de ascendentes, descendentes y densidad
+    const morphCanvas = document.createElement('canvas')
+    morphCanvas.width = 4
+    morphCanvas.height = 4
+    const morphCtx = morphCanvas.getContext('2d')
+    let morphHex = '0000'
+    if (morphCtx) {
+      morphCtx.fillStyle = '#ffffff'
+      morphCtx.fillRect(0, 0, 4, 4)
+      morphCtx.drawImage(canvas, startX, startY, cropW, cropH, 0, 0, 4, 4)
+      const mData = morphCtx.getImageData(0, 0, 4, 4).data
+      const lums = new Float32Array(16)
+      let lumSum = 0
+      for (let i = 0; i < 16; i++) {
+        const off = i * 4
+        const l = 0.299 * mData[off] + 0.587 * mData[off + 1] + 0.114 * mData[off + 2]
+        lums[i] = l
+        lumSum += l
+      }
+      const meanCellLum = lumSum / 16
+      let morphMask = 0
+      for (let i = 0; i < 16; i++) {
+        morphMask = (morphMask << 1) | (lums[i] < meanCellLum ? 1 : 0)
+      }
+      morphHex = morphMask.toString(16).padStart(4, '0')
+    }
+
     const aspectBucket = Math.max(1, Math.min(255, Math.round((cropW / cropH) * 16)))
-    return hexHash + aspectBucket.toString(16).padStart(2, '0')
+    return hexHash + aspectBucket.toString(16).padStart(2, '0') + morphHex
   } catch (err) {
     console.warn('No se pudo calcular firma visual del bloque:', err)
     return ''
@@ -244,7 +350,7 @@ function embedVisualHashInDataUrl(dataUrl, visualHash) {
 /**
  * Analiza la franja horizontal de un renglón en el canvas preprocesado para detectar
  * en qué coordenadas X hay trazos reales de escritura (tinta) y dónde hay papel en blanco.
- * Ignora líneas horizontales finas de formularios (vertical < 3px) y fondos sólidos negros.
+ * Ignora pliegues horizontales tenues del papel, líneas finas (< 3px) y fondos sólidos negros.
  *
  * @param {HTMLCanvasElement|null} canvas
  * @param {number} minY
@@ -255,8 +361,8 @@ function analyzeRowInkProfile(canvas, minY, maxY) {
   if (!canvas || !canvas.width || !canvas.height) return null
 
   const rowHeight = Math.max(8, maxY - minY)
-  const bandY1 = Math.max(0, Math.floor(minY + rowHeight * 0.15))
-  const bandY2 = Math.min(canvas.height, Math.ceil(maxY - rowHeight * 0.15))
+  const bandY1 = Math.max(0, Math.floor(minY + rowHeight * 0.12))
+  const bandY2 = Math.min(canvas.height, Math.ceil(maxY - rowHeight * 0.12))
   const bandHeight = Math.max(4, bandY2 - bandY1)
   if (bandY1 >= canvas.height || bandHeight <= 0) return null
 
@@ -265,23 +371,31 @@ function analyzeRowInkProfile(canvas, minY, maxY) {
     if (!ctx) return null
     const { data, width } = ctx.getImageData(0, bandY1, canvas.width, bandHeight)
     const hasInk = new Uint8Array(width)
-    const maxDarkCols = Math.floor(bandHeight * 0.75)
+    const maxDarkCols = Math.floor(bandHeight * 0.78)
 
     for (let x = 0; x < width; x++) {
       let darkCount = 0
       let firstDarkY = -1
       let lastDarkY = -1
+      let minColLum = 255
 
       for (let y = 0; y < bandHeight; y++) {
         const lum = data[(y * width + x) * 4]
-        if (lum < 165 && lum > 10) {
+        if (lum < 152 && lum > 8) {
           darkCount++
           if (firstDarkY === -1) firstDarkY = y
           lastDarkY = y
+          if (lum < minColLum) minColLum = lum
         }
       }
 
-      if (darkCount >= 2 && darkCount <= maxDarkCols && lastDarkY - firstDarkY >= 3) {
+      const span = lastDarkY - firstDarkY
+      if (
+        darkCount >= 2 &&
+        darkCount <= maxDarkCols &&
+        span >= 3 &&
+        (minColLum < 138 || span >= 8 || darkCount >= 4)
+      ) {
         hasInk[x] = 1
       }
     }
@@ -316,7 +430,7 @@ function hasLetterStrokePattern(hasInk, minX, maxX) {
   }
 
   const activeRatio = activeCols / segW
-  return transitions >= 10 && activeRatio >= 0.18 && activeRatio <= 0.85
+  return transitions >= 12 && activeRatio >= 0.18 && activeRatio <= 0.85
 }
 
 /**
@@ -382,20 +496,198 @@ function segmentRowIntoInkColumns(
 }
 
 /**
- * Detecta bloques escritos en 2D mediante proyección horizontal y vertical de tinta sobre el
- * canvas preprocesado, recuperando filas cursivas o columnas que DBNet haya omitido o fusionado.
+ * Detecta si una receta tiene un canal vertical central (separación en 2 columnas) analizando
+ * la proyección de tinta únicamente dentro de las bandas horizontales escritas válidas.
+ *
+ * @param {Int32Array} bandColInk
+ * @param {number} width
+ * @param {Array<{ minX: number, maxX: number, minY: number, maxY: number }>} preliminaryBlocks
+ * @returns {number|null}
+ */
+function detectCentralColumnGutter(bandColInk, width, preliminaryBlocks) {
+  if (!bandColInk || width < 120) return null
+
+  const searchMinX = Math.floor(width * 0.4)
+  const searchMaxX = Math.ceil(width * 0.64)
+  if (searchMaxX <= searchMinX) return null
+
+  const smoothCol = new Float32Array(width)
+  const win = 10
+  for (let x = 0; x < width; x++) {
+    let acc = 0
+    let cnt = 0
+    const xStart = Math.max(0, x - win)
+    const xEnd = Math.min(width - 1, x + win)
+    for (let xx = xStart; xx <= xEnd; xx++) {
+      acc += bandColInk[xx]
+      cnt++
+    }
+    smoothCol[x] = acc / Math.max(1, cnt)
+  }
+
+  let bestGutterX = Math.round(width * 0.52)
+  let minValleyVal = Infinity
+  for (let x = searchMinX; x <= searchMaxX; x++) {
+    const val = smoothCol[x]
+    if (
+      val < minValleyVal - 0.25 ||
+      (Math.abs(val - minValleyVal) <= 0.25 &&
+        Math.abs(x - width * 0.52) < Math.abs(bestGutterX - width * 0.52))
+    ) {
+      minValleyVal = val
+      bestGutterX = x
+    }
+  }
+
+  let leftPeak = 0
+  for (let x = Math.floor(width * 0.05); x < bestGutterX - Math.round(width * 0.05); x++) {
+    if (smoothCol[x] > leftPeak) leftPeak = smoothCol[x]
+  }
+  let rightPeak = 0
+  for (let x = bestGutterX + Math.round(width * 0.05); x < Math.ceil(width * 0.95); x++) {
+    if (smoothCol[x] > rightPeak) rightPeak = smoothCol[x]
+  }
+
+  if (leftPeak <= 0 || rightPeak <= 0) return null
+
+  let leftCount = 0
+  let rightCount = 0
+  for (const blk of preliminaryBlocks) {
+    const cx = (blk.minX + blk.maxX) / 2
+    const blkW = blk.maxX - blk.minX
+    if (blkW > width * 0.55) continue
+    if (cx < bestGutterX - width * 0.04) leftCount++
+    else if (cx > bestGutterX + width * 0.04) rightCount++
+  }
+
+  const minSidePeak = Math.min(leftPeak, rightPeak)
+  const hasClearValley = minValleyVal <= minSidePeak * 0.3
+  if (hasClearValley && leftCount >= 2 && rightCount >= 2) {
+    return bestGutterX
+  }
+  return null
+}
+
+/**
+ * Divide un bloque horizontal que cruza el canal central de 2 columnas en Columna 1 y Columna 2
+ * buscando el hueco blanco o mínimo de tinta más limpio cerca de `centralGutterX`.
+ *
+ * @param {Uint8Array} hasInk
+ * @param {{ minX: number, maxX: number }} col
+ * @param {number} centralGutterX
+ * @param {number} canvasWidth
+ * @returns {Array<{ minX: number, maxX: number }>}
+ */
+function splitBlockAtCentralGutter(hasInk, col, centralGutterX, canvasWidth) {
+  if (!hasInk || centralGutterX === null) return [col]
+  const crossesCenter =
+    col.minX < centralGutterX - canvasWidth * 0.06 &&
+    col.maxX > centralGutterX + canvasWidth * 0.06
+  if (!crossesCenter) return [col]
+
+  const winStart = Math.max(col.minX + 35, Math.floor(centralGutterX - 55))
+  const winEnd = Math.min(col.maxX - 35, Math.ceil(centralGutterX + 55))
+  if (winEnd <= winStart) return [col]
+
+  // Buscar la mayor secuencia continua en blanco (hasInk === 0) dentro de la ventana central
+  let bestRunLen = 0
+  let bestRunCenter = -1
+  let curLen = 0
+  let curStart = 0
+
+  for (let x = winStart; x <= winEnd; x++) {
+    if (hasInk[x] === 0) {
+      if (curLen === 0) curStart = x
+      curLen++
+      if (curLen > bestRunLen) {
+        bestRunLen = curLen
+        bestRunCenter = Math.round(curStart + curLen / 2)
+      }
+    } else {
+      curLen = 0
+    }
+  }
+
+  if (bestRunLen < 6 || bestRunCenter === -1) {
+    return [col]
+  }
+
+  let leftMaxX = bestRunCenter
+  while (leftMaxX > col.minX && hasInk[leftMaxX] === 0) {
+    leftMaxX--
+  }
+  let rightMinX = bestRunCenter
+  while (rightMinX < col.maxX && hasInk[rightMinX] === 0) {
+    rightMinX++
+  }
+
+  if (
+    hasLetterStrokePattern(hasInk, col.minX, leftMaxX) &&
+    hasLetterStrokePattern(hasInk, rightMinX, col.maxX)
+  ) {
+    return [
+      { minX: col.minX, maxX: leftMaxX },
+      { minX: rightMinX, maxX: col.maxX }
+    ]
+  }
+
+  return [col]
+}
+
+/**
+ * Obtiene los límites verticales [minY, maxY] de la hoja desde los metadatos del preprocesador
+ * o calculándolos directamente si el canvas provino sin anotación previa.
  *
  * @param {HTMLCanvasElement|null} canvas
- * @returns {Array<{ minX: number, maxX: number, minY: number, maxY: number }>}
+ * @returns {{ minY: number, maxY: number }}
  */
-function detectInkBlocksFromCanvas(canvas) {
-  if (!canvas || !canvas.width || !canvas.height) return []
-  const width = canvas.width
+export function detectPaperVerticalBounds(canvas) {
+  if (!canvas || !canvas.width || !canvas.height) {
+    return { minY: 0, maxY: 0 }
+  }
   const height = canvas.height
+  if (canvas.__paperBounds) {
+    return {
+      minY: Math.max(0, canvas.__paperBounds.minY ?? 0),
+      maxY: Math.min(height - 1, canvas.__paperBounds.maxY ?? height - 1)
+    }
+  }
 
   try {
     const ctx = canvas.getContext('2d')
-    if (!ctx) return []
+    if (!ctx) return { minY: 0, maxY: height - 1 }
+    const { data } = ctx.getImageData(0, 0, canvas.width, height)
+    const grayscale = new Uint8ClampedArray(canvas.width * height)
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+      grayscale[j] = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2])
+    }
+    const { topY, bottomY } = detectPaperVerticalBoundsFromGrayscale(grayscale, canvas.width, height)
+    return { minY: topY, maxY: Math.max(topY, bottomY - 1) }
+  } catch {
+    return { minY: 0, maxY: height - 1 }
+  }
+}
+
+/**
+ * Analiza la distribución 2D de tinta en el canvas preprocesado: detecta el canal central de
+ * 2 columnas (si existe) y segmenta todas las filas y columnas escritas respetando los límites
+ * de la hoja de papel.
+ *
+ * @param {HTMLCanvasElement|null} canvas
+ * @returns {{ blocks: Array<{ minX: number, maxX: number, minY: number, maxY: number }>, centralGutterX: number|null, paperBounds: { minY: number, maxY: number } }}
+ */
+function analyzeCanvasInkLayout(canvas) {
+  if (!canvas || !canvas.width || !canvas.height) {
+    return { blocks: [], centralGutterX: null, paperBounds: { minY: 0, maxY: 0 } }
+  }
+  const width = canvas.width
+  const height = canvas.height
+  const { minY: paperMinY, maxY: paperMaxY } = detectPaperVerticalBounds(canvas)
+  const paperH = Math.max(1, paperMaxY - paperMinY + 1)
+
+  try {
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return { blocks: [], centralGutterX: null, paperBounds: { minY: paperMinY, maxY: paperMaxY } }
     const { data } = ctx.getImageData(0, 0, width, height)
 
     const marginX = Math.floor(width * 0.04)
@@ -403,21 +695,21 @@ function detectInkBlocksFromCanvas(canvas) {
     const colDarkTotals = new Int32Array(width)
     const inkMask = new Uint8Array(width * height)
 
-    for (let y = 0; y < height; y++) {
+    for (let y = paperMinY; y <= paperMaxY; y++) {
       const rowOff = y * width
       for (let x = marginX; x < maxSafeX; x++) {
         const lum = data[(rowOff + x) * 4]
-        if (lum < 165 && lum > 15) {
+        if (lum < 152 && lum > 8) {
           inkMask[rowOff + x] = 1
           colDarkTotals[x]++
         }
       }
     }
 
-    // Suprimir bordes verticales de formularios u orillas oscuras continuas
-    const maxColDensity = height * 0.38
+    // Suprimir bordes verticales de formularios u orillas oscuras continuas (ej. dedos/sombra en el borde)
+    const maxColDensity = paperH * 0.28
     const rowCounts = new Float32Array(height)
-    for (let y = 0; y < height; y++) {
+    for (let y = paperMinY; y <= paperMaxY; y++) {
       const rowOff = y * width
       let rowInk = 0
       for (let x = marginX; x < maxSafeX; x++) {
@@ -428,15 +720,15 @@ function detectInkBlocksFromCanvas(canvas) {
       rowCounts[y] = rowInk
     }
 
-    // Suavizado vertical ventana 5px
+    // Suavizado vertical ventana 5px dentro de la hoja
     const smoothed = new Float32Array(height)
     const sortedVals = []
-    for (let y = 0; y < height; y++) {
+    for (let y = paperMinY; y <= paperMaxY; y++) {
       let acc = 0
       let cnt = 0
       for (let dy = -2; dy <= 2; dy++) {
         const yy = y + dy
-        if (yy >= 0 && yy < height) {
+        if (yy >= paperMinY && yy <= paperMaxY) {
           acc += rowCounts[yy]
           cnt++
         }
@@ -448,14 +740,14 @@ function detectInkBlocksFromCanvas(canvas) {
 
     sortedVals.sort((a, b) => a - b)
     const p25 = sortedVals[Math.floor(sortedVals.length * 0.25)] || 0
-    const rowThreshold = Math.max(16, p25 * 1.8)
+    const rowThreshold = Math.max(14, p25 * 1.8)
 
     const rawBands = []
-    let y = 0
-    while (y < height) {
+    let y = paperMinY
+    while (y <= paperMaxY) {
       if (smoothed[y] > rowThreshold) {
         const bandStart = y
-        while (y < height && smoothed[y] > rowThreshold) {
+        while (y <= paperMaxY && smoothed[y] > rowThreshold) {
           y++
         }
         rawBands.push({ y1: bandStart, y2: y })
@@ -476,21 +768,34 @@ function detectInkBlocksFromCanvas(canvas) {
     }
 
     const maxBandHeight = Math.max(120, Math.round(height * 0.35))
-    const colWhiteGap = Math.max(36, Math.round(width * 0.085))
-    const blocks = []
+    const colWhiteGap = Math.max(34, Math.round(width * 0.075))
+    const gutterHeaderSkipY = paperH >= 800 ? paperMinY + Math.floor(paperH * 0.2) : paperMinY
+    const bandEntries = []
+    const preliminaryBlocks = []
+    const bandColInk = new Int32Array(width)
 
     for (const band of mergedBands) {
       const bandH = band.y2 - band.y1
-      if (bandH < 18 || bandH > maxBandHeight) continue
+      if (bandH < 16 || bandH > maxBandHeight) continue
 
-      const y1 = Math.max(0, band.y1 - 4)
-      const y2 = Math.min(height, band.y2 + 4)
+      const y1 = Math.max(paperMinY, band.y1 - 4)
+      const y2 = Math.min(paperMaxY + 1, band.y2 + 4)
       const hasInk = analyzeRowInkProfile(canvas, y1, y2)
       if (!hasInk) continue
 
+      for (let yy = Math.max(y1, gutterHeaderSkipY); yy < y2; yy++) {
+        const rowOff = yy * width
+        for (let x = marginX; x < maxSafeX; x++) {
+          if (inkMask[rowOff + x] === 1 && colDarkTotals[x] <= maxColDensity) {
+            bandColInk[x]++
+          }
+        }
+      }
+
       const cols = segmentRowIntoInkColumns(hasInk, width, null, null, colWhiteGap)
+      bandEntries.push({ y1, y2, hasInk, cols })
       for (const col of cols) {
-        blocks.push({
+        preliminaryBlocks.push({
           minX: col.minX,
           maxX: col.maxX,
           minY: y1,
@@ -499,10 +804,38 @@ function detectInkBlocksFromCanvas(canvas) {
       }
     }
 
-    return blocks
+    const centralGutterX = detectCentralColumnGutter(bandColInk, width, preliminaryBlocks)
+    if (centralGutterX === null) {
+      return {
+        blocks: preliminaryBlocks,
+        centralGutterX: null,
+        paperBounds: { minY: paperMinY, maxY: paperMaxY }
+      }
+    }
+
+    const splitBlocks = []
+    for (const entry of bandEntries) {
+      for (const col of entry.cols) {
+        const parts = splitBlockAtCentralGutter(entry.hasInk, col, centralGutterX, width)
+        for (const part of parts) {
+          splitBlocks.push({
+            minX: part.minX,
+            maxX: part.maxX,
+            minY: entry.y1,
+            maxY: entry.y2
+          })
+        }
+      }
+    }
+
+    return {
+      blocks: splitBlocks,
+      centralGutterX,
+      paperBounds: { minY: paperMinY, maxY: paperMaxY }
+    }
   } catch (err) {
-    console.warn('No se pudo detectar bloques por tinta:', err)
-    return []
+    console.warn('No se pudo analizar distribución de tinta 2D:', err)
+    return { blocks: [], centralGutterX: null, paperBounds: { minY: paperMinY, maxY: paperMaxY } }
   }
 }
 
@@ -733,9 +1066,32 @@ function overlapsExistingBlock(inkBlock, existingBlocks) {
 }
 
 /**
+ * Encuentra todos los bloques 2D de tinta que se solapan espacialmente con un rectángulo dado.
+ *
+ * @param {{ minX: number, minY: number, maxX: number, maxY: number }} rawBbox
+ * @param {Array<{ minX: number, minY: number, maxX: number, maxY: number }>} inkBlocks
+ * @returns {Array<{ minX: number, minY: number, maxX: number, maxY: number }>}
+ */
+function findOverlappingInkBlocks(rawBbox, inkBlocks) {
+  const rawW = Math.max(1, rawBbox.maxX - rawBbox.minX)
+  const rawH = Math.max(1, rawBbox.maxY - rawBbox.minY)
+
+  return inkBlocks.filter((inkBlock) => {
+    const inkW = Math.max(1, inkBlock.maxX - inkBlock.minX)
+    const inkH = Math.max(1, inkBlock.maxY - inkBlock.minY)
+    const yOverlap = Math.max(0, Math.min(inkBlock.maxY, rawBbox.maxY) - Math.max(inkBlock.minY, rawBbox.minY))
+    const xOverlap = Math.max(0, Math.min(inkBlock.maxX, rawBbox.maxX) - Math.max(inkBlock.minX, rawBbox.minX))
+    const minH = Math.max(1, Math.min(inkH, rawH))
+    const minW = Math.max(1, Math.min(inkW, rawW))
+
+    return yOverlap / minH >= 0.35 && xOverlap / minW >= 0.35
+  })
+}
+
+/**
  * Agrupa ítems de palabras detectadas por PaddleOCR en renglones y columnas enriquecidos,
- * combina bloques cursivos detectados por proyección 2D de tinta, separa columnas amplias
- * en bloques independientes y calcula el recorte + firma visual de cada bloque.
+ * prioriza la segmentación 2D de tinta + canal central de columnas para evitar que bloques
+ * parciales absorban dos columnas y calcula el recorte + firma visual de cada bloque.
  *
  * @param {Array<{ poly: Array<[number, number]|{x: number, y: number}>, text: string, score: number }>} items
  * @param {HTMLCanvasElement|null} [sourceCanvas=null]
@@ -744,6 +1100,11 @@ function overlapsExistingBlock(inkBlock, existingBlocks) {
 export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
   const hasItems = Array.isArray(items) && items.length > 0
   if (!hasItems && !sourceCanvas) return []
+
+  const inkLayout = sourceCanvas
+    ? analyzeCanvasInkLayout(sourceCanvas)
+    : { blocks: [], centralGutterX: null, paperBounds: null }
+  const { blocks: inkBlocks, centralGutterX, paperBounds } = inkLayout
 
   const parsedBoxes = hasItems
     ? items
@@ -770,6 +1131,11 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
           const maxX = Math.max(...xs)
           const centerY = (minY + maxY) / 2
           const height = Math.max(1, maxY - minY)
+
+          if (paperBounds && (centerY < paperBounds.minY || centerY > paperBounds.maxY)) {
+            return null
+          }
+
           return {
             text: cleanedText,
             score: Math.round((it.score || 0) * 100),
@@ -833,9 +1199,15 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
         const box = group[k]
         const gapPx = box.minX - segMaxX
         const minWhiteRun = Math.max(18, Math.round(whiteStopThreshold * 0.8))
+        const crossesCentralGutter =
+          centralGutterX !== null &&
+          segMaxX <= centralGutterX + 12 &&
+          box.minX >= centralGutterX - 12 &&
+          gapPx >= 12
         const isColumnSplit =
-          gapPx >= whiteStopThreshold &&
-          (!hasInk || hasContinuousWhiteGap(hasInk, segMaxX, box.minX, minWhiteRun))
+          crossesCentralGutter ||
+          (gapPx >= whiteStopThreshold &&
+            (!hasInk || hasContinuousWhiteGap(hasInk, segMaxX, box.minX, minWhiteRun)))
 
         if (isColumnSplit) {
           columnSegments.push(currentSeg)
@@ -864,20 +1236,61 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
           maxY: Math.max(...seg.map((b) => b.maxY))
         }
 
+        // Priorizar bloques 2D independientes si este segmento abarca 2 o más columnas detectadas
+        const matchedInkBlocks = findOverlappingInkBlocks(rawBbox, inkBlocks)
+        if (matchedInkBlocks.length >= 2) {
+          for (const inkBlk of matchedInkBlocks) {
+            const subBoxes = seg.filter((b) => {
+              const bCenter = (b.minX + b.maxX) / 2
+              const bWidth = b.maxX - b.minX
+              const crossesInkCut =
+                centralGutterX !== null &&
+                b.minX < centralGutterX - 10 &&
+                b.maxX > centralGutterX + 10
+              return (
+                !crossesInkCut &&
+                bWidth <= (sourceCanvas?.width || 1200) * 0.45 &&
+                bCenter >= inkBlk.minX - 12 &&
+                bCenter <= inkBlk.maxX + 12
+              )
+            })
+            const subText = subBoxes.map((b) => b.text).filter(Boolean).join(' ').trim()
+            const subConf =
+              subBoxes.length > 0
+                ? Math.round(subBoxes.reduce((acc, b) => acc + b.score, 0) / subBoxes.length)
+                : 0
+            rawBlocks.push({
+              text: subText,
+              confidence: subConf,
+              needsBlockOcr: true,
+              bbox: inkBlk
+            })
+          }
+          return
+        }
+
         const segWidth = rawBbox.maxX - rawBbox.minX
         const splitWhiteGap = sourceCanvas?.width
           ? Math.max(whiteStopThreshold, Math.round(sourceCanvas.width * 0.085))
           : whiteStopThreshold
+        const spansCentralGutter =
+          sourceCanvas &&
+          centralGutterX !== null &&
+          rawBbox.minX < centralGutterX - sourceCanvas.width * 0.06 &&
+          rawBbox.maxX > centralGutterX + sourceCanvas.width * 0.06
 
-        // Si un único polígono abarca dos o más columnas separadas por blanco (ej. "pote ro H以 p"), dividirlo
-        if (sourceCanvas && hasInk && segWidth > sourceCanvas.width * 0.32) {
-          const subCols = segmentRowIntoInkColumns(
+        // Si un único polígono abarca dos o más columnas o cruza el canal central, dividirlo antes de expandir
+        if (sourceCanvas && hasInk && (segWidth > sourceCanvas.width * 0.32 || spansCentralGutter)) {
+          let subCols = segmentRowIntoInkColumns(
             hasInk,
             sourceCanvas.width,
             Math.max(0, rawBbox.minX - 18),
             Math.min(sourceCanvas.width - 1, rawBbox.maxX + 18),
             splitWhiteGap
           )
+          if (subCols.length === 1 && centralGutterX !== null) {
+            subCols = splitBlockAtCentralGutter(hasInk, subCols[0], centralGutterX, sourceCanvas.width)
+          }
           if (subCols.length >= 2) {
             for (const sub of subCols) {
               rawBlocks.push({
@@ -898,12 +1311,34 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
 
         const prevSeg = segIdx > 0 ? columnSegments[segIdx - 1] : null
         const nextSeg = segIdx < totalSegs - 1 ? columnSegments[segIdx + 1] : null
-        const leftBoundX = prevSeg ? Math.max(...prevSeg.map((b) => b.maxX)) + 8 : 0
-        const rightBoundX = nextSeg
+        let leftBoundX = prevSeg ? Math.max(...prevSeg.map((b) => b.maxX)) + 8 : 0
+        let rightBoundX = nextSeg
           ? Math.min(...nextSeg.map((b) => b.minX)) - 8
           : sourceCanvas?.width || rawBbox.maxX
 
-        const bbox = hasInk
+        // Evitar que la expansión horizontal invada bloques de tinta vecinos o cruce el canal central
+        const segH = Math.max(1, rawBbox.maxY - rawBbox.minY)
+        for (const inkBlk of inkBlocks) {
+          const yOv = Math.max(0, Math.min(inkBlk.maxY, rawBbox.maxY) - Math.max(inkBlk.minY, rawBbox.minY))
+          const minH = Math.max(1, Math.min(segH, inkBlk.maxY - inkBlk.minY))
+          if (yOv / minH < 0.35) continue
+
+          if (inkBlk.maxX < rawBbox.minX - 10) {
+            leftBoundX = Math.max(leftBoundX, inkBlk.maxX + 6)
+          } else if (inkBlk.minX > rawBbox.maxX + 10) {
+            rightBoundX = Math.min(rightBoundX, inkBlk.minX - 6)
+          }
+        }
+
+        if (centralGutterX !== null) {
+          if (rawBbox.maxX <= centralGutterX + 16) {
+            rightBoundX = Math.min(rightBoundX, centralGutterX - 6)
+          } else if (rawBbox.minX >= centralGutterX - 16) {
+            leftBoundX = Math.max(leftBoundX, centralGutterX + 6)
+          }
+        }
+
+        let bbox = hasInk
           ? expandSegmentBoundsUntilWhite(
               rawBbox,
               hasInk,
@@ -914,10 +1349,24 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
             )
           : rawBbox
 
+        if (matchedInkBlocks.length === 1) {
+          const singleInk = matchedInkBlocks[0]
+          const singleH = singleInk.maxY - singleInk.minY
+          if (singleH <= segH * 2.2) {
+            bbox = {
+              ...bbox,
+              minY: Math.min(bbox.minY, singleInk.minY),
+              maxY: Math.max(bbox.maxY, singleInk.maxY)
+            }
+          }
+        }
+
+        const expandedWidth = bbox.maxX - bbox.minX
+        const wasSignificantlyExpanded = expandedWidth > segWidth * 1.25 + 25
         rawBlocks.push({
           text: segText,
           confidence: avgConf,
-          needsBlockOcr: segText.length < 2,
+          needsBlockOcr: segText.length < 2 || avgConf < 78 || wasSignificantlyExpanded,
           bbox
         })
       })
@@ -926,7 +1375,6 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
 
   // Combinar con bloques de tinta detectados en 2D que PaddleOCR omitió (filas cursivas o columnas faltantes)
   if (sourceCanvas) {
-    const inkBlocks = detectInkBlocksFromCanvas(sourceCanvas)
     for (const inkBlock of inkBlocks) {
       if (!overlapsExistingBlock(inkBlock, rawBlocks)) {
         rawBlocks.push({
@@ -1117,7 +1565,14 @@ export async function recognizeRecipePaddle(imageSource, onProgress) {
               )
             : 0
 
-        if (joined.length >= 2) {
+        const existingClean = cleanRecognizedOcrText(groupedRichLines[job.idx].text)
+        const existingConf = groupedRichLines[job.idx].confidence || 0
+        if (
+          joined.length >= 2 &&
+          (existingClean.length < 2 ||
+            avgBlockConf > existingConf ||
+            joined.length > existingClean.length + 2)
+        ) {
           groupedRichLines[job.idx].text = joined
           groupedRichLines[job.idx].confidence = avgBlockConf
         }
