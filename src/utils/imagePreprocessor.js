@@ -187,7 +187,7 @@ export async function preprocessRecipeImage(imageSource, options = {}) {
     }
 
     const radius = Math.max(16, Math.round(Math.min(width, height) * 0.075))
-    const noiseFloor = 7
+    const noiseFloor = 16
 
     for (let y = 0; y < height; y++) {
       const y1 = Math.max(0, y - radius)
@@ -211,8 +211,8 @@ export async function preprocessRecipeImage(imageSource, options = {}) {
 
         let val = 255
         if (diff > noiseFloor && localMean > 45) {
-          const normInk = Math.min(1, (diff - noiseFloor) / Math.max(28, localMean * 0.38))
-          val = Math.max(0, Math.round(255 * (1 - Math.pow(normInk, 0.85))))
+          const normInk = Math.min(1, (diff - noiseFloor) / Math.max(42, localMean * 0.48))
+          val = Math.max(0, Math.round(255 * (1 - Math.pow(normInk, 1.15))))
         } else if (localMean <= 45) {
           val = gray
         }
