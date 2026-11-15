@@ -138,6 +138,9 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         id: line.id,
         texto: line.texto,
         confidence: line.confidence || 0,
+        rowIndex: line.rowIndex || line.id + 1,
+        colIndex: line.colIndex || 1,
+        totalColsInRow: line.totalColsInRow || 1,
         cropDataUrl: line.cropDataUrl || null,
         cropStorageDataUrl: line.cropStorageDataUrl || null,
         comboDetectado: line.comboDetectado || null,
@@ -571,6 +574,11 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                               )}
                               <div className="ocr-modal__line-text-block">
                                 <div className="ocr-modal__line-text-row">
+                                  <span className="ocr-modal__line-pos-badge">
+                                    {line.totalColsInRow > 1
+                                      ? `Fila ${line.rowIndex} · Col. ${line.colIndex}`
+                                      : `Fila ${line.rowIndex}`}
+                                  </span>
                                   <span className="ocr-modal__line-label">Renglón:</span>
                                   <span className="ocr-modal__line-text">{line.texto}</span>
                                 </div>

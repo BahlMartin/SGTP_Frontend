@@ -112,9 +112,12 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
     motorOcr: 'PaddleOCR'
   }))
 
-  const richLines = paddleOutput?.richLines || (paddleOutput?.lines || []).map((text) => ({
+  const richLines = paddleOutput?.richLines || (paddleOutput?.lines || []).map((text, idx) => ({
     text,
     confidence: paddleOutput?.confidence || 0,
+    rowIndex: idx + 1,
+    colIndex: 1,
+    totalColsInRow: 1,
     cropDataUrl: null,
     cropStorageDataUrl: null
   }))
@@ -131,6 +134,9 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
         id: idx,
         texto: richLine.text,
         confidence: richLine.confidence ?? 0,
+        rowIndex: richLine.rowIndex || idx + 1,
+        colIndex: richLine.colIndex || 1,
+        totalColsInRow: richLine.totalColsInRow || 1,
         cropDataUrl: richLine.cropDataUrl || null,
         cropStorageDataUrl: richLine.cropStorageDataUrl || null,
         comboDetectado: backendLine?.combo_detectado || null,

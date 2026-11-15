@@ -919,10 +919,22 @@
 
 .ocr-modal__line-crop-img {
   max-height: 84px;
-  width: 100%;
+  max-width: 100%;
+  width: auto;
   object-fit: contain;
   object-position: left center;
   display: block;
+}
+
+.ocr-modal__line-pos-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #1e40af;
+  background: #dbeafe;
+  border: 1px solid #bfdbfe;
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
 }
 
 .ocr-modal__line-text-block {
