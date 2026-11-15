@@ -178,12 +178,10 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
           .map((r) => r.id)
       }))
 
-      const firstPendingLine = initialLines.find((l) => !l.discarded && l.selectedIds.length === 0)
-
       setOcrResult(res)
       setLinesReview(initialLines)
       setExtraContextualStudies([])
-      setActiveSearchLineId(firstPendingLine ? firstPendingLine.id : null)
+      setActiveSearchLineId(null)
       setLineSearchQuery('')
       setSelectedForAiIds([])
       setAiConsultMessage('')
@@ -322,12 +320,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     setActiveSearchLineId((prev) => (prev === lineId ? null : lineId))
   }
 
-  // Agregar y marcar un estudio seleccionado desde el buscador inline o chips rápidos, saltando al próximo bloque pendiente
+  // Agregar y marcar un estudio seleccionado desde el buscador inline o chips rápidos manteniendo el fragmento actual
   const handleAssignSearchedStudyToLine = (lineId, studyFromApi) => {
-    const nextPending = linesReview.find(
-      (l) => !l.discarded && l.id !== lineId && l.selectedIds.length === 0
-    )
-
     setLinesReview((prev) =>
       prev.map((line) => {
         if (line.id !== lineId) return line
@@ -363,7 +357,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     setLineSearchResults([])
     setIsSearchingLineStudies(false)
     setLineSearchError('')
-    setActiveSearchLineId(nextPending ? nextPending.id : null)
+    setActiveSearchLineId((prev) => (prev === lineId ? lineId : null))
   }
 
   // Unión deduplicada de todos los estudios confirmados en renglones activos + sugerencias contextuales
