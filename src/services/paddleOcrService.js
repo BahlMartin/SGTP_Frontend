@@ -255,8 +255,8 @@ function analyzeRowInkProfile(canvas, minY, maxY) {
   if (!canvas || !canvas.width || !canvas.height) return null
 
   const rowHeight = Math.max(8, maxY - minY)
-  const bandY1 = Math.max(0, Math.floor(minY + rowHeight * 0.12))
-  const bandY2 = Math.min(canvas.height, Math.ceil(maxY - rowHeight * 0.12))
+  const bandY1 = Math.max(0, Math.floor(minY + rowHeight * 0.15))
+  const bandY2 = Math.min(canvas.height, Math.ceil(maxY - rowHeight * 0.15))
   const bandHeight = Math.max(4, bandY2 - bandY1)
   if (bandY1 >= canvas.height || bandHeight <= 0) return null
 
@@ -265,6 +265,7 @@ function analyzeRowInkProfile(canvas, minY, maxY) {
     if (!ctx) return null
     const { data, width } = ctx.getImageData(0, bandY1, canvas.width, bandHeight)
     const hasInk = new Uint8Array(width)
+    const maxDarkCols = Math.floor(bandHeight * 0.75)
 
     for (let x = 0; x < width; x++) {
       let darkCount = 0
@@ -273,14 +274,14 @@ function analyzeRowInkProfile(canvas, minY, maxY) {
 
       for (let y = 0; y < bandHeight; y++) {
         const lum = data[(y * width + x) * 4]
-        if (lum < 195) {
+        if (lum < 165 && lum > 10) {
           darkCount++
           if (firstDarkY === -1) firstDarkY = y
           lastDarkY = y
         }
       }
 
-      if (darkCount >= 2 && lastDarkY - firstDarkY >= 3 && darkCount <= bandHeight * 0.85) {
+      if (darkCount >= 2 && darkCount <= maxDarkCols && lastDarkY - firstDarkY >= 3) {
         hasInk[x] = 1
       }
     }
@@ -290,6 +291,32 @@ function analyzeRowInkProfile(canvas, minY, maxY) {
     console.warn('No se pudo analizar perfil de tinta del renglón:', err)
     return null
   }
+}
+
+/**
+ * Valida que un segmento horizontal [minX, maxX] tenga patrón de trazos de escritura
+ * (alternancia entre tinta y espacios internos) para evitar que sombras o bordes creen tarjetas falsas.
+ *
+ * @param {Uint8Array} hasInk
+ * @param {number} minX
+ * @param {number} maxX
+ * @returns {boolean}
+ */
+function hasLetterStrokePattern(hasInk, minX, maxX) {
+  const segW = maxX - minX + 1
+  if (!hasInk || segW < 45) return false
+
+  let activeCols = 0
+  let transitions = 0
+  for (let x = minX; x <= maxX; x++) {
+    if (hasInk[x] === 1) activeCols++
+    if (x > minX && hasInk[x] !== hasInk[x - 1]) {
+      transitions++
+    }
+  }
+
+  const activeRatio = activeCols / segW
+  return transitions >= 10 && activeRatio >= 0.18 && activeRatio <= 0.85
 }
 
 /**
@@ -338,7 +365,7 @@ function segmentRowIntoInkColumns(
     } else if (inBlock) {
       whiteRun++
       if (whiteRun >= minWhiteGap) {
-        if (blockLastInk - blockStart >= 26) {
+        if (blockLastInk - blockStart >= 45 && hasLetterStrokePattern(hasInk, blockStart, blockLastInk)) {
           blocks.push({ minX: blockStart, maxX: blockLastInk })
         }
         inBlock = false
@@ -347,7 +374,7 @@ function segmentRowIntoInkColumns(
     }
   }
 
-  if (inBlock && blockLastInk - blockStart >= 26) {
+  if (inBlock && blockLastInk - blockStart >= 45 && hasLetterStrokePattern(hasInk, blockStart, blockLastInk)) {
     blocks.push({ minX: blockStart, maxX: blockLastInk })
   }
 
@@ -380,7 +407,7 @@ function detectInkBlocksFromCanvas(canvas) {
       const rowOff = y * width
       for (let x = marginX; x < maxSafeX; x++) {
         const lum = data[(rowOff + x) * 4]
-        if (lum < 205) {
+        if (lum < 165 && lum > 15) {
           inkMask[rowOff + x] = 1
           colDarkTotals[x]++
         }
@@ -388,7 +415,7 @@ function detectInkBlocksFromCanvas(canvas) {
     }
 
     // Suprimir bordes verticales de formularios u orillas oscuras continuas
-    const maxColDensity = height * 0.45
+    const maxColDensity = height * 0.38
     const rowCounts = new Float32Array(height)
     for (let y = 0; y < height; y++) {
       const rowOff = y * width
@@ -421,7 +448,7 @@ function detectInkBlocksFromCanvas(canvas) {
 
     sortedVals.sort((a, b) => a - b)
     const p25 = sortedVals[Math.floor(sortedVals.length * 0.25)] || 0
-    const rowThreshold = Math.max(10, p25 * 1.6)
+    const rowThreshold = Math.max(16, p25 * 1.8)
 
     const rawBands = []
     let y = 0
@@ -448,13 +475,13 @@ function detectInkBlocksFromCanvas(canvas) {
       }
     }
 
-    const maxBandHeight = Math.max(140, Math.round(height * 0.38))
+    const maxBandHeight = Math.max(120, Math.round(height * 0.35))
     const colWhiteGap = Math.max(36, Math.round(width * 0.085))
     const blocks = []
 
     for (const band of mergedBands) {
       const bandH = band.y2 - band.y1
-      if (bandH < 14 || bandH > maxBandHeight) continue
+      if (bandH < 18 || bandH > maxBandHeight) continue
 
       const y1 = Math.max(0, band.y1 - 4)
       const y2 = Math.min(height, band.y2 + 4)
@@ -1028,12 +1055,12 @@ export async function recognizeRecipePaddle(imageSource, onProgress) {
     })
   }
 
-  // 3. Primera pasada global con umbrales más sensibles para trazo manuscrito
+  // 3. Primera pasada global con umbrales equilibrados para manuscritos sin disparar ruido del papel
   const [result] = await ocr.predict(preprocessed.canvas, {
-    textDetThresh: 0.18,
-    textDetBoxThresh: 0.3,
+    textDetThresh: 0.25,
+    textDetBoxThresh: 0.4,
     textDetUnclipRatio: 1.5,
-    textRecScoreThresh: 0.15
+    textRecScoreThresh: 0.2
   })
   const items = result?.items || []
   const metrics = result?.metrics || {}
@@ -1067,10 +1094,10 @@ export async function recognizeRecipePaddle(imageSource, onProgress) {
       const blockResults = await ocr.predict(
         retryJobs.map((j) => j.blockCanvas),
         {
-          textDetThresh: 0.15,
-          textDetBoxThresh: 0.22,
+          textDetThresh: 0.22,
+          textDetBoxThresh: 0.32,
           textDetUnclipRatio: 1.6,
-          textRecScoreThresh: 0.12
+          textRecScoreThresh: 0.18
         }
       )
 
