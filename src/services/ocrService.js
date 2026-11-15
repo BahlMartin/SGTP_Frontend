@@ -115,7 +115,8 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
   const richLines = paddleOutput?.richLines || (paddleOutput?.lines || []).map((text) => ({
     text,
     confidence: paddleOutput?.confidence || 0,
-    cropDataUrl: null
+    cropDataUrl: null,
+    cropStorageDataUrl: null
   }))
 
   const backendRenglones = mapping.renglones || []
@@ -131,6 +132,7 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
         texto: richLine.text,
         confidence: richLine.confidence ?? 0,
         cropDataUrl: richLine.cropDataUrl || null,
+        cropStorageDataUrl: richLine.cropStorageDataUrl || null,
         comboDetectado: backendLine?.combo_detectado || null,
         esRuidoAprendido: Boolean(backendLine?.es_ruido_aprendido),
         imagenMuestraConocida: backendLine?.imagen_muestra_conocida || null,

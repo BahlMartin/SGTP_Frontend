@@ -139,6 +139,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         texto: line.texto,
         confidence: line.confidence || 0,
         cropDataUrl: line.cropDataUrl || null,
+        cropStorageDataUrl: line.cropStorageDataUrl || null,
         comboDetectado: line.comboDetectado || null,
         imagenMuestraConocida: line.imagenMuestraConocida || null,
         discarded: false,
@@ -276,7 +277,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         .map((line) => ({
           texto: line.texto,
           estudiosIds: line.selectedIds,
-          imagenMuestra: line.cropDataUrl || ''
+          imagenMuestra: line.cropStorageDataUrl || line.cropDataUrl || ''
         }))
 
       const lineasDescartadas = linesReview

@@ -909,18 +909,19 @@
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
-  padding: 4px 6px;
-  display: inline-flex;
+  padding: 6px;
+  display: flex;
   align-items: center;
-  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
   overflow: hidden;
 }
 
 .ocr-modal__line-crop-img {
-  max-height: 44px;
-  max-width: 100%;
-  width: auto;
+  max-height: 84px;
+  width: 100%;
   object-fit: contain;
+  object-position: left center;
   display: block;
 }
 

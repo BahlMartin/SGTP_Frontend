@@ -149,27 +149,45 @@ export async function getPaddleOcrInstance(onProgress) {
 }
 
 /**
- * Genera un recorte WebP/JPEG liviano (~2-5 KB) de un único renglón del canvas.
- * Nunca expone datos sensibles del resto de la receta y limita dimensiones a max 360x44px.
+ * Genera un recorte WebP/JPEG de un único renglón del canvas extendido horizontalmente
+ * para conservar el contexto manuscrito completo aunque Paddle solo haya leído una parte.
  *
  * @param {HTMLCanvasElement|null} canvas
  * @param {{ minX: number, minY: number, maxX: number, maxY: number }} bbox
+ * @param {{ maxWidth?: number, maxHeight?: number, quality?: number }} [options]
  * @returns {string|null}
  */
-export function cropLineFromCanvas(canvas, bbox) {
+export function cropLineFromCanvas(canvas, bbox, options = {}) {
   if (!canvas || !bbox || !canvas.width || !canvas.height) return null
 
-  const padX = 10
-  const padY = 6
-  const startX = Math.max(0, Math.floor(bbox.minX - padX))
-  const startY = Math.max(0, Math.floor(bbox.minY - padY))
-  const endX = Math.min(canvas.width, Math.ceil(bbox.maxX + padX))
-  const endY = Math.min(canvas.height, Math.ceil(bbox.maxY + padY))
+  const {
+    maxWidth = 760,
+    maxHeight = 96,
+    quality = 0.82
+  } = options
+
+  const { minX, minY, maxX, maxY } = bbox
+  if (
+    !Number.isFinite(minX) ||
+    !Number.isFinite(minY) ||
+    !Number.isFinite(maxX) ||
+    !Number.isFinite(maxY)
+  ) {
+    return null
+  }
+
+  const boxHeight = Math.max(12, maxY - minY)
+  const padY = Math.max(12, Math.round(boxHeight * 0.35))
+  // Extiende el recorte a la banda útil de la receta (6%..94%) para no cortar texto manuscrito parcial
+  const startX = Math.max(0, Math.min(Math.floor(minX - 20), Math.floor(canvas.width * 0.06)))
+  const endX = Math.min(canvas.width, Math.max(Math.ceil(maxX + 24), Math.ceil(canvas.width * 0.94)))
+  const startY = Math.max(0, Math.floor(minY - padY))
+  const endY = Math.min(canvas.height, Math.ceil(maxY + padY))
 
   const cropWidth = Math.max(1, endX - startX)
   const cropHeight = Math.max(1, endY - startY)
 
-  const scale = Math.min(1, 44 / cropHeight, 360 / cropWidth)
+  const scale = Math.min(1, maxHeight / cropHeight, maxWidth / cropWidth)
   const destWidth = Math.max(1, Math.round(cropWidth * scale))
   const destHeight = Math.max(1, Math.round(cropHeight * scale))
 
@@ -184,11 +202,11 @@ export function cropLineFromCanvas(canvas, bbox) {
     ctx.fillRect(0, 0, destWidth, destHeight)
     ctx.drawImage(canvas, startX, startY, cropWidth, cropHeight, 0, 0, destWidth, destHeight)
 
-    const webpUrl = tempCanvas.toDataURL('image/webp', 0.65)
+    const webpUrl = tempCanvas.toDataURL('image/webp', quality)
     if (webpUrl && webpUrl.startsWith('data:image/webp')) {
       return webpUrl
     }
-    return tempCanvas.toDataURL('image/jpeg', 0.65)
+    return tempCanvas.toDataURL('image/jpeg', quality)
   } catch (err) {
     console.warn('No se pudo recortar renglón de imagen:', err)
     return null
@@ -198,10 +216,11 @@ export function cropLineFromCanvas(canvas, bbox) {
 /**
  * Agrupa ítems de palabras detectadas por PaddleOCR en renglones horizontales enriquecidos,
  * conservando coordenadas (bbox), confianza promedio y el recorte visual del renglón.
+ * Soporta puntos tanto en formato tupla `[x, y]` (Point2D de PaddleOCR) como `{ x, y }`.
  *
- * @param {Array<{ poly: Array<{x: number, y: number}>, text: string, score: number }>} items
+ * @param {Array<{ poly: Array<[number, number]|{x: number, y: number}>, text: string, score: number }>} items
  * @param {HTMLCanvasElement|null} [sourceCanvas=null]
- * @returns {Array<{ text: string, confidence: number, bbox: Object, cropDataUrl: string|null }>}
+ * @returns {Array<{ text: string, confidence: number, bbox: Object, cropDataUrl: string|null, cropStorageDataUrl: string|null }>}
  */
 export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
   if (!Array.isArray(items) || items.length === 0) return []
@@ -209,14 +228,24 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
   const parsedBoxes = items
     .filter((it) => it && it.text && String(it.text).trim().length > 0 && Array.isArray(it.poly) && it.poly.length > 0)
     .map((it) => {
-      const ys = it.poly.map((p) => p.y)
-      const xs = it.poly.map((p) => p.x)
+      const xs = []
+      const ys = []
+      for (const p of it.poly) {
+        const x = Array.isArray(p) ? Number(p[0]) : Number(p?.x)
+        const y = Array.isArray(p) ? Number(p[1]) : Number(p?.y)
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          xs.push(x)
+          ys.push(y)
+        }
+      }
+      if (xs.length === 0 || ys.length === 0) return null
+
       const minY = Math.min(...ys)
       const maxY = Math.max(...ys)
       const minX = Math.min(...xs)
       const maxX = Math.max(...xs)
       const centerY = (minY + maxY) / 2
-      const height = maxY - minY
+      const height = Math.max(1, maxY - minY)
       return {
         text: it.text.trim(),
         score: Math.round((it.score || 0) * 100),
@@ -228,6 +257,7 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
         height
       }
     })
+    .filter(Boolean)
 
   if (parsedBoxes.length === 0) return []
 
@@ -267,7 +297,12 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
       text,
       confidence: avgConf,
       bbox,
-      cropDataUrl: sourceCanvas ? cropLineFromCanvas(sourceCanvas, bbox) : null
+      cropDataUrl: sourceCanvas
+        ? cropLineFromCanvas(sourceCanvas, bbox, { maxWidth: 760, maxHeight: 96, quality: 0.82 })
+        : null,
+      cropStorageDataUrl: sourceCanvas
+        ? cropLineFromCanvas(sourceCanvas, bbox, { maxWidth: 420, maxHeight: 52, quality: 0.65 })
+        : null
     }
   })
 }
