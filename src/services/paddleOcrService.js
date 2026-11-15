@@ -8,7 +8,7 @@
  * 3. Ejecución 100% en el navegador vía WebAssembly / WebGPU sin consumir RAM de Render.
  */
 import { preprocessRecipeImage } from '../utils/imagePreprocessor'
-import { sanitizeRecipeLines } from '../utils/ocrSanitizer'
+import { sanitizeRecipeLine } from '../utils/ocrSanitizer'
 
 let paddleInstance = null
 let paddleLoadingPromise = null
@@ -149,20 +149,68 @@ export async function getPaddleOcrInstance(onProgress) {
 }
 
 /**
- * Agrupa ítems de palabras detectadas por PaddleOCR en líneas de texto horizontales.
- * @param {Array<{ poly: Array<{x: number, y: number}>, text: string, score: number }>} items
- * @returns {string[]}
+ * Genera un recorte WebP/JPEG liviano (~2-5 KB) de un único renglón del canvas.
+ * Nunca expone datos sensibles del resto de la receta y limita dimensiones a max 360x44px.
+ *
+ * @param {HTMLCanvasElement|null} canvas
+ * @param {{ minX: number, minY: number, maxX: number, maxY: number }} bbox
+ * @returns {string|null}
  */
-export function groupPaddleItemsIntoLines(items = []) {
+export function cropLineFromCanvas(canvas, bbox) {
+  if (!canvas || !bbox || !canvas.width || !canvas.height) return null
+
+  const padX = 10
+  const padY = 6
+  const startX = Math.max(0, Math.floor(bbox.minX - padX))
+  const startY = Math.max(0, Math.floor(bbox.minY - padY))
+  const endX = Math.min(canvas.width, Math.ceil(bbox.maxX + padX))
+  const endY = Math.min(canvas.height, Math.ceil(bbox.maxY + padY))
+
+  const cropWidth = Math.max(1, endX - startX)
+  const cropHeight = Math.max(1, endY - startY)
+
+  const scale = Math.min(1, 44 / cropHeight, 360 / cropWidth)
+  const destWidth = Math.max(1, Math.round(cropWidth * scale))
+  const destHeight = Math.max(1, Math.round(cropHeight * scale))
+
+  try {
+    const tempCanvas = document.createElement('canvas')
+    tempCanvas.width = destWidth
+    tempCanvas.height = destHeight
+    const ctx = tempCanvas.getContext('2d')
+    if (!ctx) return null
+
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, destWidth, destHeight)
+    ctx.drawImage(canvas, startX, startY, cropWidth, cropHeight, 0, 0, destWidth, destHeight)
+
+    const webpUrl = tempCanvas.toDataURL('image/webp', 0.65)
+    if (webpUrl && webpUrl.startsWith('data:image/webp')) {
+      return webpUrl
+    }
+    return tempCanvas.toDataURL('image/jpeg', 0.65)
+  } catch (err) {
+    console.warn('No se pudo recortar renglón de imagen:', err)
+    return null
+  }
+}
+
+/**
+ * Agrupa ítems de palabras detectadas por PaddleOCR en renglones horizontales enriquecidos,
+ * conservando coordenadas (bbox), confianza promedio y el recorte visual del renglón.
+ *
+ * @param {Array<{ poly: Array<{x: number, y: number}>, text: string, score: number }>} items
+ * @param {HTMLCanvasElement|null} [sourceCanvas=null]
+ * @returns {Array<{ text: string, confidence: number, bbox: Object, cropDataUrl: string|null }>}
+ */
+export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
   if (!Array.isArray(items) || items.length === 0) return []
 
-  // Calcular centroide vertical de cada caja detectada
   const parsedBoxes = items
-    .filter((it) => it && it.text && String(it.text).trim().length > 0)
+    .filter((it) => it && it.text && String(it.text).trim().length > 0 && Array.isArray(it.poly) && it.poly.length > 0)
     .map((it) => {
-      const poly = it.poly || []
-      const ys = poly.map((p) => p.y)
-      const xs = poly.map((p) => p.x)
+      const ys = it.poly.map((p) => p.y)
+      const xs = it.poly.map((p) => p.x)
       const minY = Math.min(...ys)
       const maxY = Math.max(...ys)
       const minX = Math.min(...xs)
@@ -175,17 +223,17 @@ export function groupPaddleItemsIntoLines(items = []) {
         centerY,
         minX,
         maxX,
+        minY,
+        maxY,
         height
       }
     })
 
   if (parsedBoxes.length === 0) return []
 
-  // Ordenar de arriba hacia abajo
   parsedBoxes.sort((a, b) => a.centerY - b.centerY)
 
-  // Agrupar cajas que compartan línea horizontal (diferencia vertical menor al 50% de su altura)
-  const lines = []
+  const lineGroups = []
   let currentLine = [parsedBoxes[0]]
 
   for (let i = 1; i < parsedBoxes.length; i++) {
@@ -196,19 +244,41 @@ export function groupPaddleItemsIntoLines(items = []) {
     if (Math.abs(box.centerY - avgLineY) <= Math.max(12, avgLineH * 0.6)) {
       currentLine.push(box)
     } else {
-      // Ordenar cajas en la misma línea de izquierda a derecha
-      currentLine.sort((a, b) => a.minX - b.minX)
-      lines.push(currentLine.map((b) => b.text).join(' '))
+      lineGroups.push(currentLine)
       currentLine = [box]
     }
   }
 
   if (currentLine.length > 0) {
-    currentLine.sort((a, b) => a.minX - b.minX)
-    lines.push(currentLine.map((b) => b.text).join(' '))
+    lineGroups.push(currentLine)
   }
 
-  return lines
+  return lineGroups.map((group) => {
+    group.sort((a, b) => a.minX - b.minX)
+    const text = group.map((b) => b.text).join(' ')
+    const avgConf = Math.round(group.reduce((acc, b) => acc + b.score, 0) / group.length)
+    const bbox = {
+      minX: Math.min(...group.map((b) => b.minX)),
+      minY: Math.min(...group.map((b) => b.minY)),
+      maxX: Math.max(...group.map((b) => b.maxX)),
+      maxY: Math.max(...group.map((b) => b.maxY))
+    }
+    return {
+      text,
+      confidence: avgConf,
+      bbox,
+      cropDataUrl: sourceCanvas ? cropLineFromCanvas(sourceCanvas, bbox) : null
+    }
+  })
+}
+
+/**
+ * Agrupa ítems de palabras detectadas por PaddleOCR en líneas de texto horizontales.
+ * @param {Array<{ poly: Array<{x: number, y: number}>, text: string, score: number }>} items
+ * @returns {string[]}
+ */
+export function groupPaddleItemsIntoLines(items = []) {
+  return groupPaddleItemsIntoRichLines(items, null).map((line) => line.text)
 }
 
 /**
@@ -216,7 +286,7 @@ export function groupPaddleItemsIntoLines(items = []) {
  * 
  * @param {File|Blob|string|HTMLImageElement|HTMLCanvasElement} imageSource
  * @param {Function} [onProgress]
- * @returns {Promise<{ rawText: string, lines: string[], items: Array, metrics: Object, confidence: number, engineUsed: string, preprocessedDataUrl: string }>}
+ * @returns {Promise<{ rawText: string, lines: string[], richLines: Array, items: Array, metrics: Object, confidence: number, engineUsed: string, preprocessedDataUrl: string }>}
  */
 export async function recognizeRecipePaddle(imageSource, onProgress) {
   if (!imageSource) {
@@ -257,9 +327,21 @@ export async function recognizeRecipePaddle(imageSource, onProgress) {
   const items = result?.items || []
   const metrics = result?.metrics || {}
 
-  // 4. Agrupar palabras en renglones
-  const groupedLines = groupPaddleItemsIntoLines(items)
-  const candidateLines = sanitizeRecipeLines(groupedLines)
+  // 4. Agrupar palabras en renglones y generar recortes por renglón
+  const groupedRichLines = groupPaddleItemsIntoRichLines(items, preprocessed.canvas)
+  const groupedLines = groupedRichLines.map((line) => line.text)
+
+  const candidateRichLines = []
+  for (const richLine of groupedRichLines) {
+    const cleanText = sanitizeRecipeLine(richLine.text)
+    if (cleanText) {
+      candidateRichLines.push({
+        ...richLine,
+        text: cleanText
+      })
+    }
+  }
+  const candidateLines = candidateRichLines.map((line) => line.text)
   const rawText = groupedLines.join('\n')
 
   // Calcular confianza promedio
@@ -282,6 +364,7 @@ export async function recognizeRecipePaddle(imageSource, onProgress) {
   return {
     rawText,
     lines: candidateLines,
+    richLines: candidateRichLines,
     allLines: groupedLines,
     items,
     metrics: {

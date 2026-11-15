@@ -27,6 +27,7 @@ export async function mapStudiesFromTextApi(textos = []) {
       totalSugerencias: 0,
       comboDetectado: null,
       sugerencias: [],
+      renglones: [],
       suggestedStudies: [],
       sugerenciasContextuales: []
     }
@@ -41,6 +42,7 @@ export async function mapStudiesFromTextApi(textos = []) {
     totalSugerencias: response.total_sugerencias ?? sugerencias.length,
     comboDetectado: response.combo_detectado || null,
     sugerencias,
+    renglones: response.renglones || [],
     sugerenciasContextuales: response.sugerencias_contextuales || [],
     suggestedStudies: sugerencias.map((s) => ({
       id: s.id_estudio,
@@ -49,7 +51,10 @@ export async function mapStudiesFromTextApi(textos = []) {
       codigoPractica: s.codigo_practica,
       score: s.similitud_score,
       textoOrigen: s.texto_detectado_origen,
-      origenDeteccion: s.origen_deteccion || 'OCR_DIRECTO'
+      origenDeteccion: s.origen_deteccion || 'OCR_DIRECTO',
+      preseleccionado: s.preseleccionado ?? true,
+      vecesConfirmado: s.veces_confirmado || 0,
+      imagenMuestra: s.imagen_muestra || null
     }))
   }
 }
@@ -85,6 +90,7 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
   let mapping = {
     suggestedStudies: [],
     sugerenciasContextuales: [],
+    renglones: [],
     comboDetectado: null,
     totalSugerencias: 0
   }
@@ -106,6 +112,44 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
     motorOcr: 'PaddleOCR'
   }))
 
+  const richLines = paddleOutput?.richLines || (paddleOutput?.lines || []).map((text) => ({
+    text,
+    confidence: paddleOutput?.confidence || 0,
+    cropDataUrl: null
+  }))
+
+  const backendRenglones = mapping.renglones || []
+  const detectedLinesDetail = richLines
+    .map((richLine, idx) => {
+      const backendLine =
+        backendRenglones.find((r) => r.indice === idx) ||
+        backendRenglones[idx] ||
+        null
+
+      return {
+        id: idx,
+        texto: richLine.text,
+        confidence: richLine.confidence ?? 0,
+        cropDataUrl: richLine.cropDataUrl || null,
+        comboDetectado: backendLine?.combo_detectado || null,
+        esRuidoAprendido: Boolean(backendLine?.es_ruido_aprendido),
+        imagenMuestraConocida: backendLine?.imagen_muestra_conocida || null,
+        recomendados: (backendLine?.recomendados || []).map((r) => ({
+          id: r.id_estudio,
+          nombre: r.nombre,
+          categoria: r.tipo_muestra || 'Otro',
+          codigoPractica: r.codigo_practica,
+          score: r.similitud_score,
+          textoOrigen: richLine.text,
+          origenDeteccion: r.origen_deteccion || 'OCR_DIRECTO',
+          preseleccionado: r.preseleccionado ?? true,
+          vecesConfirmado: r.veces_confirmado || 0,
+          imagenMuestra: r.imagen_muestra || null
+        }))
+      }
+    })
+    .filter((line) => !line.esRuidoAprendido)
+
   if (onProgress) {
     onProgress({
       status: 'done',
@@ -124,6 +168,7 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
     sugerenciasContextuales: mapping.sugerenciasContextuales || [],
     rawText: paddleOutput?.rawText || '',
     detectedLines: paddleOutput?.lines || [],
+    detectedLinesDetail,
     preprocessedDataUrl: paddleOutput?.preprocessedDataUrl,
     confidence: paddleOutput?.confidence || 0,
     durationMs,
@@ -135,14 +180,17 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
 /**
  * Ingesta de Aprendizaje Activo en segundo plano (fire-and-forget).
  * Notifica al backend las asociaciones validadas por el personal para:
- * 1. Guardar abreviaturas corregidas en EstudioAliasAprendido.
- * 2. Guardar combos habituales en PerfilEstudioPatron.
- * 3. Actualizar la matriz de CoocurrenciaEstudio.
+ * 1. Guardar abreviaturas corregidas y recortes en EstudioAliasAprendido.
+ * 2. Guardar combos habituales y recortes en PerfilEstudioPatron.
+ * 3. Filtrar renglones descartados como ruido en futuros escaneos.
+ * 4. Actualizar la matriz de CoocurrenciaEstudio.
  *
  * @param {Object} feedbackData
  * @param {string[]} feedbackData.lineasOrigen
  * @param {number[]} feedbackData.estudiosConfirmadosIds
  * @param {Array<{ texto: string, estudioId: number }>} feedbackData.asociacionesDirectas
+ * @param {Array<{ texto: string, estudiosIds: number[], imagenMuestra?: string }>} [feedbackData.renglonesConfirmados]
+ * @param {string[]} [feedbackData.lineasDescartadas]
  */
 export async function reportOcrFeedbackApi(feedbackData = {}) {
   try {
@@ -152,7 +200,13 @@ export async function reportOcrFeedbackApi(feedbackData = {}) {
       asociaciones_directas: (feedbackData.asociacionesDirectas || feedbackData.asociaciones_directas || []).map((a) => ({
         texto: a.texto,
         estudio_id: a.estudioId ?? a.estudio_id
-      }))
+      })),
+      renglones_confirmados: (feedbackData.renglonesConfirmados || feedbackData.renglones_confirmados || []).map((r) => ({
+        texto: r.texto,
+        estudios_ids: r.estudiosIds || r.estudios_ids || [],
+        imagen_muestra: r.imagenMuestra ?? r.imagen_muestra ?? ''
+      })),
+      lineas_descartadas: feedbackData.lineasDescartadas || feedbackData.lineas_descartadas || []
     }
     const response = await apiClient.post('/ocr/retroalimentar/', payload)
     return response
