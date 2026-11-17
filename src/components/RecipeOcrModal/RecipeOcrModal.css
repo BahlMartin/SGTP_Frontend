@@ -1322,6 +1322,155 @@
   color: #4c1d95;
 }
 
+/* Doble vista: Por Recortes vs Vista General sin duplicados */
+.ocr-modal__tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.ocr-modal__tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ocr-modal__tab-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.ocr-modal__tab-btn--active {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #ffffff;
+}
+
+.ocr-modal__general-view {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Alerta y filtro de Privacidad PHI antes de enviar recortes a IA */
+.ocr-modal__privacy-guard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #78350f;
+}
+
+.ocr-modal__privacy-guard-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.82rem;
+}
+
+.ocr-modal__privacy-guard-icon {
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ocr-modal__privacy-guard-desc {
+  margin: 4px 0 0;
+  font-size: 0.76rem;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+.ocr-modal__privacy-crops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.ocr-modal__privacy-crop-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #fde68a;
+}
+
+.ocr-modal__privacy-crop-img {
+  max-height: 54px;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.ocr-modal__privacy-crop-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.ocr-modal__privacy-crop-label {
+  font-size: 0.72rem;
+  color: #475569;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ocr-modal__privacy-guard-empty {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #92400e;
+}
+
+.ocr-modal__privacy-guard-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Miniatura de trazo histórico coincidente */
+.ocr-modal__known-trace-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.ocr-modal__known-trace-thumb {
+  height: 18px;
+  max-width: 56px;
+  object-fit: contain;
+  border-radius: 2px;
+  background: #ffffff;
+  border: 1px solid #d1fae5;
+}
+
 /* =========================================================
    Diseño Responsive para Tablets y Celulares (<= 768px)
    Unificación en 1 solo scroll continuo + 1 columna

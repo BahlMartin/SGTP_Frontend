@@ -85,19 +85,47 @@ export function useAdmissionForm() {
   }, [])
 
   /**
-   * Reemplaza por completo la lista de estudios (por ejemplo, al escanear con OCR).
+   * Fusiona sin duplicar los estudios escaneados con los previamente seleccionados en Admisión.
    */
   const handleSetStudies = useCallback((studiesList) => {
-    setFormData((previousFormData) => ({
-      ...previousFormData,
-      selectedStudies: Array.isArray(studiesList)
-        ? studiesList.map((study) => (
-            typeof study === 'string'
-              ? { id: null, nombre: study }
-              : { id: study.id ?? null, nombre: study.nombre || study.name || '' }
-          ))
-        : []
-    }))
+    setFormData((previousFormData) => {
+      const merged = []
+      const seenIds = new Set()
+      const seenNames = new Set()
+
+      const appendUnique = (study) => {
+        if (!study) return
+        const normalized =
+          typeof study === 'string'
+            ? { id: null, nombre: study }
+            : { id: study.id ?? null, nombre: study.nombre || study.name || '' }
+        const nameKey = String(normalized.nombre || '').trim().toLowerCase()
+
+        if (normalized.id !== null && normalized.id !== undefined) {
+          if (seenIds.has(normalized.id)) return
+          seenIds.add(normalized.id)
+          if (nameKey) seenNames.add(nameKey)
+          merged.push(normalized)
+        } else if (nameKey && !seenNames.has(nameKey)) {
+          seenNames.add(nameKey)
+          merged.push(normalized)
+        }
+      }
+
+      for (const existing of previousFormData.selectedStudies || []) {
+        appendUnique(existing)
+      }
+      if (Array.isArray(studiesList)) {
+        for (const incoming of studiesList) {
+          appendUnique(incoming)
+        }
+      }
+
+      return {
+        ...previousFormData,
+        selectedStudies: merged
+      }
+    })
   }, [])
 
   /**

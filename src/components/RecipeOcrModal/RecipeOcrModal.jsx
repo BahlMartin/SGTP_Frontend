@@ -12,7 +12,10 @@ import {
   Plus,
   Search,
   Ban,
-  RotateCcw
+  RotateCcw,
+  ShieldAlert,
+  Layers,
+  ListChecks
 } from 'lucide-react'
 import {
   processRecipeFullFlow,
@@ -21,6 +24,65 @@ import {
 } from '../../services/ocrService'
 import { fetchStudiesApi } from '../../services/studyService'
 import './RecipeOcrModal.css'
+
+function normalizeLocalSearchText(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+}
+
+function renderStudyOriginBadge(study) {
+  const scoreNumber = Math.round(Number(study.score) || 0)
+  if (study.origenDeteccion === 'COMBO_RUTINA') {
+    return (
+      <span className="ocr-modal__origin-badge ocr-modal__origin-badge--combo">
+        Combo de Rutina
+      </span>
+    )
+  }
+  if (study.origenDeteccion === 'MEMORIA_APRENDIDA') {
+    return (
+      <span className="ocr-modal__origin-badge ocr-modal__origin-badge--memory">
+        Memoria / Trazado (x{study.vecesConfirmado || 1})
+      </span>
+    )
+  }
+  if (study.origenDeteccion === 'VISION_IA') {
+    return (
+      <span className="ocr-modal__origin-badge ocr-modal__origin-badge--vision">
+        ✨ Visión IA
+      </span>
+    )
+  }
+  if (study.origenDeteccion === 'VALIDADO_POR_CONTEXTO') {
+    return (
+      <span className="ocr-modal__origin-badge ocr-modal__origin-badge--context">
+        ✨ Validado por contexto
+      </span>
+    )
+  }
+  if (study.origenDeteccion === 'BUSQUEDA_MANUAL') {
+    return (
+      <span className="ocr-modal__origin-badge ocr-modal__origin-badge--manual">
+        Buscado manualmente
+      </span>
+    )
+  }
+  if (scoreNumber > 0) {
+    return (
+      <span
+        className={`ocr-modal__study-score ${
+          scoreNumber >= 85 ? 'ocr-modal__study-score--high' : 'ocr-modal__study-score--medium'
+        }`}
+      >
+        {scoreNumber}% coincidencia
+      </span>
+    )
+  }
+  return null
+}
 
 export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   // Estados de captura de imagen
@@ -43,19 +105,22 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   const [lineSearchResults, setLineSearchResults] = useState([])
   const [isSearchingLineStudies, setIsSearchingLineStudies] = useState(false)
   const [lineSearchError, setLineSearchError] = useState('')
+  const [allCatalogStudies, setAllCatalogStudies] = useState([])
   const [quickCatalogStudies, setQuickCatalogStudies] = useState([])
   const [selectedForAiIds, setSelectedForAiIds] = useState([])
   const [isConsultingAi, setIsConsultingAi] = useState(false)
   const [aiConsultMessage, setAiConsultMessage] = useState('')
+  const [reviewTab, setReviewTab] = useState('crops') // 'crops' | 'general'
+  const [showAiPrivacyAlert, setShowAiPrivacyAlert] = useState(false)
 
   useEffect(() => {
     let mounted = true
     fetchStudiesApi('')
       .then((studies) => {
         if (!mounted || !Array.isArray(studies)) return
-        setQuickCatalogStudies(
-          studies.filter((s) => s?.id && s?.nombre && s.activo).slice(0, 12)
-        )
+        const activeStudies = studies.filter((s) => s?.id && s?.nombre && s.activo)
+        setAllCatalogStudies(activeStudies)
+        setQuickCatalogStudies(activeStudies.slice(0, 12))
       })
       .catch(() => {})
     return () => {
@@ -173,9 +238,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         imagenMuestraConocida: line.imagenMuestraConocida || null,
         discarded: false,
         candidates: line.recomendados || [],
-        selectedIds: (line.recomendados || [])
-          .filter((r) => r.preseleccionado)
-          .map((r) => r.id)
+        // Mejora 7: ningún estudio preseleccionado por defecto; Admisión debe tildar manualmente
+        selectedIds: []
       }))
 
       setOcrResult(res)
@@ -185,6 +249,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
       setLineSearchQuery('')
       setSelectedForAiIds([])
       setAiConsultMessage('')
+      setReviewTab('crops')
+      setShowAiPrivacyAlert(false)
       setShowFloatingAlert(true)
     } catch (err) {
       console.error('Error al procesar receta OCR:', err)
@@ -234,15 +300,9 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     )
   }
 
-  // Consultar Gemini únicamente sobre los recortes marcados por Admisión
-  const handleConsultAiSelectedCrops = async () => {
-    const targetLines = linesReview.filter(
-      (line) =>
-        !line.discarded &&
-        selectedForAiIds.includes(line.id) &&
-        (line.cropStorageDataUrl || line.cropDataUrl)
-    )
-    if (targetLines.length === 0 || isConsultingAi) return
+  // Helper compartido para consultar Gemini únicamente sobre los recortes explícitamente habilitados
+  const consultAiLines = async (targetLines) => {
+    if (!Array.isArray(targetLines) || targetLines.length === 0 || isConsultingAi) return
 
     setIsConsultingAi(true)
     setAiConsultMessage('')
@@ -275,29 +335,26 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
             existingMap.set(rec.id, rec)
           }
 
-          const nextSelectedSet = new Set(line.selectedIds)
-          for (const rec of recs) {
-            if (rec.preseleccionado) {
-              nextSelectedSet.add(rec.id)
-            }
-          }
-
+          // Mejora 7: no preseleccionar automáticamente al recibir respuesta de Gemini; conservar solo lo tildado
           return {
             ...line,
             textoOriginalOcr: line.textoOriginalOcr || line.texto,
             textoIa: item.textoTranscritoIa || line.textoIa,
             comboDetectado: item.comboDetectado || line.comboDetectado,
             candidates: Array.from(existingMap.values()),
-            selectedIds: Array.from(nextSelectedSet)
+            selectedIds: line.selectedIds
           }
         })
       )
 
       const processedIds = new Set(targetLines.map((l) => l.id))
       setSelectedForAiIds((prev) => prev.filter((id) => !processedIds.has(id)))
+      setShowAiPrivacyAlert(false)
 
       if (resolvedCount > 0) {
-        setAiConsultMessage(`IA interpretó ${resolvedCount} de ${targetLines.length} recorte(s) marcado(s).`)
+        setAiConsultMessage(
+          `IA sugirió prácticas en ${resolvedCount} de ${targetLines.length} recorte(s). Tilde las que corresponda.`
+        )
       } else {
         setAiConsultMessage(
           'No se identificaron estudios en los recortes marcados (verifique su clave API o asigne manualmente).'
@@ -309,6 +366,17 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     } finally {
       setIsConsultingAi(false)
     }
+  }
+
+  // Consultar Gemini únicamente sobre los recortes marcados por Admisión en vista Por Recortes
+  const handleConsultAiSelectedCrops = () => {
+    const targetLines = linesReview.filter(
+      (line) =>
+        !line.discarded &&
+        selectedForAiIds.includes(line.id) &&
+        (line.cropStorageDataUrl || line.cropDataUrl)
+    )
+    return consultAiLines(targetLines)
   }
 
   // Abrir o cerrar el buscador inline de un renglón
@@ -389,6 +457,125 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     [linesReview]
   )
 
+  const pendingLinesWithCrops = useMemo(
+    () =>
+      linesReview.filter(
+        (l) => !l.discarded && l.selectedIds.length === 0 && (l.cropStorageDataUrl || l.cropDataUrl)
+      ),
+    [linesReview]
+  )
+
+  // Resultados instantáneos (0 ms) sobre el catálogo en memoria combinados con resultados remotos de alias/baterías
+  const displayedLineSearchResults = useMemo(() => {
+    const normQuery = normalizeLocalSearchText(lineSearchQuery)
+    if (!normQuery) return []
+
+    const merged = []
+    const seenIds = new Set()
+
+    for (const study of allCatalogStudies) {
+      const normName = normalizeLocalSearchText(study.nombre)
+      const normCode = normalizeLocalSearchText(study.codigo_practica)
+      if (normName.includes(normQuery) || normCode.includes(normQuery)) {
+        seenIds.add(study.id)
+        merged.push(study)
+        if (merged.length >= 20) break
+      }
+    }
+
+    for (const remoteStudy of lineSearchResults) {
+      if (remoteStudy?.id && !seenIds.has(remoteStudy.id)) {
+        seenIds.add(remoteStudy.id)
+        merged.push(remoteStudy)
+      }
+    }
+
+    return merged.slice(0, 25)
+  }, [lineSearchQuery, allCatalogStudies, lineSearchResults])
+
+  // Vista General deduplicada: consolida todos los estudios sugeridos o tildados sin duplicados
+  const uniqueSuggestedStudies = useMemo(() => {
+    const mapById = new Map()
+
+    for (const line of linesReview) {
+      if (line.discarded) continue
+      const rowLabel =
+        line.totalColsInRow > 1 ? `Fila ${line.rowIndex} · Col. ${line.colIndex}` : `Fila ${line.rowIndex}`
+
+      for (const candidate of line.candidates) {
+        const isLineSelected = line.selectedIds.includes(candidate.id)
+        const existing = mapById.get(candidate.id)
+        if (!existing) {
+          mapById.set(candidate.id, {
+            ...candidate,
+            isSelected: isLineSelected,
+            lineIds: [line.id],
+            rowLabels: [rowLabel]
+          })
+        } else {
+          existing.isSelected = existing.isSelected || isLineSelected
+          if (!existing.lineIds.includes(line.id)) {
+            existing.lineIds.push(line.id)
+            existing.rowLabels.push(rowLabel)
+          }
+          if ((candidate.score || 0) > (existing.score || 0)) {
+            existing.score = candidate.score
+            existing.origenDeteccion = candidate.origenDeteccion
+          }
+        }
+      }
+    }
+
+    for (const extra of extraContextualStudies) {
+      const existing = mapById.get(extra.id)
+      if (!existing) {
+        mapById.set(extra.id, {
+          ...extra,
+          isSelected: true,
+          lineIds: [],
+          rowLabels: ['Sugerencia contextual']
+        })
+      } else {
+        existing.isSelected = true
+      }
+    }
+
+    return Array.from(mapById.values()).sort((a, b) => {
+      if (a.isSelected !== b.isSelected) return a.isSelected ? -1 : 1
+      return (b.score || 0) - (a.score || 0)
+    })
+  }, [linesReview, extraContextualStudies])
+
+  const toggleStudyInGeneralView = (uniqueItem) => {
+    if (!uniqueItem) return
+    if (uniqueItem.isSelected) {
+      setLinesReview((prev) =>
+        prev.map((line) =>
+          line.selectedIds.includes(uniqueItem.id)
+            ? { ...line, selectedIds: line.selectedIds.filter((id) => id !== uniqueItem.id) }
+            : line
+        )
+      )
+      setExtraContextualStudies((prev) => prev.filter((s) => s.id !== uniqueItem.id))
+      return
+    }
+
+    if (uniqueItem.lineIds.length > 0) {
+      const primaryLineId = uniqueItem.lineIds[0]
+      setLinesReview((prev) =>
+        prev.map((line) =>
+          line.id === primaryLineId && !line.selectedIds.includes(uniqueItem.id)
+            ? { ...line, selectedIds: [...line.selectedIds, uniqueItem.id] }
+            : line
+        )
+      )
+    } else {
+      setExtraContextualStudies((prev) =>
+        prev.some((s) => s.id === uniqueItem.id) ? prev : [...prev, uniqueItem]
+      )
+    }
+  }
+
   const availableQuickPicks = useMemo(() => {
     const selectedSet = new Set(allSelectedStudies.map((s) => s.id))
     const merged = []
@@ -445,12 +632,20 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         .filter((line) => line.discarded && (line.textoOriginalOcr || line.texto) !== '[Manuscrito a revisar]')
         .map((line) => line.textoOriginalOcr || line.texto)
 
+      const recortesDescartados = linesReview
+        .filter((line) => line.discarded && (line.cropStorageDataUrl || line.cropDataUrl))
+        .map((line) => ({
+          texto: line.textoOriginalOcr || line.texto || '',
+          imagenMuestra: line.cropStorageDataUrl || line.cropDataUrl || ''
+        }))
+
       reportOcrFeedbackApi({
         lineasOrigen: ocrResult.detectedLines || [],
         estudiosConfirmadosIds: allSelectedStudies.map((s) => s.id),
         asociacionesDirectas,
         renglonesConfirmados,
-        lineasDescartadas
+        lineasDescartadas,
+        recortesDescartados
       }).catch((err) => {
         console.warn('Feedback OCR no crítico falló:', err)
       })
@@ -476,11 +671,11 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
           <div className="ocr-modal__floating-toast" role="status">
             <Check size={15} className="ocr-modal__alert-icon" />
             <div className="ocr-modal__alert-content">
-              {allSelectedStudies.length > 0 ? (
+              {uniqueSuggestedStudies.length > 0 ? (
                 <>
-                  <strong>{allSelectedStudies.length} prácticas preseleccionadas</strong>
+                  <strong>{uniqueSuggestedStudies.length} estudios sugeridos</strong>
                   <span className="ocr-modal__alert-subtext">
-                    — Valide cada renglón
+                    — Tilde manualmente los que correspondan
                   </span>
                 </>
               ) : (
@@ -668,21 +863,52 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                 )}
               </aside>
 
-              {/* Panel Derecho: Revisión Renglón por Renglón y Sugerencias */}
+              {/* Panel Derecho: Revisión con Doble Vista (Por Recortes / Vista General) y Sugerencias */}
               <div className="ocr-modal__main-panel">
                 <div className="ocr-modal__alert ocr-modal__alert--desktop">
                   <Check size={15} className="ocr-modal__alert-icon" />
                   <div className="ocr-modal__alert-content">
                     <strong>{allSelectedStudies.length} prácticas marcadas</strong>
                     <span className="ocr-modal__alert-subtext">
-                      {pendingLinesCount > 0
-                        ? `— ${pendingLinesCount} renglón(es) sin estudio asignado; busque o descarte según corresponda`
-                        : '— Verifique cada renglón antes de confirmar'}
+                      {allSelectedStudies.length === 0
+                        ? `— Tilde manualmente los estudios que correspondan (${pendingLinesCount} renglón(es) sin marcar)`
+                        : pendingLinesCount > 0
+                          ? `— ${pendingLinesCount} renglón(es) sin estudio asignado; tilde o descarte según corresponda`
+                          : '— Verifique las prácticas tildadas antes de confirmar'}
                     </span>
                   </div>
                 </div>
 
+                {/* Pestañas: Por Recortes vs Vista General sin Duplicados */}
                 {linesReview.length > 0 && (
+                  <div className="ocr-modal__tabs" role="tablist" aria-label="Modo de revisión OCR">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={reviewTab === 'crops'}
+                      className={`ocr-modal__tab-btn ${reviewTab === 'crops' ? 'ocr-modal__tab-btn--active' : ''}`}
+                      onClick={() => {
+                        setReviewTab('crops')
+                        setShowAiPrivacyAlert(false)
+                      }}
+                    >
+                      <Layers size={14} />
+                      <span>Por Recortes ({activeLinesCount})</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={reviewTab === 'general'}
+                      className={`ocr-modal__tab-btn ${reviewTab === 'general' ? 'ocr-modal__tab-btn--active' : ''}`}
+                      onClick={() => setReviewTab('general')}
+                    >
+                      <ListChecks size={14} />
+                      <span>Vista General ({uniqueSuggestedStudies.length})</span>
+                    </button>
+                  </div>
+                )}
+
+                {linesReview.length > 0 && reviewTab === 'crops' && (
                   <div className="ocr-modal__ai-batch-bar">
                     <div className="ocr-modal__ai-batch-info">
                       <span>🔒 Privacidad: solo se envían a Gemini los recortes que marque con 'Enviar a IA'.</span>
@@ -706,7 +932,146 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                   </div>
                 )}
 
-                {linesReview.length > 0 ? (
+                {reviewTab === 'general' && linesReview.length > 0 ? (
+                  <div className="ocr-modal__general-view">
+                    <div className="ocr-modal__ai-batch-bar">
+                      <div className="ocr-modal__ai-batch-info">
+                        <span>
+                          Lista consolidada sin duplicados. Tilde manualmente cada estudio a confirmar.
+                        </span>
+                        {aiConsultMessage && (
+                          <strong className="ocr-modal__ai-batch-status">{aiConsultMessage}</strong>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="ocr-modal__ai-batch-btn"
+                        disabled={pendingLinesWithCrops.length === 0 || isConsultingAi}
+                        onClick={() => setShowAiPrivacyAlert((prev) => !prev)}
+                      >
+                        <Sparkles size={14} />
+                        <span>
+                          {isConsultingAi
+                            ? 'Consultando Gemini...'
+                            : `✨ Escanear con IA (${pendingLinesWithCrops.length})`}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Guardián de Privacidad PHI antes de enviar recortes desde Vista General */}
+                    {showAiPrivacyAlert && (
+                      <div className="ocr-modal__privacy-guard" role="alert">
+                        <div className="ocr-modal__privacy-guard-header">
+                          <ShieldAlert size={18} className="ocr-modal__privacy-guard-icon" />
+                          <div>
+                            <strong>Alerta de Privacidad (Datos Sensibles)</strong>
+                            <p className="ocr-modal__privacy-guard-desc">
+                              Revise estas imágenes antes de enviarlas a Gemini. Si alguna contiene Nombre, DNI,
+                              Obra Social, Nro. de Afiliado o Firma médica, presione &quot;Descartar&quot; para
+                              excluirla.
+                            </p>
+                          </div>
+                        </div>
+
+                        {pendingLinesWithCrops.length > 0 ? (
+                          <div className="ocr-modal__privacy-crops-grid">
+                            {pendingLinesWithCrops.map((cropLine) => (
+                              <div key={`priv-${cropLine.id}`} className="ocr-modal__privacy-crop-item">
+                                {cropLine.cropDataUrl && (
+                                  <img
+                                    src={cropLine.cropDataUrl}
+                                    alt={`Recorte pendiente ${cropLine.texto}`}
+                                    className="ocr-modal__privacy-crop-img"
+                                  />
+                                )}
+                                <div className="ocr-modal__privacy-crop-footer">
+                                  <span className="ocr-modal__privacy-crop-label">
+                                    Fila {cropLine.rowIndex} · &quot;{cropLine.texto}&quot;
+                                  </span>
+                                  <button
+                                    type="button"
+                                    className="ocr-modal__line-ignore-btn"
+                                    onClick={() => toggleDiscardLine(cropLine.id, true)}
+                                  >
+                                    <Ban size={12} />
+                                    <span>Descartar (datos sensibles)</span>
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="ocr-modal__privacy-guard-empty">
+                            No quedan recortes pendientes para enviar a IA.
+                          </p>
+                        )}
+
+                        <div className="ocr-modal__privacy-guard-actions">
+                          <button
+                            type="button"
+                            className="ocr-modal__line-restore-btn"
+                            onClick={() => setShowAiPrivacyAlert(false)}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            className="ocr-modal__ai-batch-btn"
+                            disabled={pendingLinesWithCrops.length === 0 || isConsultingAi}
+                            onClick={() => consultAiLines(pendingLinesWithCrops)}
+                          >
+                            <Sparkles size={14} />
+                            <span>
+                              Confirmar y Enviar ({pendingLinesWithCrops.length}) a IA
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {uniqueSuggestedStudies.length > 0 ? (
+                      <div className="ocr-modal__studies-grid">
+                        {uniqueSuggestedStudies.map((study) => (
+                          <label
+                            key={`gen-${study.id}`}
+                            className={`ocr-modal__study-item ${
+                              study.isSelected ? 'ocr-modal__study-item--selected' : ''
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="ocr-modal__study-checkbox"
+                              checked={study.isSelected}
+                              onChange={() => toggleStudyInGeneralView(study)}
+                            />
+                            <div className="ocr-modal__study-details">
+                              <span className="ocr-modal__study-name">{study.nombre}</span>
+                              <div className="ocr-modal__study-meta">
+                                {study.codigoPractica && (
+                                  <span className="ocr-modal__study-code">{study.codigoPractica}</span>
+                                )}
+                                {renderStudyOriginBadge(study)}
+                                {study.rowLabels?.length > 0 && (
+                                  <span className="ocr-modal__line-conf">
+                                    {study.rowLabels.join(', ')}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="ocr-modal__no-studies-msg">
+                        <AlertCircle size={16} />
+                        <span>
+                          Todavía no hay estudios sugeridos. Use la pestaña &quot;Por Recortes&quot; o
+                          &quot;Escanear con IA&quot; sobre recortes revisados.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : linesReview.length > 0 ? (
                   <div className="ocr-modal__lines-list">
                     {linesReview.map((line) => {
                       if (line.discarded) {
@@ -780,6 +1145,19 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                                       ✨ IA leyó: {line.textoIa}
                                     </span>
                                   )}
+                                  {line.imagenMuestraConocida && (
+                                    <span
+                                      className="ocr-modal__known-trace-pill"
+                                      title="Coincide con un recorte manuscrito guardado previamente"
+                                    >
+                                      <img
+                                        src={line.imagenMuestraConocida}
+                                        alt="Trazo coincidente previo"
+                                        className="ocr-modal__known-trace-thumb"
+                                      />
+                                      <span>Trazo histórico coincidente</span>
+                                    </span>
+                                  )}
                                   {line.candidates.length === 0 && (
                                     <span className="ocr-modal__line-unmatched-badge">
                                       Sin coincidencia automática
@@ -848,9 +1226,9 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                                     setLineSearchError('')
                                   }}
                                   onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && lineSearchResults.length > 0) {
+                                    if (e.key === 'Enter' && displayedLineSearchResults.length > 0) {
                                       e.preventDefault()
-                                      handleAssignSearchedStudyToLine(line.id, lineSearchResults[0])
+                                      handleAssignSearchedStudyToLine(line.id, displayedLineSearchResults[0])
                                     }
                                   }}
                                   autoFocus
@@ -860,21 +1238,21 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
 
                               {lineSearchQuery.trim() && (
                                 <div className="ocr-modal__line-search-dropdown">
-                                  {isSearchingLineStudies ? (
+                                  {displayedLineSearchResults.length === 0 && isSearchingLineStudies ? (
                                     <div className="ocr-modal__line-search-status">
                                       Buscando en catálogo y memoria...
                                     </div>
-                                  ) : lineSearchError ? (
+                                  ) : lineSearchError && displayedLineSearchResults.length === 0 ? (
                                     <div className="ocr-modal__line-search-status ocr-modal__line-search-status--error">
                                       {lineSearchError}
                                     </div>
-                                  ) : lineSearchResults.length === 0 ? (
+                                  ) : displayedLineSearchResults.length === 0 ? (
                                     <div className="ocr-modal__line-search-status">
-                                      No se encontraron estudios activos para "{lineSearchQuery.trim()}".
+                                      No se encontraron estudios activos para &quot;{lineSearchQuery.trim()}&quot;.
                                     </div>
                                   ) : (
                                     <ul className="ocr-modal__line-search-results">
-                                      {lineSearchResults.map((study) => {
+                                      {displayedLineSearchResults.map((study) => {
                                         const alreadySelected = line.selectedIds.includes(study.id)
                                         return (
                                           <li key={study.id}>
@@ -928,7 +1306,6 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                             <div className="ocr-modal__studies-grid">
                               {line.candidates.map((study) => {
                                 const isSelected = line.selectedIds.includes(study.id)
-                                const scoreNumber = Math.round(Number(study.score) || 0)
 
                                 return (
                                   <label
@@ -949,37 +1326,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                                         {study.codigoPractica && (
                                           <span className="ocr-modal__study-code">{study.codigoPractica}</span>
                                         )}
-                                        {study.origenDeteccion === 'COMBO_RUTINA' ? (
-                                          <span className="ocr-modal__origin-badge ocr-modal__origin-badge--combo">
-                                            Combo de Rutina
-                                          </span>
-                                        ) : study.origenDeteccion === 'MEMORIA_APRENDIDA' ? (
-                                          <span className="ocr-modal__origin-badge ocr-modal__origin-badge--memory">
-                                            Memoria (x{study.vecesConfirmado || 1})
-                                          </span>
-                                        ) : study.origenDeteccion === 'VISION_IA' ? (
-                                          <span className="ocr-modal__origin-badge ocr-modal__origin-badge--vision">
-                                            ✨ Visión IA
-                                          </span>
-                                        ) : study.origenDeteccion === 'VALIDADO_POR_CONTEXTO' ? (
-                                          <span className="ocr-modal__origin-badge ocr-modal__origin-badge--context">
-                                            ✨ Validado por contexto
-                                          </span>
-                                        ) : study.origenDeteccion === 'BUSQUEDA_MANUAL' ? (
-                                          <span className="ocr-modal__origin-badge ocr-modal__origin-badge--manual">
-                                            Buscado manualmente
-                                          </span>
-                                        ) : scoreNumber > 0 ? (
-                                          <span
-                                            className={`ocr-modal__study-score ${
-                                              scoreNumber >= 85
-                                                ? 'ocr-modal__study-score--high'
-                                                : 'ocr-modal__study-score--medium'
-                                            }`}
-                                          >
-                                            {scoreNumber}% coincidencia
-                                          </span>
-                                        ) : null}
+                                        {renderStudyOriginBadge(study)}
                                       </div>
                                     </div>
                                   </label>
@@ -1098,6 +1445,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                   setLineSearchQuery('')
                   setSelectedForAiIds([])
                   setAiConsultMessage('')
+                  setReviewTab('crops')
+                  setShowAiPrivacyAlert(false)
                   setShowFloatingAlert(false)
                   setProgressInfo({ percent: 0, message: '' })
                 }}

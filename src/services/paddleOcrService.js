@@ -250,7 +250,7 @@ function trimBboxToInkBounds(canvas, bbox, pad = 4) {
 }
 
 /**
- * Calcula una huella visual perceptual compacta (dHash 64 bits + relación de aspecto + mapa morfológico 4x4 = 22 hex)
+ * Calcula una huella visual perceptual compacta (dHash 64 bits + aspecto + mapa 4x4 + perfil asc/desc = 26 hex)
  * de un bloque manuscrito recortado al límite exacto de su tinta para reconocerlo en futuros
  * escaneos aunque el texto OCR sea impreciso.
  *
@@ -297,7 +297,7 @@ export function computeBlockVisualSignature(canvas, bbox) {
       }
     }
 
-    // Mapa morfológico 4x4 (16 bits) de distribución de ascendentes, descendentes y densidad
+    // Mapa morfológico 4x4 (16 bits) de distribución espacial de tinta
     const morphCanvas = document.createElement('canvas')
     morphCanvas.width = 4
     morphCanvas.height = 4
@@ -324,8 +324,44 @@ export function computeBlockVisualSignature(canvas, bbox) {
       morphHex = morphMask.toString(16).padStart(4, '0')
     }
 
+    // Envolvente vertical de ascendentes/descendentes (8 columnas x 2 bits = 16 bits = 4 hex)
+    const envCanvas = document.createElement('canvas')
+    envCanvas.width = 8
+    envCanvas.height = 12
+    const envCtx = envCanvas.getContext('2d')
+    let envHex = '0000'
+    if (envCtx) {
+      envCtx.fillStyle = '#ffffff'
+      envCtx.fillRect(0, 0, 8, 12)
+      envCtx.drawImage(canvas, startX, startY, cropW, cropH, 0, 0, 8, 12)
+      const eData = envCtx.getImageData(0, 0, 8, 12).data
+      let envMask = 0
+      for (let x = 0; x < 8; x++) {
+        let hasAscender = false
+        for (let y = 0; y < 3; y++) {
+          const off = (y * 8 + x) * 4
+          const lum = 0.299 * eData[off] + 0.587 * eData[off + 1] + 0.114 * eData[off + 2]
+          if (lum < 232) {
+            hasAscender = true
+            break
+          }
+        }
+        let hasDescender = false
+        for (let y = 9; y < 12; y++) {
+          const off = (y * 8 + x) * 4
+          const lum = 0.299 * eData[off] + 0.587 * eData[off + 1] + 0.114 * eData[off + 2]
+          if (lum < 232) {
+            hasDescender = true
+            break
+          }
+        }
+        envMask = (envMask << 2) | ((hasAscender ? 2 : 0) | (hasDescender ? 1 : 0))
+      }
+      envHex = envMask.toString(16).padStart(4, '0')
+    }
+
     const aspectBucket = Math.max(1, Math.min(255, Math.round((cropW / cropH) * 16)))
-    return hexHash + aspectBucket.toString(16).padStart(2, '0') + morphHex
+    return hexHash + aspectBucket.toString(16).padStart(2, '0') + morphHex + envHex
   } catch (err) {
     console.warn('No se pudo calcular firma visual del bloque:', err)
     return ''

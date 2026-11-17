@@ -244,6 +244,7 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
  * @param {Array<{ texto: string, estudioId: number }>} feedbackData.asociacionesDirectas
  * @param {Array<{ texto: string, estudiosIds: number[], imagenMuestra?: string }>} [feedbackData.renglonesConfirmados]
  * @param {string[]} [feedbackData.lineasDescartadas]
+ * @param {Array<{ texto: string, imagenMuestra: string }>} [feedbackData.recortesDescartados]
  */
 export async function reportOcrFeedbackApi(feedbackData = {}) {
   try {
@@ -259,7 +260,11 @@ export async function reportOcrFeedbackApi(feedbackData = {}) {
         estudios_ids: r.estudiosIds || r.estudios_ids || [],
         imagen_muestra: r.imagenMuestra ?? r.imagen_muestra ?? ''
       })),
-      lineas_descartadas: feedbackData.lineasDescartadas || feedbackData.lineas_descartadas || []
+      lineas_descartadas: feedbackData.lineasDescartadas || feedbackData.lineas_descartadas || [],
+      recortes_descartados: (feedbackData.recortesDescartados || feedbackData.recortes_descartados || []).map((rd) => ({
+        texto: rd.texto || '',
+        imagen_muestra: rd.imagenMuestra ?? rd.imagen_muestra ?? ''
+      }))
     }
     const response = await apiClient.post('/ocr/retroalimentar/', payload)
     return response
