@@ -500,6 +500,16 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     [allSelectedStudies]
   )
 
+  // En Vista General excluye todo estudio tildado globalmente; dentro de un renglón,
+  // excluye solo los ya tildados en ese mismo renglón para permitir entrenar recortes repetidos.
+  const excludedStudyIdsForActiveSearch = useMemo(() => {
+    if (!activeSearchLineId || activeSearchLineId === 'general') {
+      return selectedStudyIdsSet
+    }
+    const activeLine = linesReview.find((line) => line.id === activeSearchLineId)
+    return new Set(activeLine?.selectedIds || [])
+  }, [activeSearchLineId, linesReview, selectedStudyIdsSet])
+
   const activeLinesCount = useMemo(
     () => linesReview.filter((l) => !l.discarded).length,
     [linesReview]
@@ -519,7 +529,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   )
 
   // Resultados instantáneos (0 ms) sobre el catálogo en memoria combinados con resultados remotos de alias/baterías,
-  // excluyendo siempre cualquier estudio ya tildado en algún ocr-modal__study-item activo
+  // excluyendo según el alcance (global en Vista General, o solo el renglón actual en tarjetas de recorte).
   const displayedLineSearchResults = useMemo(() => {
     const normQuery = normalizeLocalSearchText(lineSearchQuery)
     if (!normQuery) return []
@@ -528,7 +538,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     const seenIds = new Set()
 
     for (const study of allCatalogStudies) {
-      if (!study?.id || selectedStudyIdsSet.has(study.id)) continue
+      if (!study?.id || excludedStudyIdsForActiveSearch.has(study.id)) continue
       const normName = normalizeLocalSearchText(study.nombre)
       const normCode = normalizeLocalSearchText(study.codigo_practica)
       if (normName.includes(normQuery) || normCode.includes(normQuery)) {
@@ -542,15 +552,15 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
       if (
         remoteStudy?.id &&
         !seenIds.has(remoteStudy.id) &&
-        !selectedStudyIdsSet.has(remoteStudy.id)
+        !excludedStudyIdsForActiveSearch.has(remoteStudy.id)
       ) {
         seenIds.add(remoteStudy.id)
         merged.push(remoteStudy)
       }
     }
 
-    return merged.filter((study) => !selectedStudyIdsSet.has(study.id)).slice(0, 25)
-  }, [lineSearchQuery, allCatalogStudies, lineSearchResults, selectedStudyIdsSet])
+    return merged.filter((study) => !excludedStudyIdsForActiveSearch.has(study.id)).slice(0, 25)
+  }, [lineSearchQuery, allCatalogStudies, lineSearchResults, excludedStudyIdsForActiveSearch])
 
   // Vista General deduplicada: consolida todos los estudios sugeridos o tildados sin duplicados
   const uniqueSuggestedStudies = useMemo(() => {
@@ -762,8 +772,15 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   }
 
   const renderInlineSearchBox = (searchTargetId, onSelectStudy) => {
+    const isGeneralSearch = searchTargetId === 'general'
+    const targetLine = isGeneralSearch
+      ? null
+      : linesReview.find((line) => line.id === searchTargetId)
+    const excludedIds = isGeneralSearch
+      ? selectedStudyIdsSet
+      : new Set(targetLine?.selectedIds || [])
     const filteredResults = displayedLineSearchResults.filter(
-      (study) => !selectedStudyIdsSet.has(study.id)
+      (study) => !excludedIds.has(study.id)
     )
 
     return (
@@ -810,25 +827,39 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
               </div>
             ) : (
               <ul className="ocr-modal__line-search-results">
-                {filteredResults.map((study) => (
-                  <li key={study.id}>
-                    <button
-                      type="button"
-                      className="ocr-modal__line-search-result-btn"
-                      onClick={() => onSelectStudy(study)}
-                    >
-                      <span className="ocr-modal__line-search-result-main">
-                        <Plus size={13} />
-                        <span>{study.nombre}</span>
-                      </span>
-                      {study.codigo_practica && (
-                        <span className="ocr-modal__line-search-result-meta">
-                          {study.codigo_practica}
+                {filteredResults.map((study) => {
+                  const isSelectedInAnotherLine =
+                    !isGeneralSearch && selectedStudyIdsSet.has(study.id)
+
+                  return (
+                    <li key={study.id}>
+                      <button
+                        type="button"
+                        className="ocr-modal__line-search-result-btn"
+                        onClick={() => onSelectStudy(study)}
+                      >
+                        <span className="ocr-modal__line-search-result-main">
+                          <Plus size={13} />
+                          <span>{study.nombre}</span>
                         </span>
-                      )}
-                    </button>
-                  </li>
-                ))}
+                        {(isSelectedInAnotherLine || study.codigo_practica) && (
+                          <span className="ocr-modal__line-search-result-aside">
+                            {isSelectedInAnotherLine && (
+                              <span className="ocr-modal__line-search-result-badge">
+                                En otro renglón · suma entrenamiento
+                              </span>
+                            )}
+                            {study.codigo_practica && (
+                              <span className="ocr-modal__line-search-result-meta">
+                                {study.codigo_practica}
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>
