@@ -42,6 +42,9 @@ export async function logoutApi() {
   try {
     return await apiClient.post('/auth/logout/')
   } catch (error) {
+    if (error?.data?.error === 'PACIENTE_EN_ATENCION') {
+      throw error
+    }
     console.warn('Advertencia al cerrar sesión en el servidor:', error)
     return { mensaje: 'Sesión finalizada localmente.' }
   }

@@ -13,6 +13,73 @@ import {
 } from '../utils/imagePreprocessor'
 import { sanitizeRecipeLine } from '../utils/ocrSanitizer'
 
+const ONNX_NOISE_PATTERNS = [
+  'onnxruntime',
+  '[W:onnxruntime:',
+  'CleanUnusedInitializersAndNodeArgs',
+  'Removing initializer',
+  'p2o.pd_op.full_int_array'
+]
+
+/**
+ * Silencia advertencias informativas de optimización interna de grafos de ONNX Runtime / Emscripten
+ * de forma idempotente antes de que los módulos WASM capturen las referencias de console.*.
+ */
+function installOnnxConsoleFilter() {
+  if (typeof window === 'undefined' || window.__onnx_warn_filtered) {
+    return
+  }
+  window.__onnx_warn_filtered = true
+
+  const shouldFilter = (args) =>
+    args.some((arg) => {
+      const text =
+        typeof arg === 'string'
+          ? arg
+          : typeof arg?.message === 'string'
+            ? arg.message
+            : ''
+      return Boolean(text) && ONNX_NOISE_PATTERNS.some((pattern) => text.includes(pattern))
+    })
+
+  for (const method of ['warn', 'error', 'log', 'info', 'debug']) {
+    const originalMethod = console[method]
+    if (typeof originalMethod === 'function') {
+      console[method] = (...args) => {
+        if (shouldFilter(args)) return
+        originalMethod.apply(console, args)
+      }
+    }
+  }
+}
+
+installOnnxConsoleFilter()
+
+function wrapOrtInferenceSession(InferenceSession) {
+  if (!InferenceSession?.create || InferenceSession.create.__onnxLogWrapped) {
+    return
+  }
+  const originalCreate = InferenceSession.create.bind(InferenceSession)
+  const wrappedCreate = function (model, byteOffsetOrOptions, byteLength, maybeOptions) {
+    if (typeof byteOffsetOrOptions === 'number') {
+      const mergedOptions = {
+        logSeverityLevel: 3,
+        logVerbosityLevel: 0,
+        ...(maybeOptions && typeof maybeOptions === 'object' ? maybeOptions : {})
+      }
+      return originalCreate(model, byteOffsetOrOptions, byteLength, mergedOptions)
+    }
+    const mergedOptions = {
+      logSeverityLevel: 3,
+      logVerbosityLevel: 0,
+      ...(byteOffsetOrOptions && typeof byteOffsetOrOptions === 'object' ? byteOffsetOrOptions : {})
+    }
+    return originalCreate(model, mergedOptions)
+  }
+  wrappedCreate.__onnxLogWrapped = true
+  InferenceSession.create = wrappedCreate
+}
+
 let paddleInstance = null
 let paddleLoadingPromise = null
 
@@ -41,43 +108,24 @@ export async function getPaddleOcrInstance(onProgress) {
         })
       }
 
-      // Silenciar advertencias informativas de optimización interna de grafos de ONNX Runtime
-      if (typeof window !== 'undefined' && !window.__onnx_warn_filtered) {
-        window.__onnx_warn_filtered = true
-        const shouldFilter = (args) => {
-          return args.some(
-            (arg) =>
-              typeof arg === 'string' &&
-              (arg.includes('onnxruntime') ||
-                arg.includes('CleanUnusedInitializersAndNodeArgs') ||
-                arg.includes('Removing initializer') ||
-                arg.includes('[W:onnxruntime:'))
-          )
-        }
-        const origWarn = console.warn
-        console.warn = (...args) => {
-          if (shouldFilter(args)) return
-          origWarn.apply(console, args)
-        }
-        const origLog = console.log
-        console.log = (...args) => {
-          if (shouldFilter(args)) return
-          origLog.apply(console, args)
-        }
-        const origInfo = console.info
-        console.info = (...args) => {
-          if (shouldFilter(args)) return
-          origInfo.apply(console, args)
-        }
-      }
+      installOnnxConsoleFilter()
 
-      // Configurar nivel de logs de ONNX Runtime para que solo reporte errores críticos
+      // Configurar nivel de logs de ONNX Runtime (JS + C++ WASM) para que solo reporte errores críticos
       try {
         const ort = await import('onnxruntime-web')
         if (ort?.env) {
           ort.env.logLevel = 'error'
         }
-      } catch (_) {}
+        if (ort?.env?.wasm) {
+          ort.env.wasm.proxy = false
+        }
+        if (ort?.InferenceSession) {
+          wrapOrtInferenceSession(ort.InferenceSession)
+        }
+        if (ort?.default?.InferenceSession) {
+          wrapOrtInferenceSession(ort.default.InferenceSession)
+        }
+      } catch {}
 
       // Importación dinámica para code-splitting limpio
       const { PaddleOCR } = await import('@paddleocr/paddleocr-js')

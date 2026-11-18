@@ -107,15 +107,20 @@ export default function AdmissionForm({
             type="button"
             className="admission-form__call-next-btn"
             onClick={onCallNextPatient}
-            disabled={isSubmitting || isCallingTurno || !hasPendingTurnos}
+            disabled={isSubmitting || isCallingTurno || !hasPendingTurnos || hasActiveTurno}
             title={
-              hasPendingTurnos
-                ? `Llamar al siguiente paciente en espera (${pendingTurnosCount} pendientes)`
-                : 'No hay pacientes en cola de espera de recepción'
+              hasActiveTurno
+                ? 'Ya hay un paciente en atención. Emita el ticket o cancele el turno actual antes de llamar a otro.'
+                : hasPendingTurnos
+                  ? `Llamar al siguiente paciente en espera (${pendingTurnosCount} pendientes)`
+                  : 'No hay pacientes en cola de espera de recepción'
             }
             aria-label="Llamar al siguiente paciente en espera"
           >
-            <Bell size={15} className={hasPendingTurnos ? 'admission-form__call-next-icon--pulse' : ''} />
+            <Bell
+              size={15}
+              className={hasPendingTurnos && !hasActiveTurno ? 'admission-form__call-next-icon--pulse' : ''}
+            />
             <span>{isCallingTurno ? 'Llamando...' : 'Llamar al siguiente'}</span>
           </button>
 
@@ -139,7 +144,11 @@ export default function AdmissionForm({
             type="button"
             className="admission-form__reset-btn admission-form__reset-btn--header"
             onClick={handleResetForm}
-            title="Borrar todos los datos y volver a empezar"
+            title={
+              hasActiveTurno
+                ? 'Limpiar los campos editables manteniendo el turno convocado activo (use Cancelar para liberar el turno)'
+                : 'Borrar todos los datos y volver a empezar'
+            }
             aria-label="Limpiar formulario"
             disabled={isSubmitting}
           >

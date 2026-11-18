@@ -181,6 +181,16 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
           ? backendLine.texto_renglon
           : richLine.text
 
+      const rawKnownImages = Array.isArray(backendLine?.imagenes_muestra_conocidas)
+        ? backendLine.imagenes_muestra_conocidas.filter(Boolean)
+        : []
+      const imagenesMuestraConocidas =
+        rawKnownImages.length > 0
+          ? rawKnownImages
+          : backendLine?.imagen_muestra_conocida
+            ? [backendLine.imagen_muestra_conocida]
+            : []
+
       return {
         id: idx,
         texto: resolvedTexto,
@@ -195,7 +205,9 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
         cropStorageDataUrl: richLine.cropStorageDataUrl || null,
         comboDetectado: backendLine?.combo_detectado || null,
         esRuidoAprendido: Boolean(backendLine?.es_ruido_aprendido),
-        imagenMuestraConocida: backendLine?.imagen_muestra_conocida || null,
+        imagenMuestraConocida:
+          backendLine?.imagen_muestra_conocida || imagenesMuestraConocidas[0] || null,
+        imagenesMuestraConocidas,
         recomendados: (backendLine?.recomendados || []).map((r) =>
           mapRecomendadoToCandidate(r, richLine.text)
         )

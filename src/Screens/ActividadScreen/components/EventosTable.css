@@ -116,10 +116,9 @@
 .eventos-table__action-title {
   font-weight: var(--font-weight-medium, 500);
   color: var(--auditoria-text-primary, #275369);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
+  white-space: normal;
+  line-height: 1.25;
+  max-width: 210px;
 }
 
 .eventos-table__cat-label {
@@ -127,11 +126,23 @@
   color: var(--auditoria-text-light, #94a3a8);
 }
 
+.eventos-table__cat-label--gemini {
+  color: #6d28d9;
+  font-weight: 600;
+}
+
+.eventos-table__detail-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 380px;
+}
+
 .eventos-table__detail-wrapper {
   display: flex;
   align-items: center;
   gap: 8px;
-  max-width: 320px;
+  min-width: 0;
 }
 
 .eventos-table__detail-text {
@@ -139,6 +150,34 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.eventos-table__trace-badges {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.eventos-table__trace-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 1px 7px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.eventos-table__trace-pill--turno {
+  color: #0369a1;
+  background: #e0f2fe;
+  border-color: #bae6fd;
+  font-weight: 700;
 }
 
 .eventos-table__alert-indicator {

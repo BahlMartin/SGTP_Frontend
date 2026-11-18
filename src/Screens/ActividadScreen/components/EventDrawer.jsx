@@ -11,13 +11,18 @@ import {
   Copy,
   Check,
   ExternalLink,
-  Laptop
+  Laptop,
+  Ticket
 } from 'lucide-react'
 import {
   CATEGORIAS_CONFIG,
   RESULTADOS_CONFIG,
   ROLES_CONFIG,
-  ACCIONES_CATALOGO,
+  GEMINI_AI_CONFIG,
+  GeminiLogoIcon,
+  isGeminiAiEvent,
+  getAccionDisplayLabel,
+  extractPatientTraceMeta,
   formatFechaHora
 } from '../constants/auditoriaConstants'
 import './EventDrawer.css'
@@ -38,8 +43,11 @@ export default function EventDrawer({
   const res = RESULTADOS_CONFIG[evento.resultado] || RESULTADOS_CONFIG.EXITO
   const CatIcon = cat.Icon
   const ResIcon = res.Icon
+  const isGemini = isGeminiAiEvent(evento)
 
-  const accionNombre = ACCIONES_CATALOGO[evento.accion] || evento.accion
+  const accionNombre = getAccionDisplayLabel(evento)
+  const traceMeta = extractPatientTraceMeta(evento)
+  const hasTraceMeta = Boolean(traceMeta.turno || traceMeta.dni || traceMeta.numeroAfiliado)
   const nombreOperador = evento.usuario
     ? `${evento.usuario.nombre} ${evento.usuario.apellidos || ''}`.trim()
     : (evento.email_intentado || 'Sistema / Sin sesión')
@@ -124,6 +132,19 @@ export default function EventDrawer({
               <CatIcon size={14} />
               {cat.label}
             </span>
+            {isGemini && (
+              <span
+                className="event-drawer__gemini-tag"
+                style={{
+                  color: GEMINI_AI_CONFIG.color,
+                  backgroundColor: GEMINI_AI_CONFIG.bg,
+                  borderColor: GEMINI_AI_CONFIG.border
+                }}
+              >
+                <GeminiLogoIcon size={13} />
+                {GEMINI_AI_CONFIG.label}
+              </span>
+            )}
             <span
               className="event-drawer__res-tag"
               style={{
@@ -206,6 +227,44 @@ export default function EventDrawer({
             </div>
           )}
         </section>
+
+        {/* Trazabilidad del Paciente (Turno, DNI, N° de Afiliado y Box) */}
+        {hasTraceMeta && (
+          <section className="event-drawer__section">
+            <h4 className="event-drawer__section-title">
+              <Ticket size={15} />
+              Trazabilidad del Paciente
+            </h4>
+            <div className="event-drawer__trace-card">
+              {traceMeta.turno && (
+                <div className="event-drawer__trace-item">
+                  <span className="event-drawer__trace-label">Turno</span>
+                  <span className="event-drawer__trace-val event-drawer__trace-val--turno">
+                    {traceMeta.turno}
+                  </span>
+                </div>
+              )}
+              {traceMeta.dni && (
+                <div className="event-drawer__trace-item">
+                  <span className="event-drawer__trace-label">DNI</span>
+                  <span className="event-drawer__trace-val">{traceMeta.dni}</span>
+                </div>
+              )}
+              {traceMeta.numeroAfiliado && (
+                <div className="event-drawer__trace-item">
+                  <span className="event-drawer__trace-label">N° de Afiliado</span>
+                  <span className="event-drawer__trace-val">{traceMeta.numeroAfiliado}</span>
+                </div>
+              )}
+              {traceMeta.box && (
+                <div className="event-drawer__trace-item">
+                  <span className="event-drawer__trace-label">Box</span>
+                  <span className="event-drawer__trace-val">{traceMeta.box}</span>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* 6. Tabla de Cambios (DiffTable Antes -> Después) */}
         {hasDiff && (

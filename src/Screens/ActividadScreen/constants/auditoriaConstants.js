@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   KeyRound,
   ClipboardPlus,
@@ -9,6 +10,42 @@ import {
   CircleX,
   Ban
 } from 'lucide-react'
+
+/**
+ * Ícono SVG distintivo de IA Gemini (estrella principal de 4 puntas + destello secundario).
+ * Se construye con React.createElement porque este archivo tiene extensión .js.
+ */
+export function GeminiLogoIcon({ size = 14, className = '' }) {
+  return React.createElement(
+    'svg',
+    {
+      width: size,
+      height: size,
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      xmlns: 'http://www.w3.org/2000/svg',
+      className,
+      'aria-hidden': 'true'
+    },
+    React.createElement('path', {
+      d: 'M10.5 4.5C10.5 9.19442 14.3056 13 19 13C14.3056 13 10.5 16.8056 10.5 21.5C10.5 16.8056 6.69442 13 2 13C6.69442 13 10.5 9.19442 10.5 4.5Z',
+      fill: 'currentColor'
+    }),
+    React.createElement('path', {
+      d: 'M19 1.75C19 3.54493 20.4551 5 22.25 5C20.4551 5 19 6.45507 19 8.25C19 6.45507 17.5449 5 15.75 5C17.5449 5 19 3.54493 19 1.75Z',
+      fill: 'currentColor',
+      opacity: '0.88'
+    })
+  )
+}
+
+export const GEMINI_AI_CONFIG = {
+  label: 'IA Gemini',
+  Icon: GeminiLogoIcon,
+  color: '#6d28d9',
+  bg: '#ede9fe',
+  border: '#c4b5fd'
+}
 
 export const CATEGORIAS_CONFIG = {
   acceso: {
@@ -99,18 +136,84 @@ export const ACCIONES_CATALOGO = {
   PACIENTE_CREADO: 'Nuevo paciente empadronado',
   PACIENTE_EDITADO: 'Datos del paciente modificados',
   HISTORIAL_PACIENTE_CONSULTADO: 'Historial del paciente consultado',
-  TICKET_CREADO: 'Ticket de atención generado',
+  TICKET_CREADO: 'Paciente finalizado (Ticket emitido)',
   TICKET_EDITADO: 'Ticket modificado',
   RECETA_ESCANEADA: 'Orden médica escaneada (OCR)',
   OCR_CORREGIDO: 'Corrección manual de datos OCR',
   BOX_TOMADO: 'Toma de puesto de Box',
   PACIENTE_LLAMADO: 'Paciente llamado a Box',
   ESTUDIOS_MODIFICADOS: 'Estudios de laboratorio modificados',
-  ATENCION_FINALIZADA: 'Atención médica finalizada',
+  ATENCION_FINALIZADA: 'Atención finalizada en Box',
   ATENCION_CANCELADA: 'Atención cancelada con motivo',
   SLA_MODIFICADO: 'Umbrales SLA actualizados',
   REPORTE_EXPORTADO: 'Reporte operacional exportado',
   REPORTE_ENVIADO: 'Reporte despachado por correo institucional'
+}
+
+function resolveEventMetadata(ev) {
+  if (ev?.metadata && typeof ev.metadata === 'object' && Object.keys(ev.metadata).length > 0) {
+    return ev.metadata
+  }
+  if (ev?.evento?.metadata && typeof ev.evento.metadata === 'object') {
+    return ev.evento.metadata
+  }
+  return ev?.metadata || {}
+}
+
+export function isGeminiAiEvent(ev) {
+  if (!ev) return false
+  const meta = resolveEventMetadata(ev)
+  const desc = String(
+    ev?.descripcion || ev?.what || ev?.titulo || ev?.evento?.descripcion || ''
+  )
+  return (
+    meta?.motor_ia === 'gemini' ||
+    meta?.modo === 'recortes_bajo_demanda_ia' ||
+    /gemini|bajo_demanda_ia|recortes seleccionados/i.test(desc)
+  )
+}
+
+export function extractPatientTraceMeta(ev) {
+  const meta = resolveEventMetadata(ev)
+  const rawTurno = meta.turno ?? meta.ticket ?? ''
+  const rawDni = meta.dni ?? ''
+  const rawAfiliado = meta.numero_afiliado ?? ''
+  const rawBox = meta.box ?? ''
+  return {
+    turno: rawTurno !== null && rawTurno !== undefined ? String(rawTurno).trim() : '',
+    dni: rawDni !== null && rawDni !== undefined ? String(rawDni).trim() : '',
+    numeroAfiliado: rawAfiliado !== null && rawAfiliado !== undefined ? String(rawAfiliado).trim() : '',
+    box: rawBox !== null && rawBox !== undefined ? String(rawBox).trim() : ''
+  }
+}
+
+export function getAccionDisplayLabel(ev) {
+  if (!ev) return ''
+  const target = ev.evento || ev
+  const accion = target.accion || ev.accion || ''
+  const categoria = String(target.categoria || ev.categoria || '').toLowerCase()
+  const meta = resolveEventMetadata(ev)
+  const sector = String(meta.sector || '').toLowerCase()
+
+  if (isGeminiAiEvent(ev)) {
+    return 'Escaneo IA (Gemini)'
+  }
+
+  if (accion === 'PACIENTE_LLAMADO') {
+    if (categoria === 'admision' || sector === 'admision') {
+      return 'Paciente llamado en Admisión'
+    }
+    return 'Paciente llamado a Box'
+  }
+
+  if (accion === 'ATENCION_CANCELADA') {
+    if (categoria === 'admision' || sector === 'admision') {
+      return 'Turno cancelado en Admisión'
+    }
+    return ACCIONES_CATALOGO.ATENCION_CANCELADA
+  }
+
+  return ACCIONES_CATALOGO[accion] || accion
 }
 
 export function formatHora(val, includeSeconds = false) {
