@@ -34,7 +34,11 @@ function normalizeLocalSearchText(text) {
 }
 
 function isCandidatePenalized(line, study) {
-  if (!line || !study || study.origenDeteccion !== 'MEMORIA_APRENDIDA') {
+  if (
+    !line ||
+    !study ||
+    (study.origenDeteccion !== 'MEMORIA_APRENDIDA' && study.origenDeteccion !== 'COMBO_RUTINA')
+  ) {
     return false
   }
   const matchingTraces = (line.trazosCoincidentes || []).filter(
