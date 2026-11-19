@@ -33,6 +33,20 @@ function normalizeLocalSearchText(text) {
     .trim()
 }
 
+function isCandidatePenalized(line, study) {
+  if (!line || !study || study.origenDeteccion !== 'MEMORIA_APRENDIDA') {
+    return false
+  }
+  const matchingTraces = (line.trazosCoincidentes || []).filter(
+    (trace) => Array.isArray(trace.estudiosIds) && trace.estudiosIds.includes(study.id)
+  )
+  if (matchingTraces.length === 0) {
+    return false
+  }
+  const votes = line.traceVotes || {}
+  return matchingTraces.every((trace) => votes[trace.recorteId] === 'down')
+}
+
 function renderStudyOriginBadge(study) {
   const scoreNumber = Math.round(Number(study.score) || 0)
   if (study.origenDeteccion === 'COMBO_RUTINA') {
@@ -258,6 +272,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
           comboDetectado: line.comboDetectado || null,
           imagenMuestraConocida: line.imagenMuestraConocida || knownTraceImages[0] || null,
           imagenesMuestraConocidas: knownTraceImages,
+          trazosCoincidentes: Array.isArray(line.trazosCoincidentes) ? line.trazosCoincidentes : [],
+          traceVotes: {},
           discarded: false,
           candidates: line.recomendados || [],
           // Mejora 7: ningún estudio preseleccionado por defecto; Admisión debe tildar manualmente
@@ -306,6 +322,27 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         prev.some((s) => s.id === studyId) ? prev.filter((s) => s.id !== studyId) : prev
       )
     }
+  }
+
+  // Votar Bien ('up') o Mal ('down') por un trazo histórico coincidente (no modifica selectedIds — Mejora 7)
+  const toggleTraceVote = (lineId, recorteId, vote) => {
+    if (vote !== 'up' && vote !== 'down') return
+    setLinesReview((prev) =>
+      prev.map((line) => {
+        if (line.id !== lineId) return line
+        const currentVotes = line.traceVotes || {}
+        const nextVotes = { ...currentVotes }
+        if (nextVotes[recorteId] === vote) {
+          delete nextVotes[recorteId]
+        } else {
+          nextVotes[recorteId] = vote
+        }
+        return {
+          ...line,
+          traceVotes: nextVotes
+        }
+      })
+    )
   }
 
   // Descartar o restaurar un renglón ("No es estudio / Ignorar")
@@ -755,13 +792,36 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
           imagenMuestra: line.cropStorageDataUrl || line.cropDataUrl || ''
         }))
 
+      const evaluacionesTrazos = []
+      for (const line of linesReview) {
+        for (const [recorteIdStr, vote] of Object.entries(line.traceVotes || {})) {
+          if (vote !== 'up' && vote !== 'down') continue
+          const recorteId = Number(recorteIdStr)
+          if (!Number.isInteger(recorteId) || recorteId < 1) continue
+          const trace = (line.trazosCoincidentes || []).find(
+            (t) => Number(t.recorteId) === recorteId
+          )
+          evaluacionesTrazos.push({
+            recorteId,
+            esCorrecto: vote === 'up',
+            textoConsulta: line.textoOriginalOcr || line.texto || '',
+            firmaVisualConsulta: line.visualHash || '',
+            imagenConsulta: line.cropStorageDataUrl || line.cropDataUrl || '',
+            estudiosConfirmadosIds: line.discarded ? [] : (line.selectedIds || []),
+            scoreBase: trace?.scoreBase ?? null,
+            metricas: trace?.metricas || {}
+          })
+        }
+      }
+
       reportOcrFeedbackApi({
         lineasOrigen: ocrResult.detectedLines || [],
         estudiosConfirmadosIds: allSelectedStudies.map((s) => s.id),
         asociacionesDirectas,
         renglonesConfirmados,
         lineasDescartadas,
-        recortesDescartados
+        recortesDescartados,
+        evaluacionesTrazos
       }).catch((err) => {
         console.warn('Feedback OCR no crítico falló:', err)
       })
@@ -1373,32 +1433,33 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                                       ✨ IA leyó: {line.textoIa}
                                     </span>
                                   )}
-                                  {line.imagenesMuestraConocidas?.length > 0 && (
-                                    <div
-                                      className="ocr-modal__known-trace-pill"
-                                      title={
-                                        line.imagenesMuestraConocidas.length > 1
-                                          ? `Coincide con ${line.imagenesMuestraConocidas.length} recortes manuscritos guardados previamente`
-                                          : 'Coincide con un recorte manuscrito guardado previamente'
-                                      }
-                                    >
-                                      <div className="ocr-modal__known-trace-thumbs">
-                                        {line.imagenesMuestraConocidas.map((imgSrc, imgIdx) => (
-                                          <img
-                                            key={`${line.id}-trace-${imgIdx}`}
-                                            src={imgSrc}
-                                            alt={`Trazo coincidente previo ${imgIdx + 1}`}
-                                            className="ocr-modal__known-trace-thumb"
-                                          />
-                                        ))}
+                                  {(!line.trazosCoincidentes || line.trazosCoincidentes.length === 0) &&
+                                    line.imagenesMuestraConocidas?.length > 0 && (
+                                      <div
+                                        className="ocr-modal__known-trace-pill"
+                                        title={
+                                          line.imagenesMuestraConocidas.length > 1
+                                            ? `Coincide con ${line.imagenesMuestraConocidas.length} recortes manuscritos guardados previamente`
+                                            : 'Coincide con un recorte manuscrito guardado previamente'
+                                        }
+                                      >
+                                        <div className="ocr-modal__known-trace-thumbs">
+                                          {line.imagenesMuestraConocidas.map((imgSrc, imgIdx) => (
+                                            <img
+                                              key={`${line.id}-trace-${imgIdx}`}
+                                              src={imgSrc}
+                                              alt={`Trazo coincidente previo ${imgIdx + 1}`}
+                                              className="ocr-modal__known-trace-thumb"
+                                            />
+                                          ))}
+                                        </div>
+                                        <span>
+                                          {line.imagenesMuestraConocidas.length > 1
+                                            ? `Trazos históricos coincidentes (${line.imagenesMuestraConocidas.length})`
+                                            : 'Trazo histórico coincidente'}
+                                        </span>
                                       </div>
-                                      <span>
-                                        {line.imagenesMuestraConocidas.length > 1
-                                          ? `Trazos históricos coincidentes (${line.imagenesMuestraConocidas.length})`
-                                          : 'Trazo histórico coincidente'}
-                                      </span>
-                                    </div>
-                                  )}
+                                    )}
                                   {line.candidates.length === 0 && (
                                     <span className="ocr-modal__line-unmatched-badge">
                                       Sin coincidencia automática
@@ -1454,6 +1515,79 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                               handleAssignSearchedStudyToLine(line.id, study)
                             )}
 
+                          {/* Trazos históricos coincidentes evaluables (Bien / Mal) */}
+                          {line.trazosCoincidentes?.length > 0 && (
+                            <div className="ocr-modal__matched-traces">
+                              <div className="ocr-modal__matched-traces-header">
+                                Trazos históricos coincidentes ({line.trazosCoincidentes.length}) — marcá si coinciden:
+                              </div>
+                              <div className="ocr-modal__matched-traces-list">
+                                {line.trazosCoincidentes.map((trace) => {
+                                  const currentVote = line.traceVotes?.[trace.recorteId]
+                                  const studyNames =
+                                    Array.isArray(trace.estudiosNombres) && trace.estudiosNombres.length > 0
+                                      ? trace.estudiosNombres.join(', ')
+                                      : 'Estudio asociado'
+
+                                  return (
+                                    <div
+                                      key={`${line.id}-matched-trace-${trace.recorteId}`}
+                                      className={`ocr-modal__trace-chip ${
+                                        currentVote === 'up'
+                                          ? 'ocr-modal__trace-chip--good'
+                                          : currentVote === 'down'
+                                            ? 'ocr-modal__trace-chip--bad'
+                                            : ''
+                                      }`}
+                                    >
+                                      {trace.imagenMuestra && (
+                                        <img
+                                          src={trace.imagenMuestra}
+                                          alt={`Trazo histórico de ${studyNames}`}
+                                          className="ocr-modal__trace-thumb"
+                                        />
+                                      )}
+                                      <div className="ocr-modal__trace-info">
+                                        <span className="ocr-modal__trace-study" title={studyNames}>
+                                          {studyNames}
+                                        </span>
+                                        <span className="ocr-modal__trace-score">
+                                          {Math.round(Number(trace.similitudScore) || 0)}%
+                                        </span>
+                                      </div>
+                                      <div className="ocr-modal__trace-actions">
+                                        <button
+                                          type="button"
+                                          aria-pressed={currentVote === 'up'}
+                                          className={`ocr-modal__trace-vote-btn ocr-modal__trace-vote-btn--good ${
+                                            currentVote === 'up' ? 'ocr-modal__trace-vote-btn--active' : ''
+                                          }`}
+                                          onClick={() => toggleTraceVote(line.id, trace.recorteId, 'up')}
+                                          title="Marcar trazo como coincidencia correcta"
+                                        >
+                                          <Check size={12} />
+                                          <span>Bien</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          aria-pressed={currentVote === 'down'}
+                                          className={`ocr-modal__trace-vote-btn ocr-modal__trace-vote-btn--bad ${
+                                            currentVote === 'down' ? 'ocr-modal__trace-vote-btn--active' : ''
+                                          }`}
+                                          onClick={() => toggleTraceVote(line.id, trace.recorteId, 'down')}
+                                          title="Marcar trazo como coincidencia errónea"
+                                        >
+                                          <X size={12} />
+                                          <span>Mal</span>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )}
+
                           {/* Chips de asignación rápida en 1 clic para bloques pendientes */}
                           {!hasSelected && availableQuickPicks.length > 0 && (
                             <div className="ocr-modal__quick-assign-bar">
@@ -1477,36 +1611,56 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
 
                           {/* Estudios Recomendados / Asignados al Renglón */}
                           {line.candidates.length > 0 ? (
-                            <div className="ocr-modal__studies-grid">
-                              {line.candidates.map((study) => {
-                                const isSelected = line.selectedIds.includes(study.id)
+                            (() => {
+                              const sortedCandidates = line.candidates
+                                .map((study, idx) => ({
+                                  study,
+                                  idx,
+                                  penalized: isCandidatePenalized(line, study)
+                                }))
+                                .sort((a, b) => {
+                                  if (a.penalized !== b.penalized) return a.penalized ? 1 : -1
+                                  return a.idx - b.idx
+                                })
 
-                                return (
-                                  <label
-                                    key={`${line.id}-${study.id}`}
-                                    className={`ocr-modal__study-item ${
-                                      isSelected ? 'ocr-modal__study-item--selected' : ''
-                                    }`}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      className="ocr-modal__study-checkbox"
-                                      checked={isSelected}
-                                      onChange={() => toggleStudyInLine(line.id, study.id)}
-                                    />
-                                    <div className="ocr-modal__study-details">
-                                      <span className="ocr-modal__study-name">{study.nombre}</span>
-                                      <div className="ocr-modal__study-meta">
-                                        {study.codigoPractica && (
-                                          <span className="ocr-modal__study-code">{study.codigoPractica}</span>
-                                        )}
-                                        {renderStudyOriginBadge(study)}
-                                      </div>
-                                    </div>
-                                  </label>
-                                )
-                              })}
-                            </div>
+                              return (
+                                <div className="ocr-modal__studies-grid">
+                                  {sortedCandidates.map(({ study, penalized }) => {
+                                    const isSelected = line.selectedIds.includes(study.id)
+
+                                    return (
+                                      <label
+                                        key={`${line.id}-${study.id}`}
+                                        className={`ocr-modal__study-item ${
+                                          isSelected ? 'ocr-modal__study-item--selected' : ''
+                                        } ${penalized ? 'ocr-modal__study-item--penalized' : ''}`}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          className="ocr-modal__study-checkbox"
+                                          checked={isSelected}
+                                          onChange={() => toggleStudyInLine(line.id, study.id)}
+                                        />
+                                        <div className="ocr-modal__study-details">
+                                          <span className="ocr-modal__study-name">{study.nombre}</span>
+                                          <div className="ocr-modal__study-meta">
+                                            {study.codigoPractica && (
+                                              <span className="ocr-modal__study-code">{study.codigoPractica}</span>
+                                            )}
+                                            {renderStudyOriginBadge(study)}
+                                            {penalized && (
+                                              <span className="ocr-modal__penalized-tag">
+                                                Trazo marcado como erróneo
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </label>
+                                    )
+                                  })}
+                                </div>
+                              )
+                            })()
                           ) : (
                             !isSearchOpen && (
                               <button

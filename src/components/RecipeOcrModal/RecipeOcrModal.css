@@ -1513,6 +1513,170 @@
   border: 1px solid #d1fae5;
 }
 
+/* Bloque de trazos históricos coincidentes con votación Bien / Mal */
+.ocr-modal__matched-traces {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.ocr-modal__matched-traces-header {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #334155;
+  line-height: 1.3;
+}
+
+.ocr-modal__matched-traces-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ocr-modal__trace-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.ocr-modal__trace-chip--good {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.ocr-modal__trace-chip--bad {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.ocr-modal__trace-thumb {
+  height: 36px;
+  max-width: 120px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 4px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.ocr-modal__trace-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ocr-modal__trace-study {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.ocr-modal__trace-score {
+  font-size: 0.69rem;
+  font-weight: 700;
+  color: #0369a1;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  padding: 1px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ocr-modal__trace-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.ocr-modal__trace-vote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.14s ease;
+}
+
+.ocr-modal__trace-vote-btn--good:hover {
+  background: #f0fdf4;
+  border-color: #4ade80;
+  color: #15803d;
+}
+
+.ocr-modal__trace-vote-btn--good.ocr-modal__trace-vote-btn--active {
+  background: #16a34a;
+  border-color: #15803d;
+  color: #ffffff;
+}
+
+.ocr-modal__trace-vote-btn--bad:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+  color: #b91c1c;
+}
+
+.ocr-modal__trace-vote-btn--bad.ocr-modal__trace-vote-btn--active {
+  background: #dc2626;
+  border-color: #b91c1c;
+  color: #ffffff;
+}
+
+/* Atenuación visual inmediata de candidatos cuyo trazo fue marcado como erróneo */
+.ocr-modal__study-item--penalized {
+  opacity: 0.6;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.ocr-modal__study-item--penalized:hover {
+  opacity: 0.85;
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.ocr-modal__study-item--selected.ocr-modal__study-item--penalized {
+  opacity: 0.88;
+  background: #fff1f2;
+  border-color: #0284c7;
+}
+
+.ocr-modal__penalized-tag {
+  font-size: 0.66rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  display: inline-flex;
+  align-items: center;
+}
+
 /* =========================================================
    Diseño Responsive para Tablets y Celulares (<= 768px)
    Unificación en 1 solo scroll continuo + 1 columna
@@ -1678,5 +1842,29 @@
   .ocr-modal__cancel-btn {
     padding: 12px 14px;
     font-size: 0.86rem;
+  }
+
+  .ocr-modal__trace-chip {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ocr-modal__trace-thumb {
+    max-width: 100px;
+  }
+
+  .ocr-modal__trace-info {
+    flex: 1 1 140px;
+  }
+
+  .ocr-modal__trace-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .ocr-modal__trace-vote-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 6px 10px;
   }
 }

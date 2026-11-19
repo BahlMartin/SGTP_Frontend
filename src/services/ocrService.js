@@ -194,6 +194,23 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
             ? [backendLine.imagen_muestra_conocida]
             : []
 
+      const trazosCoincidentes = Array.isArray(backendLine?.trazos_coincidentes)
+        ? backendLine.trazos_coincidentes
+            .filter((t) => t && t.recorte_id !== undefined && t.recorte_id !== null)
+            .map((t) => ({
+              recorteId: t.recorte_id,
+              imagenMuestra: t.imagen_muestra || '',
+              estudiosIds: Array.isArray(t.estudios_ids) ? t.estudios_ids : [],
+              estudiosNombres: Array.isArray(t.estudios_nombres) ? t.estudios_nombres : [],
+              similitudScore: Number(t.similitud_score) || 0,
+              scoreBase: Number(t.score_base) || 0,
+              metricas:
+                t.metricas && typeof t.metricas === 'object' && !Array.isArray(t.metricas)
+                  ? t.metricas
+                  : {}
+            }))
+        : []
+
       return {
         id: idx,
         texto: resolvedTexto,
@@ -211,6 +228,7 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
         imagenMuestraConocida:
           backendLine?.imagen_muestra_conocida || imagenesMuestraConocidas[0] || null,
         imagenesMuestraConocidas,
+        trazosCoincidentes,
         recomendados: (backendLine?.recomendados || []).map((r) =>
           mapRecomendadoToCandidate(r, richLine.text)
         )
@@ -260,9 +278,42 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
  * @param {Array<{ texto: string, estudiosIds: number[], imagenMuestra?: string }>} [feedbackData.renglonesConfirmados]
  * @param {string[]} [feedbackData.lineasDescartadas]
  * @param {Array<{ texto: string, imagenMuestra: string }>} [feedbackData.recortesDescartados]
+ * @param {Array<{ recorteId: number, esCorrecto: boolean, textoConsulta?: string, firmaVisualConsulta?: string, imagenConsulta?: string, estudiosConfirmadosIds?: number[], scoreBase?: number|null, metricas?: Object }>} [feedbackData.evaluacionesTrazos]
  */
 export async function reportOcrFeedbackApi(feedbackData = {}) {
   try {
+    const rawEvaluacionesTrazos =
+      feedbackData.evaluacionesTrazos || feedbackData.evaluaciones_trazos || []
+    const evaluacionesTrazos = Array.isArray(rawEvaluacionesTrazos)
+      ? rawEvaluacionesTrazos
+          .map((ev) => {
+            const recorteId = Number(ev?.recorteId ?? ev?.recorte_id)
+            const estudiosIds = ev?.estudiosConfirmadosIds ?? ev?.estudios_confirmados_ids
+            const rawScoreBase = ev?.scoreBase ?? ev?.score_base
+            const parsedScoreBase =
+              rawScoreBase === undefined || rawScoreBase === null || rawScoreBase === ''
+                ? null
+                : Number(rawScoreBase)
+            const metricas = ev?.metricas
+            return {
+              recorte_id: recorteId,
+              es_correcto: Boolean(ev?.esCorrecto ?? ev?.es_correcto),
+              texto_consulta: String(ev?.textoConsulta ?? ev?.texto_consulta ?? ''),
+              firma_visual_consulta: String(
+                ev?.firmaVisualConsulta ?? ev?.firma_visual_consulta ?? ''
+              ),
+              imagen_consulta: String(ev?.imagenConsulta ?? ev?.imagen_consulta ?? ''),
+              estudios_confirmados_ids: Array.isArray(estudiosIds) ? estudiosIds : [],
+              score_base: Number.isFinite(parsedScoreBase) ? parsedScoreBase : null,
+              metricas:
+                metricas && typeof metricas === 'object' && !Array.isArray(metricas)
+                  ? metricas
+                  : {}
+            }
+          })
+          .filter((ev) => Number.isInteger(ev.recorte_id) && ev.recorte_id >= 1)
+      : []
+
     const payload = {
       lineas_origen: feedbackData.lineasOrigen || feedbackData.lineas_origen || [],
       estudios_confirmados_ids: feedbackData.estudiosConfirmadosIds || feedbackData.estudios_confirmados_ids || [],
@@ -279,7 +330,8 @@ export async function reportOcrFeedbackApi(feedbackData = {}) {
       recortes_descartados: (feedbackData.recortesDescartados || feedbackData.recortes_descartados || []).map((rd) => ({
         texto: rd.texto || '',
         imagen_muestra: rd.imagenMuestra ?? rd.imagen_muestra ?? ''
-      }))
+      })),
+      evaluaciones_trazos: evaluacionesTrazos
     }
     const response = await apiClient.post('/ocr/retroalimentar/', payload)
     return response
