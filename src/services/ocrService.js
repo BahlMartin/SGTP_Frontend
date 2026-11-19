@@ -1,7 +1,7 @@
 import apiClient from './apiClient'
-import { recognizeRecipePaddle } from './paddleOcrService'
+import { recognizeRecipePaddle, recognizeManualCropFromImage } from './paddleOcrService'
 
-export { recognizeRecipePaddle }
+export { recognizeRecipePaddle, recognizeManualCropFromImage }
 
 /**
  * Servicio de Reconocimiento y Mapeo de Recetas Médicas con Memoria Adaptativa.
@@ -71,11 +71,58 @@ export async function mapStudiesFromTextApi(textos = [], firmasVisuales = [], re
 }
 
 /**
- * Envía únicamente los recortes aislados seleccionados manualmente por Admisión
- * para interpretarlos con el asistente de Visión IA (sin exponer jamás la receta completa).
+ * Envía una única imagen contextual saneada (zona clínica recortada + rectángulos blancos sobre
+ * datos sensibles/firma) al backend para que Gemini 3.6 Flash interprete los estudios en contexto.
  *
- * @param {Array<{ indice: number, texto_ocr: string, firma_visual: string, imagen_recorte: string }>} recortes
- * @returns {Promise<{ totalProcesados: number, resultados: Array }>}
+ * @param {{ imagenContextual: string, contextoRenglones?: Array<{ indice: number, texto_ocr: string }> }} payload
+ */
+export async function interpretContextualRecipeWithAiApi({
+  imagenContextual,
+  contextoRenglones = []
+} = {}) {
+  if (!imagenContextual) {
+    return {
+      totalProcesados: 0,
+      resultados: [],
+      renglonesNuevos: [],
+      diagnosticoDetectado: '',
+      notasMuestra: '',
+      modeloUsado: 'gemini-3.6-flash',
+      errorIa: 'No se preparó la imagen contextual para enviar a IA.'
+    }
+  }
+
+  const response = await apiClient.post('/ocr/interpretar-recortes/', {
+    imagen_contextual: imagenContextual,
+    contexto_renglones: Array.isArray(contextoRenglones) ? contextoRenglones : []
+  })
+
+  const rawResultados = Array.isArray(response?.resultados) ? response.resultados : []
+  const rawNuevos = Array.isArray(response?.renglones_nuevos) ? response.renglones_nuevos : []
+
+  const mapIaItem = (item) => ({
+    indice: item.indice ?? null,
+    textoOcrOriginal: item.texto_ocr_original || '',
+    textoTranscritoIa: item.texto_transcrito_ia || '',
+    comboDetectado: item.combo_detectado || null,
+    recomendados: (item.recomendados || []).map((r) =>
+      mapRecomendadoToCandidate(r, item.texto_transcrito_ia || item.texto_ocr_original || '')
+    )
+  })
+
+  return {
+    totalProcesados: response?.total_procesados ?? rawResultados.length + rawNuevos.length,
+    resultados: rawResultados.map(mapIaItem),
+    renglonesNuevos: rawNuevos.map(mapIaItem),
+    diagnosticoDetectado: response?.diagnostico_detectado || '',
+    notasMuestra: response?.notas_muestra || '',
+    modeloUsado: response?.modelo_usado || 'gemini-3.6-flash',
+    errorIa: response?.error_ia || ''
+  }
+}
+
+/**
+ * @deprecated Función heredada; la UI actual utiliza interpretContextualRecipeWithAiApi.
  */
 export async function interpretSelectedCropsWithAiApi(recortes = []) {
   if (!Array.isArray(recortes) || recortes.length === 0) {
@@ -98,6 +145,95 @@ export async function interpretSelectedCropsWithAiApi(recortes = []) {
         mapRecomendadoToCandidate(r, item.texto_ocr_original || '')
       )
     }))
+  }
+}
+
+function buildDetectedLineDetail(richLine, backendLine, idx) {
+  const resolvedTexto =
+    richLine.text === '[Manuscrito a revisar]' &&
+    backendLine?.texto_renglon &&
+    backendLine.texto_renglon !== '[Manuscrito a revisar]'
+      ? backendLine.texto_renglon
+      : richLine.text
+
+  const rawKnownImages = Array.isArray(backendLine?.imagenes_muestra_conocidas)
+    ? backendLine.imagenes_muestra_conocidas.filter(Boolean)
+    : []
+  const imagenesMuestraConocidas =
+    rawKnownImages.length > 0
+      ? rawKnownImages
+      : backendLine?.imagen_muestra_conocida
+        ? [backendLine.imagen_muestra_conocida]
+        : []
+
+  const trazosCoincidentes = Array.isArray(backendLine?.trazos_coincidentes)
+    ? backendLine.trazos_coincidentes
+        .filter((t) => t && t.recorte_id !== undefined && t.recorte_id !== null)
+        .map((t) => ({
+          recorteId: t.recorte_id,
+          imagenMuestra: t.imagen_muestra || '',
+          estudiosIds: Array.isArray(t.estudios_ids) ? t.estudios_ids : [],
+          estudiosNombres: Array.isArray(t.estudios_nombres) ? t.estudios_nombres : [],
+          similitudScore: Number(t.similitud_score) || 0,
+          scoreBase: Number(t.score_base) || 0,
+          metricas:
+            t.metricas && typeof t.metricas === 'object' && !Array.isArray(t.metricas)
+              ? t.metricas
+              : {}
+        }))
+    : []
+
+  return {
+    id: idx,
+    texto: resolvedTexto,
+    textoOriginalOcr: richLine.text,
+    textoIa: null,
+    confidence: richLine.confidence ?? 0,
+    bbox: richLine.bbox || null,
+    rowIndex: richLine.rowIndex || idx + 1,
+    colIndex: richLine.colIndex || 1,
+    totalColsInRow: richLine.totalColsInRow || 1,
+    visualHash: richLine.visualHash || '',
+    cropDataUrl: richLine.cropDataUrl || null,
+    cropStorageDataUrl: richLine.cropStorageDataUrl || null,
+    comboDetectado: backendLine?.combo_detectado || null,
+    esRuidoAprendido: Boolean(backendLine?.es_ruido_aprendido),
+    imagenMuestraConocida:
+      backendLine?.imagen_muestra_conocida || imagenesMuestraConocidas[0] || null,
+    imagenesMuestraConocidas,
+    trazosCoincidentes,
+    recomendados: (backendLine?.recomendados || []).map((r) =>
+      mapRecomendadoToCandidate(r, richLine.text)
+    )
+  }
+}
+
+/**
+ * Procesa un recorte dibujado manualmente en "Por Recortes" usando PaddleOCR local
+ * sobre ese fragmento y el mapeador / comparador OpenCV en Django (sin enviar PHI externo).
+ *
+ * @param {{ preprocessedDataUrl?: string, fallbackImageUrl?: string, normalizedRect: { x: number, y: number, w: number, h: number } }} params
+ */
+export async function processManualRecipeCrop({
+  preprocessedDataUrl,
+  fallbackImageUrl,
+  normalizedRect
+} = {}) {
+  const imageSource = preprocessedDataUrl || fallbackImageUrl
+  const cropInfo = await recognizeManualCropFromImage(imageSource, normalizedRect)
+
+  const mapping = await mapStudiesFromTextApi(
+    [cropInfo.text],
+    [cropInfo.visualHash || ''],
+    [cropInfo.cropStorageDataUrl || '']
+  )
+
+  const backendLine = mapping?.renglones?.[0] || null
+  const detail = buildDetectedLineDetail(cropInfo, backendLine, 0)
+  return {
+    ...detail,
+    esRuidoAprendido: false,
+    isManualCrop: true
   }
 }
 
@@ -177,62 +313,7 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
         backendRenglones[idx] ||
         null
 
-      const resolvedTexto =
-        richLine.text === '[Manuscrito a revisar]' &&
-        backendLine?.texto_renglon &&
-        backendLine.texto_renglon !== '[Manuscrito a revisar]'
-          ? backendLine.texto_renglon
-          : richLine.text
-
-      const rawKnownImages = Array.isArray(backendLine?.imagenes_muestra_conocidas)
-        ? backendLine.imagenes_muestra_conocidas.filter(Boolean)
-        : []
-      const imagenesMuestraConocidas =
-        rawKnownImages.length > 0
-          ? rawKnownImages
-          : backendLine?.imagen_muestra_conocida
-            ? [backendLine.imagen_muestra_conocida]
-            : []
-
-      const trazosCoincidentes = Array.isArray(backendLine?.trazos_coincidentes)
-        ? backendLine.trazos_coincidentes
-            .filter((t) => t && t.recorte_id !== undefined && t.recorte_id !== null)
-            .map((t) => ({
-              recorteId: t.recorte_id,
-              imagenMuestra: t.imagen_muestra || '',
-              estudiosIds: Array.isArray(t.estudios_ids) ? t.estudios_ids : [],
-              estudiosNombres: Array.isArray(t.estudios_nombres) ? t.estudios_nombres : [],
-              similitudScore: Number(t.similitud_score) || 0,
-              scoreBase: Number(t.score_base) || 0,
-              metricas:
-                t.metricas && typeof t.metricas === 'object' && !Array.isArray(t.metricas)
-                  ? t.metricas
-                  : {}
-            }))
-        : []
-
-      return {
-        id: idx,
-        texto: resolvedTexto,
-        textoOriginalOcr: richLine.text,
-        textoIa: null,
-        confidence: richLine.confidence ?? 0,
-        rowIndex: richLine.rowIndex || idx + 1,
-        colIndex: richLine.colIndex || 1,
-        totalColsInRow: richLine.totalColsInRow || 1,
-        visualHash: richLine.visualHash || '',
-        cropDataUrl: richLine.cropDataUrl || null,
-        cropStorageDataUrl: richLine.cropStorageDataUrl || null,
-        comboDetectado: backendLine?.combo_detectado || null,
-        esRuidoAprendido: Boolean(backendLine?.es_ruido_aprendido),
-        imagenMuestraConocida:
-          backendLine?.imagen_muestra_conocida || imagenesMuestraConocidas[0] || null,
-        imagenesMuestraConocidas,
-        trazosCoincidentes,
-        recomendados: (backendLine?.recomendados || []).map((r) =>
-          mapRecomendadoToCandidate(r, richLine.text)
-        )
-      }
+      return buildDetectedLineDetail(richLine, backendLine, idx)
     })
     .filter((line) => !line.esRuidoAprendido)
 
@@ -256,6 +337,8 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
     detectedLines: paddleOutput?.lines || [],
     detectedLinesDetail,
     preprocessedDataUrl: paddleOutput?.preprocessedDataUrl,
+    preprocessedWidth: paddleOutput?.preprocessedWidth || 0,
+    preprocessedHeight: paddleOutput?.preprocessedHeight || 0,
     confidence: paddleOutput?.confidence || 0,
     durationMs,
     wordsCount: paddleOutput?.metrics?.wordsCount || paddleOutput?.lines?.length || 0,

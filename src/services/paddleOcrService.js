@@ -9,7 +9,8 @@
  */
 import {
   preprocessRecipeImage,
-  detectPaperVerticalBoundsFromGrayscale
+  detectPaperVerticalBoundsFromGrayscale,
+  loadImageElement
 } from '../utils/imagePreprocessor'
 import { sanitizeRecipeLine } from '../utils/ocrSanitizer'
 
@@ -1173,6 +1174,21 @@ function findOverlappingInkBlocks(rawBbox, inkBlocks) {
 }
 
 /**
+ * Determina si dos cajas/bloques están apilados verticalmente en la misma columna horizontal,
+ * evitando fusionar en un solo renglón palabras escritas una debajo de la otra (ej. proteinuria / albuminuria).
+ *
+ * @param {{ minX: number, maxX: number, centerY: number, height: number }} a
+ * @param {{ minX: number, maxX: number, centerY: number, height: number }} b
+ * @returns {boolean}
+ */
+function areElementsVerticallyStacked(a, b) {
+  const xOverlap = Math.max(0, Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX))
+  const minW = Math.max(1, Math.min(a.maxX - a.minX, b.maxX - b.minX))
+  const minH = Math.max(1, Math.min(a.height, b.height))
+  return xOverlap / minW >= 0.45 && Math.abs(a.centerY - b.centerY) >= minH * 0.55
+}
+
+/**
  * Agrupa ítems de palabras detectadas por PaddleOCR en renglones y columnas enriquecidos,
  * prioriza la segmentación 2D de tinta + canal central de columnas para evitar que bloques
  * parciales absorban dos columnas y calcula el recorte + firma visual de cada bloque.
@@ -1246,8 +1262,9 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
       const box = parsedBoxes[i]
       const avgLineY = currentLine.reduce((acc, b) => acc + b.centerY, 0) / currentLine.length
       const avgLineH = currentLine.reduce((acc, b) => acc + b.height, 0) / currentLine.length
+      const verticallyStacked = currentLine.some((b) => areElementsVerticallyStacked(box, b))
 
-      if (Math.abs(box.centerY - avgLineY) <= Math.max(12, avgLineH * 0.6)) {
+      if (!verticallyStacked && Math.abs(box.centerY - avgLineY) <= Math.max(12, avgLineH * 0.6)) {
         currentLine.push(box)
       } else {
         lineGroups.push(currentLine)
@@ -1509,7 +1526,21 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
     const blk = sortedBlocks[i]
     const avgY = activeRow.reduce((acc, b) => acc + b.centerY, 0) / activeRow.length
     const avgH = activeRow.reduce((acc, b) => acc + b.height, 0) / activeRow.length
-    if (Math.abs(blk.centerY - avgY) <= Math.max(14, avgH * 0.65)) {
+    const blkGeom = {
+      minX: blk.bbox.minX,
+      maxX: blk.bbox.maxX,
+      centerY: blk.centerY,
+      height: blk.height
+    }
+    const verticallyStacked = activeRow.some((b) =>
+      areElementsVerticallyStacked(blkGeom, {
+        minX: b.bbox.minX,
+        maxX: b.bbox.maxX,
+        centerY: b.centerY,
+        height: b.height
+      })
+    )
+    if (!verticallyStacked && Math.abs(blk.centerY - avgY) <= Math.max(14, avgH * 0.65)) {
       activeRow.push(blk)
     } else {
       finalRows.push(activeRow)
@@ -1562,6 +1593,119 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
  */
 export function groupPaddleItemsIntoLines(items = []) {
   return groupPaddleItemsIntoRichLines(items, null).map((line) => line.text)
+}
+
+/**
+ * Ordena elementos de OCR de izquierda a derecha y extrae texto limpio y confianza promedio.
+ *
+ * @param {Array} resItems
+ * @returns {{ text: string, confidence: number }}
+ */
+function extractJoinedTextFromOcrItems(resItems = []) {
+  const sortedItems = [...resItems].sort((a, b) => {
+    const ax = Array.isArray(a?.poly?.[0]) ? a.poly[0][0] : a?.poly?.[0]?.x || 0
+    const bx = Array.isArray(b?.poly?.[0]) ? b.poly[0][0] : b?.poly?.[0]?.x || 0
+    return ax - bx
+  })
+  const text = cleanRecognizedOcrText(sortedItems.map((it) => it?.text || '').join(' '))
+  const confidence =
+    sortedItems.length > 0
+      ? Math.round(
+          (sortedItems.reduce((acc, it) => acc + (it?.score || 0), 0) / sortedItems.length) * 100
+        )
+      : 0
+  return { text, confidence }
+}
+
+/**
+ * Extrae el recorte manual seleccionado por Admisión desde un rectángulo normalizado [0..1],
+ * calcula su huella visual/recortes y ejecuta reconocimiento PaddleOCR local sobre ese bloque.
+ *
+ * @param {string|HTMLImageElement|HTMLCanvasElement|Blob|File} imageSource
+ * @param {{ x: number, y: number, w: number, h: number }} normalizedRect
+ * @returns {Promise<{ text: string, confidence: number, bbox: Object, visualHash: string, cropDataUrl: string|null, cropStorageDataUrl: string|null }>}
+ */
+export async function recognizeManualCropFromImage(imageSource, normalizedRect) {
+  if (!imageSource || !normalizedRect) {
+    throw new Error('Debe proporcionar una imagen y un rectángulo de recorte válido.')
+  }
+
+  const img = await loadImageElement(imageSource)
+  const w = img.naturalWidth || img.width || 0
+  const h = img.naturalHeight || img.height || 0
+  if (!w || !h) {
+    throw new Error('No se pudieron leer las dimensiones de la imagen para recortar.')
+  }
+
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    throw new Error('No se pudo inicializar el lienzo de recorte.')
+  }
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, w, h)
+  ctx.drawImage(img, 0, 0, w, h)
+
+  const nx = Math.max(0, Math.min(1, Number(normalizedRect.x) || 0))
+  const ny = Math.max(0, Math.min(1, Number(normalizedRect.y) || 0))
+  const nw = Math.max(0.01, Math.min(1 - nx, Number(normalizedRect.w) || 0.1))
+  const nh = Math.max(0.01, Math.min(1 - ny, Number(normalizedRect.h) || 0.05))
+
+  const minX = Math.max(0, Math.floor(nx * w))
+  const minY = Math.max(0, Math.floor(ny * h))
+  const maxX = Math.min(w, Math.max(minX + 8, Math.ceil((nx + nw) * w)))
+  const maxY = Math.min(h, Math.max(minY + 8, Math.ceil((ny + nh) * h)))
+  const bbox = { minX, minY, maxX, maxY }
+
+  const visualHash = computeBlockVisualSignature(canvas, bbox)
+  const cropDataUrl = cropLineFromCanvas(canvas, bbox, {
+    maxWidth: 760,
+    maxHeight: 96,
+    quality: 0.82
+  })
+  const rawStorageUrl = cropLineFromCanvas(canvas, bbox, {
+    maxWidth: 420,
+    maxHeight: 52,
+    quality: 0.65
+  })
+  const cropStorageDataUrl = embedVisualHashInDataUrl(rawStorageUrl, visualHash)
+
+  let detectedText = ''
+  let detectedConf = 0
+
+  try {
+    const blockCanvas = createPaddedBlockCanvasForOcr(canvas, bbox)
+    if (blockCanvas) {
+      const ocr = await getPaddleOcrInstance()
+      const blockResults = await ocr.predict([blockCanvas], {
+        textDetThresh: 0.2,
+        textDetBoxThresh: 0.28,
+        textDetUnclipRatio: 1.65,
+        textRecScoreThresh: 0.15
+      })
+      const joinedRes = extractJoinedTextFromOcrItems(blockResults?.[0]?.items || [])
+      detectedText = joinedRes.text
+      detectedConf = joinedRes.confidence
+    }
+  } catch (err) {
+    console.warn('Reconocimiento PaddleOCR de recorte manual falló parcialmente:', err)
+  }
+
+  const effectiveText =
+    detectedText.length >= 2
+      ? sanitizeRecipeLine(detectedText) || '[Manuscrito a revisar]'
+      : '[Manuscrito a revisar]'
+
+  return {
+    text: effectiveText,
+    confidence: detectedText.length >= 2 ? detectedConf : 0,
+    bbox,
+    visualHash,
+    cropDataUrl,
+    cropStorageDataUrl
+  }
 }
 
 /**
@@ -1656,20 +1800,9 @@ export async function recognizeRecipePaddle(imageSource, onProgress) {
 
       for (let jobPos = 0; jobPos < retryJobs.length; jobPos++) {
         const job = retryJobs[jobPos]
-        const resItems = blockResults?.[jobPos]?.items || []
-        const sortedItems = [...resItems].sort((a, b) => {
-          const ax = Array.isArray(a?.poly?.[0]) ? a.poly[0][0] : a?.poly?.[0]?.x || 0
-          const bx = Array.isArray(b?.poly?.[0]) ? b.poly[0][0] : b?.poly?.[0]?.x || 0
-          return ax - bx
-        })
-
-        let joined = cleanRecognizedOcrText(sortedItems.map((it) => it?.text || '').join(' '))
-        let avgBlockConf =
-          sortedItems.length > 0
-            ? Math.round(
-                (sortedItems.reduce((acc, it) => acc + (it?.score || 0), 0) / sortedItems.length) * 100
-              )
-            : 0
+        const firstPassBlock = extractJoinedTextFromOcrItems(blockResults?.[jobPos]?.items || [])
+        let joined = firstPassBlock.text
+        let avgBlockConf = firstPassBlock.confidence
 
         if (joined.length < 2 && groupedRichLines[job.idx].fallbackOcrBbox) {
           const fbCanvas = createPaddedBlockCanvasForOcr(
@@ -1683,20 +1816,9 @@ export async function recognizeRecipePaddle(imageSource, onProgress) {
               textDetUnclipRatio: 1.6,
               textRecScoreThresh: 0.18
             })
-            const fbItems = fbResults?.[0]?.items || []
-            const sortedFbItems = [...fbItems].sort((a, b) => {
-              const ax = Array.isArray(a?.poly?.[0]) ? a.poly[0][0] : a?.poly?.[0]?.x || 0
-              const bx = Array.isArray(b?.poly?.[0]) ? b.poly[0][0] : b?.poly?.[0]?.x || 0
-              return ax - bx
-            })
-            joined = cleanRecognizedOcrText(sortedFbItems.map((it) => it?.text || '').join(' '))
-            avgBlockConf =
-              sortedFbItems.length > 0
-                ? Math.round(
-                    (sortedFbItems.reduce((acc, it) => acc + (it?.score || 0), 0) / sortedFbItems.length) *
-                      100
-                  )
-                : 0
+            const fbPassBlock = extractJoinedTextFromOcrItems(fbResults?.[0]?.items || [])
+            joined = fbPassBlock.text
+            avgBlockConf = fbPassBlock.confidence
           }
         }
 
@@ -1769,6 +1891,8 @@ export async function recognizeRecipePaddle(imageSource, onProgress) {
     },
     confidence: avgConfidence,
     engineUsed: 'PaddleOCR (PP-OCRv5)',
-    preprocessedDataUrl: preprocessed.dataUrl
+    preprocessedDataUrl: preprocessed.dataUrl,
+    preprocessedWidth: preprocessed.width,
+    preprocessedHeight: preprocessed.height
   }
 }

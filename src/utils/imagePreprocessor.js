@@ -322,7 +322,6 @@ export async function preprocessRecipeImage(imageSource, options = {}) {
     const radiusXAniso = Math.max(14, Math.round(width * 0.016))
     const radiusYAniso = Math.max(24, Math.round(height * 0.032))
     const radiusMacro = Math.max(16, Math.round(Math.min(width, height) * 0.075))
-    const noiseFloor = 19
 
     for (let y = 0; y < height; y++) {
       const rowOffset = y * width
@@ -354,9 +353,16 @@ export async function preprocessRecipeImage(imageSource, options = {}) {
           const localMean = 0.72 * meanAniso + 0.28 * meanMacro
           const gray = grayscale[rowOffset + x]
           const diff = localMean - gray
+          const isShadowZone = localMean < 138
+          const adaptiveNoiseFloor = isShadowZone
+            ? Math.max(10, Math.min(18, Math.round(localMean * 0.11)))
+            : 19
+          const adaptiveDivisor = isShadowZone
+            ? Math.max(30, localMean * 0.35)
+            : Math.max(42, localMean * 0.48)
 
-          if (diff > noiseFloor && localMean > 45) {
-            const normInk = Math.min(1, (diff - noiseFloor) / Math.max(42, localMean * 0.48))
+          if (diff > adaptiveNoiseFloor && localMean > 45) {
+            const normInk = Math.min(1, (diff - adaptiveNoiseFloor) / adaptiveDivisor)
             val = Math.max(0, Math.round(255 * (1 - Math.pow(normInk, 1.12))))
           } else if (localMean <= 45) {
             val = gray
