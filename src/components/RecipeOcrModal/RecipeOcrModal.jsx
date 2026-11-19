@@ -335,15 +335,47 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
       prev.map((line) => {
         if (line.id !== lineId) return line
         const currentVotes = line.traceVotes || {}
+        const isActivatingUp = vote === 'up' && currentVotes[recorteId] !== 'up'
         const nextVotes = { ...currentVotes }
         if (nextVotes[recorteId] === vote) {
           delete nextVotes[recorteId]
         } else {
           nextVotes[recorteId] = vote
         }
+
+        let nextCandidates = line.candidates || []
+        if (isActivatingUp) {
+          const trace = (line.trazosCoincidentes || []).find(
+            (t) => Number(t.recorteId) === Number(recorteId)
+          )
+          if (trace && Array.isArray(trace.estudiosIds) && trace.estudiosIds.length > 0) {
+            nextCandidates = [...nextCandidates]
+            trace.estudiosIds.forEach((estId, idx) => {
+              const alreadyExists = nextCandidates.some((c) => Number(c.id) === Number(estId))
+              if (!alreadyExists) {
+                const catalogStudy = allCatalogStudies.find((s) => Number(s.id) === Number(estId))
+                const fallbackName = trace.estudiosNombres?.[idx]
+                nextCandidates.push({
+                  id: estId,
+                  nombre: catalogStudy?.nombre || fallbackName || `Estudio #${estId}`,
+                  categoria: catalogStudy?.tipo_muestra || 'Otro',
+                  codigoPractica: catalogStudy?.codigo_practica || '',
+                  score: Number(trace.similitudScore) || 85,
+                  textoOrigen: line.texto,
+                  origenDeteccion: 'MEMORIA_APRENDIDA',
+                  preseleccionado: false,
+                  vecesConfirmado: 1,
+                  imagenMuestra: trace.imagenMuestra || null
+                })
+              }
+            })
+          }
+        }
+
         return {
           ...line,
-          traceVotes: nextVotes
+          traceVotes: nextVotes,
+          candidates: nextCandidates
         }
       })
     )

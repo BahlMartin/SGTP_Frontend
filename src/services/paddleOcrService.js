@@ -1088,7 +1088,7 @@ export function cropLineFromCanvas(canvas, bbox, options = {}) {
 
   const boxHeight = Math.max(12, maxY - minY)
   const padX = 14
-  const padY = Math.max(10, Math.round(boxHeight * 0.35))
+  const padY = Math.min(10, Math.max(4, Math.round(boxHeight * 0.12)))
   const startX = Math.max(0, Math.floor(minX - padX))
   const endX = Math.min(canvas.width, Math.ceil(maxX + padX))
   const startY = Math.max(0, Math.floor(minY - padY))
@@ -1141,7 +1141,7 @@ function overlapsExistingBlock(inkBlock, existingBlocks) {
     const minH = Math.max(1, Math.min(inkH, b.maxY - b.minY))
     const minW = Math.max(1, Math.min(inkW, b.maxX - b.minX))
 
-    if (yOverlap / minH >= 0.35 && xOverlap / minW >= 0.35) {
+    if (yOverlap / minH >= 0.35 && yOverlap / inkH >= 0.45 && xOverlap / minW >= 0.35) {
       return true
     }
   }
@@ -1433,6 +1433,9 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
             )
           : rawBbox
 
+        const preInkBbox = { ...bbox }
+        let fallbackOcrBbox = null
+
         if (matchedInkBlocks.length === 1) {
           const singleInk = matchedInkBlocks[0]
           const singleH = singleInk.maxY - singleInk.minY
@@ -1441,6 +1444,22 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
               ...bbox,
               minY: Math.min(bbox.minY, singleInk.minY),
               maxY: Math.max(bbox.maxY, singleInk.maxY)
+            }
+          } else if (segH < singleH * 0.75 && singleH <= 140) {
+            fallbackOcrBbox = preInkBbox
+            bbox = {
+              minX: Math.min(bbox.minX, singleInk.minX),
+              minY: singleInk.minY,
+              maxX: Math.max(bbox.maxX, singleInk.maxX),
+              maxY: singleInk.maxY
+            }
+          }
+          if (segH > singleH * 1.28 && singleH >= 20) {
+            const vPad = Math.min(8, Math.round(singleH * 0.12))
+            bbox = {
+              ...bbox,
+              minY: Math.max(bbox.minY, singleInk.minY - vPad),
+              maxY: Math.min(bbox.maxY, singleInk.maxY + vPad)
             }
           }
         }
@@ -1451,7 +1470,8 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
           text: segText,
           confidence: avgConf,
           needsBlockOcr: segText.length < 2 || avgConf < 78 || wasSignificantlyExpanded,
-          bbox
+          bbox,
+          fallbackOcrBbox
         })
       })
     }
@@ -1520,6 +1540,7 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
         text: block.text,
         confidence: block.confidence,
         bbox: block.bbox,
+        fallbackOcrBbox: block.fallbackOcrBbox || null,
         rowIndex: rowIdx + 1,
         colIndex: colIdx + 1,
         totalColsInRow,
@@ -1633,7 +1654,8 @@ export async function recognizeRecipePaddle(imageSource, onProgress) {
         }
       )
 
-      retryJobs.forEach((job, jobPos) => {
+      for (let jobPos = 0; jobPos < retryJobs.length; jobPos++) {
+        const job = retryJobs[jobPos]
         const resItems = blockResults?.[jobPos]?.items || []
         const sortedItems = [...resItems].sort((a, b) => {
           const ax = Array.isArray(a?.poly?.[0]) ? a.poly[0][0] : a?.poly?.[0]?.x || 0
@@ -1641,18 +1663,53 @@ export async function recognizeRecipePaddle(imageSource, onProgress) {
           return ax - bx
         })
 
-        const joined = cleanRecognizedOcrText(sortedItems.map((it) => it?.text || '').join(' '))
-        const avgBlockConf =
+        let joined = cleanRecognizedOcrText(sortedItems.map((it) => it?.text || '').join(' '))
+        let avgBlockConf =
           sortedItems.length > 0
             ? Math.round(
                 (sortedItems.reduce((acc, it) => acc + (it?.score || 0), 0) / sortedItems.length) * 100
               )
             : 0
 
+        if (joined.length < 2 && groupedRichLines[job.idx].fallbackOcrBbox) {
+          const fbCanvas = createPaddedBlockCanvasForOcr(
+            preprocessed.canvas,
+            groupedRichLines[job.idx].fallbackOcrBbox
+          )
+          if (fbCanvas) {
+            const fbResults = await ocr.predict([fbCanvas], {
+              textDetThresh: 0.22,
+              textDetBoxThresh: 0.32,
+              textDetUnclipRatio: 1.6,
+              textRecScoreThresh: 0.18
+            })
+            const fbItems = fbResults?.[0]?.items || []
+            const sortedFbItems = [...fbItems].sort((a, b) => {
+              const ax = Array.isArray(a?.poly?.[0]) ? a.poly[0][0] : a?.poly?.[0]?.x || 0
+              const bx = Array.isArray(b?.poly?.[0]) ? b.poly[0][0] : b?.poly?.[0]?.x || 0
+              return ax - bx
+            })
+            joined = cleanRecognizedOcrText(sortedFbItems.map((it) => it?.text || '').join(' '))
+            avgBlockConf =
+              sortedFbItems.length > 0
+                ? Math.round(
+                    (sortedFbItems.reduce((acc, it) => acc + (it?.score || 0), 0) / sortedFbItems.length) *
+                      100
+                  )
+                : 0
+          }
+        }
+
         const existingClean = cleanRecognizedOcrText(groupedRichLines[job.idx].text)
         const existingConf = groupedRichLines[job.idx].confidence || 0
+        const wouldTruncateExisting =
+          (existingClean.length >= 3 &&
+            joined.length < existingClean.length &&
+            avgBlockConf < existingConf + 15) ||
+          (existingClean.length >= 6 && avgBlockConf < existingConf + 10)
         if (
           joined.length >= 2 &&
+          !wouldTruncateExisting &&
           (existingClean.length < 2 ||
             avgBlockConf > existingConf ||
             joined.length > existingClean.length + 2)
@@ -1660,7 +1717,7 @@ export async function recognizeRecipePaddle(imageSource, onProgress) {
           groupedRichLines[job.idx].text = joined
           groupedRichLines[job.idx].confidence = avgBlockConf
         }
-      })
+      }
     } catch (err) {
       console.warn('Segunda pasada por bloque falló parcialmente:', err)
     }
