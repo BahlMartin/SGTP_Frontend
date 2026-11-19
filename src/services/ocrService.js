@@ -53,7 +53,8 @@ export async function mapStudiesFromTextApi(textos = [], firmasVisuales = [], re
   const response = await apiClient.post('/ocr/escanear-receta/', {
     textos,
     firmas_visuales: Array.isArray(firmasVisuales) ? firmasVisuales : [],
-    recortes_imagen: Array.isArray(recortesImagen) ? recortesImagen : []
+    recortes_imagen: Array.isArray(recortesImagen) ? recortesImagen : [],
+    usar_vision_ia: false
   })
 
   const sugerencias = response.sugerencias || []
@@ -146,8 +147,10 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
       })
     }
     const firmasVisuales = (paddleOutput.richLines || []).map((l) => l.visualHash || '')
-    // Confidencialidad PHI: el escaneo inicial nunca envía recortes de imagen a servicios externos; solo texto local + hash
-    mapping = await mapStudiesFromTextApi(paddleOutput.lines, firmasVisuales)
+    const recortesImagen = (paddleOutput.richLines || []).map((l) => l.cropStorageDataUrl || '')
+    // Los recortes livianos prefiltrados se envían solo al backend propio de Django
+    // para comparación visual local (OpenCV + NumPy) con usar_vision_ia: false (sin exposición externa PHI).
+    mapping = await mapStudiesFromTextApi(paddleOutput.lines, firmasVisuales, recortesImagen)
   }
 
   const suggestedStudies = (mapping.suggestedStudies || []).map((s) => ({
