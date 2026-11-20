@@ -54,7 +54,8 @@ export async function mapStudiesFromTextApi(textos = [], firmasVisuales = [], re
     textos,
     firmas_visuales: Array.isArray(firmasVisuales) ? firmasVisuales : [],
     recortes_imagen: Array.isArray(recortesImagen) ? recortesImagen : [],
-    usar_vision_ia: false
+    usar_vision_ia: false,
+    deduplicar_imagenes: true
   })
 
   const sugerencias = response.sugerencias || []
@@ -65,6 +66,10 @@ export async function mapStudiesFromTextApi(textos = [], firmasVisuales = [], re
     comboDetectado: response.combo_detectado || null,
     sugerencias,
     renglones: response.renglones || [],
+    imagenesRecortes:
+      response.imagenes_recortes && typeof response.imagenes_recortes === 'object'
+        ? response.imagenes_recortes
+        : {},
     sugerenciasContextuales: response.sugerencias_contextuales || [],
     suggestedStudies: sugerencias.map((s) => mapRecomendadoToCandidate(s))
   }
@@ -148,7 +153,7 @@ export async function interpretSelectedCropsWithAiApi(recortes = []) {
   }
 }
 
-function buildDetectedLineDetail(richLine, backendLine, idx) {
+function buildDetectedLineDetail(richLine, backendLine, idx, imagenesRecortes = {}) {
   const resolvedTexto =
     richLine.text === '[Manuscrito a revisar]' &&
     backendLine?.texto_renglon &&
@@ -171,7 +176,7 @@ function buildDetectedLineDetail(richLine, backendLine, idx) {
         .filter((t) => t && t.recorte_id !== undefined && t.recorte_id !== null)
         .map((t) => ({
           recorteId: t.recorte_id,
-          imagenMuestra: t.imagen_muestra || '',
+          imagenMuestra: t.imagen_muestra || imagenesRecortes[String(t.recorte_id)] || '',
           estudiosIds: Array.isArray(t.estudios_ids) ? t.estudios_ids : [],
           estudiosNombres: Array.isArray(t.estudios_nombres) ? t.estudios_nombres : [],
           similitudScore: Number(t.similitud_score) || 0,
@@ -229,7 +234,7 @@ export async function processManualRecipeCrop({
   )
 
   const backendLine = mapping?.renglones?.[0] || null
-  const detail = buildDetectedLineDetail(cropInfo, backendLine, 0)
+  const detail = buildDetectedLineDetail(cropInfo, backendLine, 0, mapping?.imagenesRecortes || {})
   return {
     ...detail,
     esRuidoAprendido: false,
@@ -306,6 +311,7 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
   }))
 
   const backendRenglones = mapping.renglones || []
+  const imagenesRecortesMap = mapping.imagenesRecortes || {}
   const detectedLinesDetail = richLines
     .map((richLine, idx) => {
       const backendLine =
@@ -313,7 +319,7 @@ export async function processRecipeFullFlow(imageSource, onProgress) {
         backendRenglones[idx] ||
         null
 
-      return buildDetectedLineDetail(richLine, backendLine, idx)
+      return buildDetectedLineDetail(richLine, backendLine, idx, imagenesRecortesMap)
     })
     .filter((line) => !line.esRuidoAprendido)
 

@@ -171,6 +171,8 @@ function renderStudyOriginBadge(study) {
   return null
 }
 
+const INITIAL_VISIBLE_TRACES = 6
+
 export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   // Estados de captura de imagen
   const [file, setFile] = useState(null)
@@ -183,6 +185,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   const [ocrError, setOcrError] = useState(null)
   const [ocrResult, setOcrResult] = useState(null)
   const [linesReview, setLinesReview] = useState([])
+  const [expandedTracesLines, setExpandedTracesLines] = useState({})
   const [extraContextualStudies, setExtraContextualStudies] = useState([])
   const [showFloatingAlert, setShowFloatingAlert] = useState(false)
 
@@ -371,6 +374,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
 
       setOcrResult(res)
       setLinesReview(initialLines)
+      setExpandedTracesLines({})
       setExtraContextualStudies([])
       setActiveSearchLineId(null)
       setLineSearchQuery('')
@@ -388,6 +392,13 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     } finally {
       setAnalyzing(false)
     }
+  }
+
+  const toggleExpandTraces = (lineId) => {
+    setExpandedTracesLines((prev) => ({
+      ...prev,
+      [lineId]: !prev[lineId]
+    }))
   }
 
   // Marcar / desmarcar un estudio dentro de un renglón específico
@@ -1815,77 +1826,98 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                             )}
 
                           {/* Trazos históricos coincidentes evaluables (Bien / Mal) */}
-                          {line.trazosCoincidentes?.length > 0 && (
-                            <div className="ocr-modal__matched-traces">
-                              <div className="ocr-modal__matched-traces-header">
-                                Trazos históricos coincidentes ({line.trazosCoincidentes.length}) — marcá si coinciden:
-                              </div>
-                              <div className="ocr-modal__matched-traces-list">
-                                {line.trazosCoincidentes.map((trace) => {
-                                  const currentVote = line.traceVotes?.[trace.recorteId]
-                                  const studyNames =
-                                    Array.isArray(trace.estudiosNombres) && trace.estudiosNombres.length > 0
-                                      ? trace.estudiosNombres.join(', ')
-                                      : 'Estudio asociado'
+                          {line.trazosCoincidentes?.length > 0 && (() => {
+                            const totalTraces = line.trazosCoincidentes.length
+                            const isTracesExpanded = Boolean(expandedTracesLines[line.id])
+                            const visibleTraces = isTracesExpanded
+                              ? line.trazosCoincidentes
+                              : line.trazosCoincidentes.slice(0, INITIAL_VISIBLE_TRACES)
+                            const hiddenTracesCount = Math.max(0, totalTraces - visibleTraces.length)
 
-                                  return (
-                                    <div
-                                      key={`${line.id}-matched-trace-${trace.recorteId}`}
-                                      className={`ocr-modal__trace-chip ${
-                                        currentVote === 'up'
-                                          ? 'ocr-modal__trace-chip--good'
-                                          : currentVote === 'down'
-                                            ? 'ocr-modal__trace-chip--bad'
-                                            : ''
-                                      }`}
-                                    >
-                                      {trace.imagenMuestra && (
-                                        <img
-                                          src={trace.imagenMuestra}
-                                          alt={`Trazo histórico de ${studyNames}`}
-                                          className="ocr-modal__trace-thumb"
-                                        />
-                                      )}
-                                      <div className="ocr-modal__trace-info">
-                                        <span className="ocr-modal__trace-study" title={studyNames}>
-                                          {studyNames}
-                                        </span>
-                                        <span className="ocr-modal__trace-score">
-                                          {Math.round(Number(trace.similitudScore) || 0)}%
-                                        </span>
+                            return (
+                              <div className="ocr-modal__matched-traces">
+                                <div className="ocr-modal__matched-traces-header">
+                                  Trazos históricos coincidentes ({totalTraces}) — marcá si coinciden:
+                                </div>
+                                <div className="ocr-modal__matched-traces-list">
+                                  {visibleTraces.map((trace) => {
+                                    const currentVote = line.traceVotes?.[trace.recorteId]
+                                    const studyNames =
+                                      Array.isArray(trace.estudiosNombres) && trace.estudiosNombres.length > 0
+                                        ? trace.estudiosNombres.join(', ')
+                                        : 'Estudio asociado'
+
+                                    return (
+                                      <div
+                                        key={`${line.id}-matched-trace-${trace.recorteId}`}
+                                        className={`ocr-modal__trace-chip ${
+                                          currentVote === 'up'
+                                            ? 'ocr-modal__trace-chip--good'
+                                            : currentVote === 'down'
+                                              ? 'ocr-modal__trace-chip--bad'
+                                              : ''
+                                        }`}
+                                      >
+                                        {trace.imagenMuestra && (
+                                          <img
+                                            src={trace.imagenMuestra}
+                                            alt={`Trazo histórico de ${studyNames}`}
+                                            className="ocr-modal__trace-thumb"
+                                          />
+                                        )}
+                                        <div className="ocr-modal__trace-info">
+                                          <span className="ocr-modal__trace-study" title={studyNames}>
+                                            {studyNames}
+                                          </span>
+                                          <span className="ocr-modal__trace-score">
+                                            {Math.round(Number(trace.similitudScore) || 0)}%
+                                          </span>
+                                        </div>
+                                        <div className="ocr-modal__trace-actions">
+                                          <button
+                                            type="button"
+                                            aria-pressed={currentVote === 'up'}
+                                            className={`ocr-modal__trace-vote-btn ocr-modal__trace-vote-btn--good ${
+                                              currentVote === 'up' ? 'ocr-modal__trace-vote-btn--active' : ''
+                                            }`}
+                                            onClick={() => toggleTraceVote(line.id, trace.recorteId, 'up')}
+                                            title="Marcar trazo como coincidencia correcta"
+                                          >
+                                            <Check size={12} />
+                                            <span>Bien</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            aria-pressed={currentVote === 'down'}
+                                            className={`ocr-modal__trace-vote-btn ocr-modal__trace-vote-btn--bad ${
+                                              currentVote === 'down' ? 'ocr-modal__trace-vote-btn--active' : ''
+                                            }`}
+                                            onClick={() => toggleTraceVote(line.id, trace.recorteId, 'down')}
+                                            title="Marcar trazo como coincidencia errónea"
+                                          >
+                                            <X size={12} />
+                                            <span>Mal</span>
+                                          </button>
+                                        </div>
                                       </div>
-                                      <div className="ocr-modal__trace-actions">
-                                        <button
-                                          type="button"
-                                          aria-pressed={currentVote === 'up'}
-                                          className={`ocr-modal__trace-vote-btn ocr-modal__trace-vote-btn--good ${
-                                            currentVote === 'up' ? 'ocr-modal__trace-vote-btn--active' : ''
-                                          }`}
-                                          onClick={() => toggleTraceVote(line.id, trace.recorteId, 'up')}
-                                          title="Marcar trazo como coincidencia correcta"
-                                        >
-                                          <Check size={12} />
-                                          <span>Bien</span>
-                                        </button>
-                                        <button
-                                          type="button"
-                                          aria-pressed={currentVote === 'down'}
-                                          className={`ocr-modal__trace-vote-btn ocr-modal__trace-vote-btn--bad ${
-                                            currentVote === 'down' ? 'ocr-modal__trace-vote-btn--active' : ''
-                                          }`}
-                                          onClick={() => toggleTraceVote(line.id, trace.recorteId, 'down')}
-                                          title="Marcar trazo como coincidencia errónea"
-                                        >
-                                          <X size={12} />
-                                          <span>Mal</span>
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )
-                                })}
+                                    )
+                                  })}
+                                </div>
+                                {totalTraces > INITIAL_VISIBLE_TRACES && (
+                                  <button
+                                    type="button"
+                                    className="ocr-modal__traces-toggle-btn"
+                                    onClick={() => toggleExpandTraces(line.id)}
+                                    aria-expanded={isTracesExpanded}
+                                  >
+                                    {isTracesExpanded
+                                      ? `Ver menos (mostrar ${INITIAL_VISIBLE_TRACES})`
+                                      : `Ver todos (${totalTraces}) · +${hiddenTracesCount} más`}
+                                  </button>
+                                )}
                               </div>
-                            </div>
-                          )}
+                            )
+                          })()}
 
                           {/* Chips de asignación rápida en 1 clic para bloques pendientes */}
                           {!hasSelected && availableQuickPicks.length > 0 && (
