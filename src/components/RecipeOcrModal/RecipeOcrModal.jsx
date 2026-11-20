@@ -56,6 +56,52 @@ function normalizeLocalSearchText(text) {
     .trim()
 }
 
+function buildCandidateFromTrace(
+  trace,
+  estId,
+  fallbackIdx = 0,
+  lineTexto = '',
+  allCatalogStudies = []
+) {
+  const catalogStudy = allCatalogStudies.find((s) => Number(s.id) === Number(estId))
+  const fallbackName = trace?.estudiosNombres?.[fallbackIdx]
+  return {
+    id: estId,
+    nombre: catalogStudy?.nombre || fallbackName || `Estudio #${estId}`,
+    categoria: catalogStudy?.tipo_muestra || 'Otro',
+    codigoPractica: catalogStudy?.codigo_practica || '',
+    score: Number(trace?.similitudScore) || 0,
+    textoOrigen: lineTexto || '',
+    origenDeteccion: 'MEMORIA_APRENDIDA',
+    preseleccionado: false,
+    vecesConfirmado: 1,
+    imagenMuestra: trace?.imagenMuestra || null
+  }
+}
+
+function syncTraceStudiesIntoCandidates(
+  candidates = [],
+  trazosCoincidentes = [],
+  lineTexto = '',
+  allCatalogStudies = []
+) {
+  const nextCandidates = Array.isArray(candidates) ? [...candidates] : []
+  const existingIds = new Set(nextCandidates.map((c) => Number(c.id)))
+
+  for (const trace of trazosCoincidentes || []) {
+    if (!trace || !Array.isArray(trace.estudiosIds)) continue
+    trace.estudiosIds.forEach((estId, idx) => {
+      const numId = Number(estId)
+      if (!numId || existingIds.has(numId)) return
+      existingIds.add(numId)
+      nextCandidates.push(
+        buildCandidateFromTrace(trace, estId, idx, lineTexto, allCatalogStudies)
+      )
+    })
+  }
+  return nextCandidates
+}
+
 function isCandidatePenalized(line, study) {
   if (
     !line ||
@@ -287,6 +333,9 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
             : line.imagenMuestraConocida
               ? [line.imagenMuestraConocida]
               : []
+        const trazosCoincidentes = Array.isArray(line.trazosCoincidentes)
+          ? line.trazosCoincidentes
+          : []
 
         return {
           id: line.id,
@@ -304,11 +353,17 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
           comboDetectado: line.comboDetectado || null,
           imagenMuestraConocida: line.imagenMuestraConocida || knownTraceImages[0] || null,
           imagenesMuestraConocidas: knownTraceImages,
-          trazosCoincidentes: Array.isArray(line.trazosCoincidentes) ? line.trazosCoincidentes : [],
+          trazosCoincidentes,
           traceVotes: {},
+          removedTraceCandidates: {},
           discarded: false,
           isAiDiscovered: false,
-          candidates: line.recomendados || [],
+          candidates: syncTraceStudiesIntoCandidates(
+            line.recomendados || [],
+            trazosCoincidentes,
+            line.texto,
+            allCatalogStudies
+          ),
           // Mejora 7: ningún estudio preseleccionado por defecto; Admisión debe tildar manualmente
           selectedIds: []
         }
@@ -360,14 +415,14 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     }
   }
 
-  // Votar Bien ('up') o Mal ('down') por un trazo histórico coincidente (no modifica selectedIds — Mejora 7)
+  // Votar Bien ('up') o Mal ('down') por un trazo histórico coincidente:
+  // si todos los trazos de un estudio se marcan Mal se elimina su estudio; si se marca Bien o se destilda Mal permanece/vuelve sin auto-tildar (Mejora 7).
   const toggleTraceVote = (lineId, recorteId, vote) => {
     if (vote !== 'up' && vote !== 'down') return
     setLinesReview((prev) =>
       prev.map((line) => {
         if (line.id !== lineId) return line
         const currentVotes = line.traceVotes || {}
-        const isActivatingUp = vote === 'up' && currentVotes[recorteId] !== 'up'
         const nextVotes = { ...currentVotes }
         if (nextVotes[recorteId] === vote) {
           delete nextVotes[recorteId]
@@ -375,39 +430,67 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
           nextVotes[recorteId] = vote
         }
 
-        let nextCandidates = line.candidates || []
-        if (isActivatingUp) {
-          const trace = (line.trazosCoincidentes || []).find(
-            (t) => Number(t.recorteId) === Number(recorteId)
-          )
-          if (trace && Array.isArray(trace.estudiosIds) && trace.estudiosIds.length > 0) {
-            nextCandidates = [...nextCandidates]
-            trace.estudiosIds.forEach((estId, idx) => {
-              const alreadyExists = nextCandidates.some((c) => Number(c.id) === Number(estId))
-              if (!alreadyExists) {
-                const catalogStudy = allCatalogStudies.find((s) => Number(s.id) === Number(estId))
-                const fallbackName = trace.estudiosNombres?.[idx]
-                nextCandidates.push({
-                  id: estId,
-                  nombre: catalogStudy?.nombre || fallbackName || `Estudio #${estId}`,
-                  categoria: catalogStudy?.tipo_muestra || 'Otro',
-                  codigoPractica: catalogStudy?.codigo_practica || '',
-                  score: Number(trace.similitudScore) || 85,
-                  textoOrigen: line.texto,
-                  origenDeteccion: 'MEMORIA_APRENDIDA',
-                  preseleccionado: false,
-                  vecesConfirmado: 1,
-                  imagenMuestra: trace.imagenMuestra || null
-                })
-              }
-            })
+        const trazos = Array.isArray(line.trazosCoincidentes) ? line.trazosCoincidentes : []
+        const targetTrace = trazos.find((t) => Number(t.recorteId) === Number(recorteId))
+        if (!targetTrace || !Array.isArray(targetTrace.estudiosIds)) {
+          return {
+            ...line,
+            traceVotes: nextVotes
           }
         }
+
+        let nextCandidates = [...(line.candidates || [])]
+        let nextSelectedIds = [...(line.selectedIds || [])]
+        const nextRemoved = { ...(line.removedTraceCandidates || {}) }
+
+        targetTrace.estudiosIds.forEach((estId, idx) => {
+          const numId = Number(estId)
+          if (!numId) return
+
+          const tracesForStudy = trazos.filter(
+            (t) =>
+              Array.isArray(t.estudiosIds) &&
+              t.estudiosIds.some((id) => Number(id) === numId)
+          )
+          const allDown =
+            tracesForStudy.length > 0 &&
+            tracesForStudy.every((t) => nextVotes[t.recorteId] === 'down')
+
+          if (allDown) {
+            const existingCand = nextCandidates.find((c) => Number(c.id) === numId)
+            if (existingCand && existingCand.origenDeteccion === 'MEMORIA_APRENDIDA') {
+              nextRemoved[numId] = existingCand
+              nextCandidates = nextCandidates.filter((c) => Number(c.id) !== numId)
+              nextSelectedIds = nextSelectedIds.filter((id) => Number(id) !== numId)
+            }
+          } else {
+            const alreadyExists = nextCandidates.some((c) => Number(c.id) === numId)
+            if (!alreadyExists) {
+              const restored = nextRemoved[numId]
+              if (restored) {
+                delete nextRemoved[numId]
+                nextCandidates.push(restored)
+              } else {
+                nextCandidates.push(
+                  buildCandidateFromTrace(
+                    targetTrace,
+                    estId,
+                    idx,
+                    line.texto,
+                    allCatalogStudies
+                  )
+                )
+              }
+            }
+          }
+        })
 
         return {
           ...line,
           traceVotes: nextVotes,
-          candidates: nextCandidates
+          candidates: nextCandidates,
+          selectedIds: nextSelectedIds,
+          removedTraceCandidates: nextRemoved
         }
       })
     )
@@ -471,8 +554,10 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
 
           const recs = Array.isArray(item.recomendados) ? item.recomendados : []
           const existingMap = new Map(line.candidates.map((c) => [c.id, c]))
+          const nextRemoved = { ...(line.removedTraceCandidates || {}) }
           for (const rec of recs) {
             existingMap.set(rec.id, rec)
+            delete nextRemoved[rec.id]
           }
 
           // Mejora 7: no preseleccionar automáticamente al recibir respuesta de Gemini; conservar solo lo tildado
@@ -482,6 +567,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
             textoIa: item.textoTranscritoIa || line.textoIa,
             comboDetectado: item.comboDetectado || line.comboDetectado,
             candidates: Array.from(existingMap.values()),
+            removedTraceCandidates: nextRemoved,
             selectedIds: line.selectedIds
           }
         })
@@ -514,6 +600,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
             imagenesMuestraConocidas: [],
             trazosCoincidentes: [],
             traceVotes: {},
+            removedTraceCandidates: {},
             discarded: false,
             isAiDiscovered: true,
             candidates: recs,
@@ -607,16 +694,27 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
       const nextRowIndex =
         linesReview.reduce((acc, l) => Math.max(acc, Number(l.rowIndex) || 0), 0) + 1
 
+      const trazosManuales = Array.isArray(detail.trazosCoincidentes)
+        ? detail.trazosCoincidentes
+        : []
+
       const newLine = {
         ...detail,
         id: nextId,
         rowIndex: nextRowIndex,
         colIndex: 1,
         totalColsInRow: 1,
+        trazosCoincidentes: trazosManuales,
         traceVotes: {},
+        removedTraceCandidates: {},
         discarded: false,
         isManualCrop: true,
-        candidates: detail.recomendados || [],
+        candidates: syncTraceStudiesIntoCandidates(
+          detail.recomendados || [],
+          trazosManuales,
+          detail.texto,
+          allCatalogStudies
+        ),
         // Mejora 7: ningún estudio preseleccionado por defecto; Admisión debe tildar manualmente
         selectedIds: []
       }
@@ -665,11 +763,14 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         const nextSelectedIds = line.selectedIds.includes(studyFromApi.id)
           ? line.selectedIds
           : [...line.selectedIds, studyFromApi.id]
+        const nextRemoved = { ...(line.removedTraceCandidates || {}) }
+        delete nextRemoved[studyFromApi.id]
 
         return {
           ...line,
           discarded: false,
           candidates: nextCandidates,
+          removedTraceCandidates: nextRemoved,
           selectedIds: nextSelectedIds
         }
       })
