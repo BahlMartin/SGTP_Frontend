@@ -13,10 +13,24 @@ import { fetchEmpleadoJornadaApi } from '../../../services/auditService'
 import { fetchAllStaffApi } from '../../../services/userService'
 import ActivityStripSVG from './ActivityStripSVG'
 import {
-  CATEGORIAS_CONFIG,
   ACCIONES_CATALOGO,
+  GEMINI_AI_CONFIG,
+  GeminiLogoIcon,
+  isGeminiAiEvent,
+  getAccionDisplayLabel,
+  extractPatientTraceMeta,
   formatHora
 } from '../constants/auditoriaConstants'
+
+const TIMELINE_TAG_CLASSES = {
+  cancel: 'empleado-jornada__timeline-tag--cancel',
+  admision: 'empleado-jornada__timeline-tag--admision',
+  reportes: 'empleado-jornada__timeline-tag--reportes',
+  gemini: 'empleado-jornada__timeline-tag--gemini',
+  box: 'empleado-jornada__timeline-tag--box',
+  acceso: 'empleado-jornada__timeline-tag--acceso',
+  alerta: 'empleado-jornada__timeline-tag--alerta'
+}
 import './EmpleadoJornadaView.css'
 
 export default function EmpleadoJornadaView({
@@ -273,9 +287,11 @@ export default function EmpleadoJornadaView({
           return filterCategory === 'alertas'
         }
         const ev = item.evento || item
-        const evCat = ev.categoria || item.categoria || ''
+        const evCat = String(ev.categoria || item.categoria || '').toLowerCase()
         const evAccion = ev.accion || item.accion || ''
         const evRes = ev.resultado || item.resultado || ''
+        const evMeta = (ev.metadata && Object.keys(ev.metadata).length > 0 ? ev.metadata : item.metadata) || {}
+        const evSector = String(evMeta.sector || '').toLowerCase()
         const colorTipo = item.color_tipo || ''
 
         if (filterCategory === 'acceso') {
@@ -287,22 +303,26 @@ export default function EmpleadoJornadaView({
           )
         }
         if (filterCategory === 'admision') {
+          if (evCat === 'box' || evSector === 'box') return false
           return (
             colorTipo === 'admision' ||
             colorTipo === 'cancelacion' ||
             evCat === 'admision' ||
+            evSector === 'admision' ||
             evAccion.includes('TICKET') ||
             evAccion.includes('OCR') ||
             evAccion.includes('RECETA') ||
-            evAccion.includes('PACIENTE') ||
+            (evAccion.includes('PACIENTE') && evAccion !== 'PACIENTE_LLAMADO') ||
             evAccion.includes('CANCEL')
           )
         }
         if (filterCategory === 'box') {
+          if (evCat === 'admision' || evSector === 'admision') return false
           return (
             colorTipo === 'ticket' ||
             colorTipo === 'box' ||
             evCat === 'box' ||
+            evSector === 'box' ||
             evAccion.includes('BOX') ||
             evAccion.includes('LLAMADO') ||
             evAccion.includes('ATENCION')
@@ -605,13 +625,30 @@ export default function EmpleadoJornadaView({
                         {v.tag && (
                           <span
                             className={`empleado-jornada__timeline-tag ${
-                              v.tagType === 'cancel'
-                                ? 'empleado-jornada__timeline-tag--cancel'
-                                : 'empleado-jornada__timeline-tag--alerta'
+                              TIMELINE_TAG_CLASSES[v.tagType] || 'empleado-jornada__timeline-tag--alerta'
                             }`}
                           >
                             {v.tag}
                           </span>
+                        )}
+                        {v.patientMeta && (v.patientMeta.turno || v.patientMeta.dni || v.patientMeta.numeroAfiliado) && (
+                          <div className="empleado-jornada__trace-badges">
+                            {v.patientMeta.turno && (
+                              <span className="empleado-jornada__trace-pill empleado-jornada__trace-pill--turno">
+                                Turno: {v.patientMeta.turno}
+                              </span>
+                            )}
+                            {v.patientMeta.dni && (
+                              <span className="empleado-jornada__trace-pill">
+                                DNI: {v.patientMeta.dni}
+                              </span>
+                            )}
+                            {v.patientMeta.numeroAfiliado && (
+                              <span className="empleado-jornada__trace-pill">
+                                N° Afiliado: {v.patientMeta.numeroAfiliado}
+                              </span>
+                            )}
+                          </div>
                         )}
                         {item.tipo === 'grupo' && (
                           <button
@@ -717,6 +754,9 @@ function TimelineSvgIcon({ iconName }) {
       </svg>
     )
   }
+  if (iconName === 'gemini') {
+    return <GeminiLogoIcon size={15} />
+  }
   if (iconName === 'box') {
     return (
       <svg
@@ -816,20 +856,35 @@ function getEventVisualProps(item) {
   }
 
   const ev = item.evento || item
-  const evCat = ev.categoria || item.categoria || 'gestion'
+  const evCat = String(ev.categoria || item.categoria || 'gestion').toLowerCase()
+  const evMeta = (ev.metadata && Object.keys(ev.metadata).length > 0 ? ev.metadata : item.metadata) || {}
+  const evSector = String(evMeta.sector || '').toLowerCase()
   const evAccion = ev.accion || item.accion || 'ACCION'
   const evRes = ev.resultado || item.resultado || 'EXITO'
-  const evDesc = ev.descripcion || item.descripcion || item.titulo || ACCIONES_CATALOGO[evAccion] || evAccion
+  const displayTitle = getAccionDisplayLabel(item)
+  const evDesc = ev.descripcion || item.descripcion || item.titulo || displayTitle
+  const patientMeta = extractPatientTraceMeta(item)
   const isFallo = evRes === 'FALLO' || evRes === 'DENEGADO'
   const isCancel = evAccion === 'ATENCION_CANCELADA' || evAccion.includes('CANCEL')
   const isAlerta = (ev.alertas && ev.alertas.length > 0) || isFallo
   const isAcceso = evCat === 'acceso' || evAccion.includes('LOGIN') || evAccion.includes('LOGOUT')
+  const isGemini = isGeminiAiEvent(item)
+  const isBox =
+    evCat === 'box' ||
+    evSector === 'box' ||
+    evAccion.includes('BOX') ||
+    evAccion === 'ATENCION_FINALIZADA'
   const isAdmision =
     evCat === 'admision' ||
-    evAccion.includes('TICKET') ||
-    evAccion.includes('OCR') ||
-    evAccion.includes('RECETA') ||
-    evAccion.includes('PACIENTE')
+    evSector === 'admision' ||
+    (
+      !isBox && (
+        evAccion.includes('TICKET') ||
+        evAccion.includes('OCR') ||
+        evAccion.includes('RECETA') ||
+        (evAccion.includes('PACIENTE') && evAccion !== 'PACIENTE_LLAMADO')
+      )
+    )
   const isReporte =
     evCat === 'reportes' ||
     evAccion.includes('REPORTE') ||
@@ -842,10 +897,11 @@ function getEventVisualProps(item) {
       fg: '#dc2626',
       bg: '#fee2e2',
       titleColor: '#991b1b',
-      title: ACCIONES_CATALOGO[evAccion] || evAccion,
+      title: displayTitle,
       sub: evDesc,
       tag: 'Cancelación',
-      tagType: 'cancel'
+      tagType: 'cancel',
+      patientMeta
     }
   }
 
@@ -855,10 +911,11 @@ function getEventVisualProps(item) {
       fg: '#92400e',
       bg: '#fdf3e7',
       titleColor: '#92400e',
-      title: ACCIONES_CATALOGO[evAccion] || evAccion,
+      title: displayTitle,
       sub: evDesc,
       tag: isFallo ? 'Fallo' : 'Alerta',
-      tagType: 'alerta'
+      tagType: 'alerta',
+      patientMeta
     }
   }
 
@@ -868,10 +925,25 @@ function getEventVisualProps(item) {
       fg: '#4338ca',
       bg: '#eef0fd',
       titleColor: '#275369',
-      title: ACCIONES_CATALOGO[evAccion] || evAccion,
+      title: displayTitle,
       sub: evDesc,
       tag: evAccion === 'LOGIN_EXITOSO' ? 'Inicio de sesión' : '',
-      tagType: 'acceso'
+      tagType: 'acceso',
+      patientMeta
+    }
+  }
+
+  if (isGemini) {
+    return {
+      icon: 'gemini',
+      fg: GEMINI_AI_CONFIG.color,
+      bg: GEMINI_AI_CONFIG.bg,
+      titleColor: GEMINI_AI_CONFIG.color,
+      title: displayTitle,
+      sub: evDesc,
+      tag: GEMINI_AI_CONFIG.label,
+      tagType: 'gemini',
+      patientMeta
     }
   }
 
@@ -882,10 +954,11 @@ function getEventVisualProps(item) {
       fg: '#0f766e',
       bg: '#e6f4f2',
       titleColor: '#0f766e',
-      title: ACCIONES_CATALOGO[evAccion] || evAccion,
+      title: displayTitle,
       sub: evDesc,
       tag: isOcr ? 'Escaneo OCR' : 'Admisión',
-      tagType: 'admision'
+      tagType: 'admision',
+      patientMeta
     }
   }
 
@@ -895,10 +968,11 @@ function getEventVisualProps(item) {
       fg: '#334155',
       bg: '#e8ecf1',
       titleColor: '#334155',
-      title: ACCIONES_CATALOGO[evAccion] || evAccion,
+      title: displayTitle,
       sub: evDesc,
       tag: 'Reporte / Correo',
-      tagType: 'reportes'
+      tagType: 'reportes',
+      patientMeta
     }
   }
 
@@ -907,10 +981,11 @@ function getEventVisualProps(item) {
     fg: '#be185d',
     bg: '#fbe8f1',
     titleColor: '#275369',
-    title: ACCIONES_CATALOGO[evAccion] || evAccion,
+    title: displayTitle,
     sub: evDesc,
-    tag: '',
-    tagType: 'box'
+    tag: isBox || evAccion === 'PACIENTE_LLAMADO' ? 'Box' : '',
+    tagType: 'box',
+    patientMeta
   }
 }
 

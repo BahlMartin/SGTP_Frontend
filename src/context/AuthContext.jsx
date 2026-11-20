@@ -114,17 +114,25 @@ export const AuthContextProvider = ({ children }) => {
   }, [])
 
   const logout = useCallback(async () => {
+    let blockedByActiveAttention = false
     try {
       await logoutApi()
+    } catch (error) {
+      if (error?.data?.error === 'PACIENTE_EN_ATENCION') {
+        blockedByActiveAttention = true
+      }
+      throw error
     } finally {
-      setUserData(null)
-      setIsLogged(false)
-      try {
-        localStorage.removeItem(STORAGE_KEY)
-        localStorage.removeItem(TOKEN_KEY)
-        sessionStorage.removeItem(TOKEN_KEY)
-      } catch (e) {
-        console.warn('Error al limpiar almacenamiento local:', e)
+      if (!blockedByActiveAttention) {
+        setUserData(null)
+        setIsLogged(false)
+        try {
+          localStorage.removeItem(STORAGE_KEY)
+          localStorage.removeItem(TOKEN_KEY)
+          sessionStorage.removeItem(TOKEN_KEY)
+        } catch (e) {
+          console.warn('Error al limpiar almacenamiento local:', e)
+        }
       }
     }
   }, [])

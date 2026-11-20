@@ -1,6 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { INITIAL_ADMISSION_FORM_STATE } from '../constants/admision.constants'
 import { validatePersonName, validateDni } from '../utils/validators'
+
+export const ADMISSION_FORM_DRAFT_STORAGE_KEY = 'sgtp_admision_form_draft'
+export const ADMISSION_STATE_CHANGED_EVENT = 'sgtp:admision_state_changed'
 
 const PREFIX_TO_TRIAGE_MAP = {
   G: 'Guardia',
@@ -9,14 +12,93 @@ const PREFIX_TO_TRIAGE_MAP = {
   Csl: 'Otro'
 }
 
+function readAdmissionFormDraft() {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return null
+    const raw = window.localStorage.getItem(ADMISSION_FORM_DRAFT_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+function isAdmissionDraftEmpty(formData, existingPatient) {
+  if (existingPatient) return false
+  if (!formData || typeof formData !== 'object') return true
+
+  return (
+    !formData.pacienteId &&
+    !String(formData.dni || '').trim() &&
+    !String(formData.numeroAfiliado || '').trim() &&
+    !String(formData.nombre || '').trim() &&
+    !String(formData.apellido || '').trim() &&
+    (formData.obraSocial ?? INITIAL_ADMISSION_FORM_STATE.obraSocial) ===
+      INITIAL_ADMISSION_FORM_STATE.obraSocial &&
+    (formData.prefijoLlamado || INITIAL_ADMISSION_FORM_STATE.prefijoLlamado) ===
+      INITIAL_ADMISSION_FORM_STATE.prefijoLlamado &&
+    !String(formData.numeroLlamado || '').trim() &&
+    (formData.selectedTriage || INITIAL_ADMISSION_FORM_STATE.selectedTriage) ===
+      INITIAL_ADMISSION_FORM_STATE.selectedTriage &&
+    !String(formData.justificacionOtro || '').trim() &&
+    (!Array.isArray(formData.selectedStudies) || formData.selectedStudies.length === 0)
+  )
+}
+
+function notifyAdmisionStateChanged() {
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(ADMISSION_STATE_CHANGED_EVENT))
+    }
+  } catch {
+    // Ignorar en entornos sin window
+  }
+}
+
 /**
  * Hook para gestionar el estado, validaciones reactivas y reseteo
  * del formulario de ingreso y clasificación de pacientes en Admisión.
  */
 export function useAdmissionForm() {
-  const [formData, setFormData] = useState(INITIAL_ADMISSION_FORM_STATE)
+  const [formData, setFormData] = useState(() => {
+    const draft = readAdmissionFormDraft()
+    if (draft?.formData && typeof draft.formData === 'object') {
+      return {
+        ...INITIAL_ADMISSION_FORM_STATE,
+        ...draft.formData,
+        selectedStudies: Array.isArray(draft.formData.selectedStudies)
+          ? draft.formData.selectedStudies
+          : []
+      }
+    }
+    return INITIAL_ADMISSION_FORM_STATE
+  })
   const [validationErrors, setValidationErrors] = useState({})
-  const [existingPatient, setExistingPatient] = useState(null)
+  const [existingPatient, setExistingPatient] = useState(() => {
+    const draft = readAdmissionFormDraft()
+    return draft?.existingPatient && typeof draft.existingPatient === 'object'
+      ? draft.existingPatient
+      : null
+  })
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        if (isAdmissionDraftEmpty(formData, existingPatient)) {
+          window.localStorage.removeItem(ADMISSION_FORM_DRAFT_STORAGE_KEY)
+        } else {
+          window.localStorage.setItem(
+            ADMISSION_FORM_DRAFT_STORAGE_KEY,
+            JSON.stringify({ formData, existingPatient })
+          )
+        }
+      }
+    } catch (error) {
+      console.warn('No se pudo persistir el borrador de admisión:', error)
+    }
+    notifyAdmisionStateChanged()
+  }, [formData, existingPatient])
 
   /**
    * Actualiza un campo individual y valida en tiempo real.
@@ -85,19 +167,47 @@ export function useAdmissionForm() {
   }, [])
 
   /**
-   * Reemplaza por completo la lista de estudios (por ejemplo, al escanear con OCR).
+   * Fusiona sin duplicar los estudios escaneados con los previamente seleccionados en Admisión.
    */
   const handleSetStudies = useCallback((studiesList) => {
-    setFormData((previousFormData) => ({
-      ...previousFormData,
-      selectedStudies: Array.isArray(studiesList)
-        ? studiesList.map((study) => (
-            typeof study === 'string'
-              ? { id: null, nombre: study }
-              : { id: study.id ?? null, nombre: study.nombre || study.name || '' }
-          ))
-        : []
-    }))
+    setFormData((previousFormData) => {
+      const merged = []
+      const seenIds = new Set()
+      const seenNames = new Set()
+
+      const appendUnique = (study) => {
+        if (!study) return
+        const normalized =
+          typeof study === 'string'
+            ? { id: null, nombre: study }
+            : { id: study.id ?? null, nombre: study.nombre || study.name || '' }
+        const nameKey = String(normalized.nombre || '').trim().toLowerCase()
+
+        if (normalized.id !== null && normalized.id !== undefined) {
+          if (seenIds.has(normalized.id)) return
+          seenIds.add(normalized.id)
+          if (nameKey) seenNames.add(nameKey)
+          merged.push(normalized)
+        } else if (nameKey && !seenNames.has(nameKey)) {
+          seenNames.add(nameKey)
+          merged.push(normalized)
+        }
+      }
+
+      for (const existing of previousFormData.selectedStudies || []) {
+        appendUnique(existing)
+      }
+      if (Array.isArray(studiesList)) {
+        for (const incoming of studiesList) {
+          appendUnique(incoming)
+        }
+      }
+
+      return {
+        ...previousFormData,
+        selectedStudies: merged
+      }
+    })
   }, [])
 
   /**
@@ -175,12 +285,52 @@ export function useAdmissionForm() {
   }, [formData, existingPatient])
 
   /**
-   * Restablece el formulario a sus valores por defecto y limpia errores.
+   * Restablece únicamente los campos editables manteniendo el turno convocado activo
+   * (prefijo, número de llamado y DNI) para evitar dejar turnos huérfanos en atención.
+   */
+  const clearEditableFieldsKeepTurno = useCallback((turnoDefaults = null) => {
+    setFormData((previousFormData) => {
+      const keptPrefix =
+        turnoDefaults?.prefijoLlamado ||
+        previousFormData.prefijoLlamado ||
+        INITIAL_ADMISSION_FORM_STATE.prefijoLlamado
+      const keptNumber =
+        turnoDefaults?.numeroLlamado !== undefined && turnoDefaults?.numeroLlamado !== null
+          ? String(turnoDefaults.numeroLlamado)
+          : String(previousFormData.numeroLlamado || '')
+      const keptDni =
+        turnoDefaults?.dni !== undefined && turnoDefaults?.dni !== null
+          ? String(turnoDefaults.dni)
+          : String(previousFormData.dni || '')
+
+      return {
+        ...INITIAL_ADMISSION_FORM_STATE,
+        prefijoLlamado: keptPrefix,
+        numeroLlamado: keptNumber,
+        dni: keptDni,
+        selectedTriage:
+          PREFIX_TO_TRIAGE_MAP[keptPrefix] || INITIAL_ADMISSION_FORM_STATE.selectedTriage
+      }
+    })
+    setValidationErrors({})
+    setExistingPatient(null)
+  }, [])
+
+  /**
+   * Restablece el formulario a sus valores por defecto y limpia errores y borrador persistido.
    */
   const resetAdmissionForm = useCallback(() => {
     setFormData(INITIAL_ADMISSION_FORM_STATE)
     setValidationErrors({})
     setExistingPatient(null)
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(ADMISSION_FORM_DRAFT_STORAGE_KEY)
+      }
+    } catch (error) {
+      console.warn('No se pudo limpiar el borrador de admisión:', error)
+    }
+    notifyAdmisionStateChanged()
   }, [])
 
   return {
@@ -192,6 +342,8 @@ export function useAdmissionForm() {
     handleSetStudies,
     handleLoadPatient,
     validateAdmissionForm,
-    resetAdmissionForm
+    resetAdmissionForm,
+    clearEditableFieldsKeepTurno,
+    resetEditableFields: clearEditableFieldsKeepTurno
   }
 }

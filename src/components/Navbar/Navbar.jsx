@@ -1,10 +1,93 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { LogOut, User, X } from 'lucide-react'
+import { AlertTriangle, LogOut, User, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useBox } from '../../context/BoxContext'
+import { useTriageQueue } from '../../context/TriageQueueContext'
 import { getHomePathByRole } from '../../utils/navigation'
 import Logo from '../Logo/Logo'
 import './Navbar.css'
+
+const ADMISSION_ACTIVE_TURNO_KEY = 'sgtp_admision_active_turno'
+const ADMISSION_FORM_DRAFT_KEY = 'sgtp_admision_form_draft'
+const ADMISSION_STATE_CHANGED_EVENT = 'sgtp:admision_state_changed'
+
+function readAdmisionActiveState() {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return {
+        hasActiveTurno: false,
+        activeTurno: null,
+        hasFormInProgress: false
+      }
+    }
+
+    const activeRaw = window.localStorage.getItem(ADMISSION_ACTIVE_TURNO_KEY)
+    const activeParsed = activeRaw ? JSON.parse(activeRaw) : null
+    const activeTurno = activeParsed?.activeReceptionTurno || null
+    const activeTurnoId = activeParsed?.activeReceptionTurnoId || activeTurno?.id || null
+
+    const draftRaw = window.localStorage.getItem(ADMISSION_FORM_DRAFT_KEY)
+    const draftParsed = draftRaw ? JSON.parse(draftRaw) : null
+    const formData = draftParsed?.formData || null
+
+    const hasFormInProgress = Boolean(
+      formData &&
+        (String(formData.dni || '').trim() ||
+          String(formData.nombre || '').trim() ||
+          String(formData.apellido || '').trim() ||
+          String(formData.numeroAfiliado || '').trim() ||
+          String(formData.numeroLlamado || '').trim() ||
+          (Array.isArray(formData.selectedStudies) && formData.selectedStudies.length > 0))
+    )
+
+    return {
+      hasActiveTurno: Boolean(activeTurnoId),
+      activeTurno,
+      hasFormInProgress
+    }
+  } catch {
+    return {
+      hasActiveTurno: false,
+      activeTurno: null,
+      hasFormInProgress: false
+    }
+  }
+}
+
+function normalizeBoxEstado(estado) {
+  return String(estado || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, ' ')
+}
+
+function getBoxPersonalId(box) {
+  const personal = box?.personal_actual_detalle || box?.personal_actual
+  if (personal == null) return null
+  if (typeof personal === 'object') {
+    return personal.id_personal ?? personal.id ?? null
+  }
+  return personal
+}
+
+function isBoxOwnedByUser(box, userData) {
+  if (!box || !userData) return false
+  const currentUserId = userData?.id_personal ?? userData?.id ?? null
+  const boxPersonalId = getBoxPersonalId(box)
+
+  if (currentUserId != null && boxPersonalId != null) {
+    return Number(boxPersonalId) === Number(currentUserId)
+  }
+
+  const personal = box?.personal_actual_detalle || box?.personal_actual
+  if (userData?.matricula && typeof personal === 'object' && personal?.matricula) {
+    return String(personal.matricula).trim() === String(userData.matricula).trim()
+  }
+  return false
+}
 
 // Constante estática fuera del componente para evitar reasignación de memoria en cada render
 const NAV_TABS = [
@@ -19,22 +102,129 @@ export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { userData, logout } = useAuth()
+  const { boxes = [], currentBoxNumber = 1 } = useBox()
+  const { activeInBoxes = {} } = useTriageQueue()
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [logoutBlockedReason, setLogoutBlockedReason] = useState('')
+  const [admisionState, setAdmisionState] = useState(() => readAdmisionActiveState())
 
   const firstName = userData?.nombre?.split(' ')[0] || 'Usuario'
   const fullName = [userData?.nombre, userData?.apellidos].filter(Boolean).join(' ') || 'No informado'
   const userRole = userData?.rol || 'Personal'
 
   useEffect(() => {
-    if (!isProfileModalOpen) return undefined
+    const syncAdmisionState = () => {
+      setAdmisionState(readAdmisionActiveState())
+    }
+    syncAdmisionState()
+    window.addEventListener(ADMISSION_STATE_CHANGED_EVENT, syncAdmisionState)
+    window.addEventListener('storage', syncAdmisionState)
+    return () => {
+      window.removeEventListener(ADMISSION_STATE_CHANGED_EVENT, syncAdmisionState)
+      window.removeEventListener('storage', syncAdmisionState)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isProfileModalOpen && !logoutBlockedReason) return undefined
 
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setIsProfileModalOpen(false)
+      if (event.key === 'Escape') {
+        setIsProfileModalOpen(false)
+        setLogoutBlockedReason('')
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isProfileModalOpen])
+  }, [isProfileModalOpen, logoutBlockedReason])
+
+  const activeAttentionBlockReason = useMemo(() => {
+    if (userData?.rol === 'Box') {
+      const currentBoxKey = `Box ${currentBoxNumber}`
+      const currentBoxData = boxes.find(
+        (boxItem) => Number(boxItem.numero) === Number(currentBoxNumber)
+      )
+      const currentBoxPersonalId = getBoxPersonalId(currentBoxData)
+      const currentUserId = userData?.id_personal ?? userData?.id ?? null
+      const isCurrentBoxOwnedOrUnassigned =
+        !currentBoxData ||
+        currentBoxPersonalId == null ||
+        currentUserId == null ||
+        Number(currentBoxPersonalId) === Number(currentUserId)
+
+      const attendingBoxOwnedByUser = boxes.find(
+        (boxItem) =>
+          normalizeBoxEstado(boxItem?.estado) === 'en atencion' &&
+          isBoxOwnedByUser(boxItem, userData)
+      )
+
+      const activeTicketInCurrentBox = isCurrentBoxOwnedOrUnassigned
+        ? activeInBoxes?.[currentBoxKey]
+        : null
+
+      if (attendingBoxOwnedByUser || activeTicketInCurrentBox) {
+        const boxNum = attendingBoxOwnedByUser?.numero ?? currentBoxNumber
+        const boxKey = `Box ${boxNum}`
+        const ticket =
+          activeInBoxes?.[boxKey] ||
+          activeTicketInCurrentBox ||
+          attendingBoxOwnedByUser?.paciente_actual_detalle ||
+          attendingBoxOwnedByUser?.paciente_actual
+
+        const patientName =
+          ticket?.paciente_nombre && ticket?.paciente_apellido
+            ? `${ticket.paciente_nombre} ${ticket.paciente_apellido}`.trim()
+            : ticket?.paciente_nombre || 'en curso'
+        const ticketNum = ticket?.num_llamado || ticket?.num_totem || ''
+        const ticketSuffix = ticketNum ? ` (${ticketNum})` : ''
+
+        return `Está atendiendo al paciente ${patientName}${ticketSuffix} en Box ${boxNum}. Finalice o cancele la atención antes de cerrar sesión.`
+      }
+    }
+
+    if (userData?.rol === 'Admision') {
+      if (admisionState.hasActiveTurno) {
+        const turnoNum = admisionState.activeTurno?.numero_llamado
+        const turnoDni = admisionState.activeTurno?.dni
+        const detailParts = [
+          turnoNum ? `Turno ${turnoNum}` : '',
+          turnoDni ? `DNI ${turnoDni}` : ''
+        ].filter(Boolean)
+        const detailSuffix = detailParts.length > 0 ? ` (${detailParts.join(' · ')})` : ''
+        return `Tiene un paciente en atención${detailSuffix} en Admisión. Emita el ticket o cancele el turno antes de cerrar sesión.`
+      }
+      if (admisionState.hasFormInProgress) {
+        return 'Tiene un paciente en atención o con carga de datos en curso en Admisión. Emita el ticket, cancele el turno o limpie los datos antes de cerrar sesión.'
+      }
+    }
+
+    return ''
+  }, [userData, currentBoxNumber, boxes, activeInBoxes, admisionState])
+
+  const handleLogoutClick = useCallback(async () => {
+    if (activeAttentionBlockReason) {
+      setLogoutBlockedReason(activeAttentionBlockReason)
+      return
+    }
+
+    try {
+      await logout()
+    } catch (error) {
+      const errData = error?.data || {}
+      if (
+        errData?.error === 'PACIENTE_EN_ATENCION' ||
+        String(error?.message || '').includes('PACIENTE_EN_ATENCION')
+      ) {
+        setLogoutBlockedReason(
+          errData?.detail ||
+            'No puede cerrar sesión mientras está atendiendo a un paciente. Finalice o cancele la atención actual antes de salir.'
+        )
+        return
+      }
+      throw error
+    }
+  }, [activeAttentionBlockReason, logout])
 
   // Pestañas visibles según rol (Jefa y Admin ven y navegan libremente entre Supervisión, Reportes y Actividad)
   const visibleTabs = NAV_TABS.filter((tab) => {
@@ -102,8 +292,8 @@ export default function Navbar() {
         <button
           type="button"
           className="navbar__logout-btn"
-          onClick={logout}
-          title="Cerrar Sesión"
+          onClick={handleLogoutClick}
+          title={activeAttentionBlockReason || 'Cerrar Sesión'}
           aria-label="Cerrar Sesión"
         >
           <LogOut size={17} />
@@ -156,6 +346,52 @@ export default function Navbar() {
                 <dd>{userRole}</dd>
               </div>
             </dl>
+          </section>
+        </div>
+      )}
+
+      {logoutBlockedReason && (
+        <div
+          className="navbar__alert-modal"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setLogoutBlockedReason('')
+          }}
+        >
+          <section
+            className="navbar__alert-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="navbar-logout-blocked-title"
+            aria-describedby="navbar-logout-blocked-desc"
+          >
+            <button
+              type="button"
+              className="navbar__alert-close"
+              onClick={() => setLogoutBlockedReason('')}
+              aria-label="Cerrar aviso"
+            >
+              <X size={20} />
+            </button>
+            <div className="navbar__alert-icon" aria-hidden="true">
+              <AlertTriangle size={24} />
+            </div>
+            <h2 id="navbar-logout-blocked-title" className="navbar__alert-title">
+              Cierre de sesión bloqueado
+            </h2>
+            <p id="navbar-logout-blocked-desc" className="navbar__alert-message">
+              {logoutBlockedReason}
+            </p>
+            <div className="navbar__alert-actions">
+              <button
+                type="button"
+                className="navbar__alert-confirm-btn"
+                onClick={() => setLogoutBlockedReason('')}
+                autoFocus
+              >
+                Entendido
+              </button>
+            </div>
           </section>
         </div>
       )}

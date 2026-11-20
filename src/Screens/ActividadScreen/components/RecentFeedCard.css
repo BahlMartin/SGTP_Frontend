@@ -89,12 +89,71 @@
   text-overflow: ellipsis;
 }
 
-.recent-feed-card__what {
+.recent-feed-card__what-group {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.recent-feed-card__what {
+  flex: 1 1 220px;
+  min-width: 0;
   color: #275369;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.recent-feed-card__trace-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.recent-feed-card__trace-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 1px 7px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.recent-feed-card__trace-pill--turno {
+  color: #0369a1;
+  background: #e0f2fe;
+  border-color: #bae6fd;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .recent-feed-card__item {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .recent-feed-card__who {
+    width: auto;
+    max-width: 180px;
+  }
+
+  .recent-feed-card__what-group {
+    flex-basis: 100%;
+  }
+
+  .recent-feed-card__what {
+    flex-basis: 100%;
+  }
 }
 
 .recent-feed-card__empty {

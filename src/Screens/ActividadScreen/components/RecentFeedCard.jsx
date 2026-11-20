@@ -1,6 +1,11 @@
 import React from 'react';
 import { Ban, AlertTriangle } from 'lucide-react';
-import { CATEGORIAS_CONFIG } from '../constants/auditoriaConstants';
+import {
+  CATEGORIAS_CONFIG,
+  GEMINI_AI_CONFIG,
+  isGeminiAiEvent,
+  extractPatientTraceMeta
+} from '../constants/auditoriaConstants';
 import './RecentFeedCard.css';
 
 /**
@@ -27,7 +32,18 @@ function getFeedItemBadge(item) {
     };
   }
 
-  // 3. Categoría según configuración unificada de la tabla modal (acceso, admisión, box, gestión, reportes, sla)
+  // 3. Eventos procesados con IA Gemini
+  if (isGeminiAiEvent(item)) {
+    return {
+      Icon: GEMINI_AI_CONFIG.Icon,
+      color: GEMINI_AI_CONFIG.color,
+      bg: GEMINI_AI_CONFIG.bg,
+      border: GEMINI_AI_CONFIG.border,
+      title: GEMINI_AI_CONFIG.label
+    };
+  }
+
+  // 4. Categoría según configuración unificada de la tabla modal (acceso, admisión, box, gestión, reportes, sla)
   const catKey = (item.categoria || '').toLowerCase();
   const cat = CATEGORIAS_CONFIG[catKey] || CATEGORIAS_CONFIG.gestion;
 
@@ -77,6 +93,8 @@ export default function RecentFeedCard({
           {feed.map((item) => {
             const badge = getFeedItemBadge(item);
             const BadgeIcon = badge.Icon;
+            const trace = extractPatientTraceMeta(item);
+            const hasTrace = Boolean(trace.turno || trace.dni || trace.numeroAfiliado);
 
             return (
               <li
@@ -88,13 +106,40 @@ export default function RecentFeedCard({
                 <time className="recent-feed-card__time">{item.t}</time>
                 <span
                   className="recent-feed-card__icon-badge"
-                  style={{ color: badge.color, backgroundColor: badge.bg }}
+                  style={{
+                    color: badge.color,
+                    backgroundColor: badge.bg,
+                    border: badge.border ? `1px solid ${badge.border}` : undefined
+                  }}
                   title={badge.title}
                 >
                   <BadgeIcon size={14} />
                 </span>
                 <span className="recent-feed-card__who">{item.who}</span>
-                <span className="recent-feed-card__what">{item.what}</span>
+                <div className="recent-feed-card__what-group">
+                  <span className="recent-feed-card__what" title={item.what}>
+                    {item.what}
+                  </span>
+                  {hasTrace && (
+                    <div className="recent-feed-card__trace-pills">
+                      {trace.turno && (
+                        <span className="recent-feed-card__trace-pill recent-feed-card__trace-pill--turno">
+                          Turno: {trace.turno}
+                        </span>
+                      )}
+                      {trace.dni && (
+                        <span className="recent-feed-card__trace-pill">
+                          DNI: {trace.dni}
+                        </span>
+                      )}
+                      {trace.numeroAfiliado && (
+                        <span className="recent-feed-card__trace-pill">
+                          N° Afiliado: {trace.numeroAfiliado}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </li>
             );
           })}

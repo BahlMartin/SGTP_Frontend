@@ -16,7 +16,8 @@ export default function ReceptionQueueCard({
   onCallPatient,
   onCancelTurno,
   callingTurnoId = null,
-  isProcessing = false
+  isProcessing = false,
+  hasActiveTurno = false
 }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentTime, setCurrentTime] = useState(() => Date.now())
@@ -173,8 +174,12 @@ export default function ReceptionQueueCard({
                       type="button"
                       className="reception-queue-card__btn-call"
                       onClick={() => onCallPatient?.(turnoItem)}
-                      disabled={isProcessing || isCurrentlyCalling}
-                      title="Llamar y cargar datos en formulario"
+                      disabled={isProcessing || isCurrentlyCalling || hasActiveTurno}
+                      title={
+                        hasActiveTurno
+                          ? 'Emita el ticket o cancele el turno en atención antes de llamar a otro paciente'
+                          : 'Llamar y cargar datos en formulario'
+                      }
                       aria-label={`Llamar turno ${turnoItem.numero_llamado}`}
                     >
                       <Bell size={13} />

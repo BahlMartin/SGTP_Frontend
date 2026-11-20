@@ -115,9 +115,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .event-drawer__cat-tag,
+.event-drawer__gemini-tag,
 .event-drawer__res-tag {
   display: inline-flex;
   align-items: center;
@@ -255,6 +257,51 @@
 .event-drawer__resource-tag {
   font-size: 12px;
   color: var(--auditoria-text-secondary, #647a85);
+}
+
+/* Trazabilidad del Paciente */
+.event-drawer__trace-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+  background: var(--auditoria-bg-subtle, #f4f8fb);
+  border: 1px solid var(--auditoria-border-card, #d9e5ea);
+  border-radius: var(--radius-sm, 6px);
+  padding: 12px;
+}
+
+.event-drawer__trace-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.event-drawer__trace-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--auditoria-text-secondary, #647a85);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.event-drawer__trace-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--auditoria-text-primary, #275369);
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+
+.event-drawer__trace-val--turno {
+  display: inline-flex;
+  align-self: flex-start;
+  color: #0369a1;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 12px;
 }
 
 /* Diff Table */

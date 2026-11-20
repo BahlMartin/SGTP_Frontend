@@ -238,6 +238,109 @@
   font-weight: 600;
 }
 
+/* Modal de advertencia: bloqueo de cierre de sesión con paciente en atención */
+.navbar__alert-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.68);
+  backdrop-filter: blur(2px);
+}
+
+.navbar__alert-dialog {
+  position: relative;
+  width: min(460px, 100%);
+  padding: 28px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  color: var(--text-primary);
+}
+
+.navbar__alert-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-card-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.navbar__alert-close:hover {
+  background: #e2e8f0;
+  color: var(--text-primary);
+}
+
+.navbar__alert-close:focus-visible,
+.navbar__alert-confirm-btn:focus-visible {
+  outline: 2px solid #22C7C9;
+  outline-offset: 2px;
+}
+
+.navbar__alert-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.navbar__alert-title {
+  margin: 0 32px 10px 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.navbar__alert-message {
+  margin: 0 0 22px 0;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.navbar__alert-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.navbar__alert-confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--medical-primary);
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.navbar__alert-confirm-btn:hover {
+  background: var(--medical-primary-hover);
+}
+
 @media (max-width: 768px) {
   .navbar {
     padding: 0 14px;

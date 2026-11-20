@@ -23,6 +23,13 @@ export const receptionService = {
   },
 
   /**
+   * Obtiene la lista de turnos actualmente en atención en recepción para el día de hoy.
+   */
+  async getTurnosEnAtencion() {
+    return apiClient.get('/turnos-recepcion/en-atencion/')
+  },
+
+  /**
    * Convoca a un paciente desde la cola de recepción a mostrador.
    * @param {string} id UUID del turno
    */

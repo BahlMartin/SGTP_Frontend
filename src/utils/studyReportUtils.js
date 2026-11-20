@@ -125,6 +125,10 @@ export function computePerformedStudySummaries(tickets = [], targetDate = null) 
   return {
     bySection: toRows(sectionCounts, 'seccion_key', 'nombre_seccion'),
     bySample: toRows(sampleCounts, 'muestra_key', 'nombre_muestra'),
-    byStudy: Array.from(studyCounts, ([id, study]) => ({ id, ...study }))
+    byStudy: Array.from(studyCounts, ([id, study]) => ({ id, ...study })).sort(
+      (a, b) =>
+        (Number(b.total) || 0) - (Number(a.total) || 0) ||
+        String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es')
+    )
   }
 }

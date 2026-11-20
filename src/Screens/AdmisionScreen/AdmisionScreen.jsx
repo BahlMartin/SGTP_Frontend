@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { Radio, Clock } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
@@ -10,12 +10,51 @@ import ReceptionQueueCard from './components/ReceptionQueueCard/ReceptionQueueCa
 import ModalCancelarTurnoRecepcion from './components/ModalCancelarTurnoRecepcion/ModalCancelarTurnoRecepcion'
 import { useTriageQueue } from '../../context/TriageQueueContext'
 import { useAuth } from '../../context/AuthContext'
-import { useAdmissionForm } from '../../hooks/useAdmissionForm'
+import {
+  useAdmissionForm,
+  ADMISSION_STATE_CHANGED_EVENT
+} from '../../hooks/useAdmissionForm'
 import { useTodayTickets } from '../../hooks/useTodayTickets'
 import { useWebSocket } from '../../hooks/useWebSocket'
 import receptionService from '../../services/receptionService'
 import { searchPatientByDniApi } from '../../services/patientService'
 import './AdmisionScreen.css'
+
+export const ADMISSION_ACTIVE_TURNO_STORAGE_KEY = 'sgtp_admision_active_turno'
+
+function readStoredActiveTurno() {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return null
+    const raw = window.localStorage.getItem(ADMISSION_ACTIVE_TURNO_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+function clearStoredActiveTurno() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(ADMISSION_ACTIVE_TURNO_STORAGE_KEY)
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(ADMISSION_STATE_CHANGED_EVENT))
+    }
+  } catch {
+    // Ignorar errores de almacenamiento
+  }
+}
+
+function parseTurnoCallParts(turno) {
+  const match = String(turno?.numero_llamado || '').match(/^([A-Z]+)[-\s]?(\d+)$/i)
+  return {
+    prefijo: match ? match[1] : turno?.prefijo || 'Ext',
+    secuencia: match ? match[2] : '',
+    dni: String(turno?.dni || '').trim()
+  }
+}
 
 function getTicketNumberKey(ticketNumber) {
   if (!ticketNumber) return ''
@@ -56,7 +95,8 @@ export default function AdmisionScreen() {
     handleSetStudies,
     handleLoadPatient,
     validateAdmissionForm,
-    resetAdmissionForm
+    resetAdmissionForm,
+    clearEditableFieldsKeepTurno
   } = useAdmissionForm()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -64,20 +104,88 @@ export default function AdmisionScreen() {
   const [showOcrModal, setShowOcrModal] = useState(false)
   const [admissionError, setAdmissionError] = useState('')
 
-  // Estado para la gestión del Tótem y Cola de Recepción
+  // Estado para la gestión del Tótem y Cola de Recepción (persistido ante F5)
   const [activeSideTab, setActiveSideTab] = useState('recepcion') // 'recepcion' | 'ingresos'
   const [receptionQueue, setReceptionQueue] = useState([])
   const [callingTurnoId, setCallingTurnoId] = useState(null)
-  const [activeReceptionTurnoId, setActiveReceptionTurnoId] = useState(null)
-  const [activeReceptionTurno, setActiveReceptionTurno] = useState(null)
+  const [activeReceptionTurnoId, setActiveReceptionTurnoId] = useState(() => {
+    const stored = readStoredActiveTurno()
+    return stored?.activeReceptionTurnoId || stored?.activeReceptionTurno?.id || null
+  })
+  const [activeReceptionTurno, setActiveReceptionTurno] = useState(() => {
+    const stored = readStoredActiveTurno()
+    return stored?.activeReceptionTurno || null
+  })
   const [selectedTurnoForCancel, setSelectedTurnoForCancel] = useState(null)
   const [isCancelProcessing, setIsCancelProcessing] = useState(false)
-  const [unregisteredPatientAlert, setUnregisteredPatientAlert] = useState('')
+  const [unregisteredPatientAlert, setUnregisteredPatientAlert] = useState(() => {
+    const stored = readStoredActiveTurno()
+    return stored?.unregisteredPatientAlert || ''
+  })
 
-  // Carga de la cola de recepción ordenada por prioridad de Triage y FIFO
-  const fetchReceptionQueue = useCallback(async () => {
+  const formDataRef = useRef(formData)
+  const existingPatientRef = useRef(existingPatient)
+  const activeTurnoIdRef = useRef(activeReceptionTurnoId)
+  const unregisteredAlertRef = useRef(unregisteredPatientAlert)
+  const isCallingTurnoRef = useRef(false)
+  const hydratedTurnoIdRef = useRef(null)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    formDataRef.current = formData
+    existingPatientRef.current = existingPatient
+    activeTurnoIdRef.current = activeReceptionTurnoId
+    unregisteredAlertRef.current = unregisteredPatientAlert
+  }, [formData, existingPatient, activeReceptionTurnoId, unregisteredPatientAlert])
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  // Sincronizar el turno activo en atención en localStorage y notificar a Navbar
+  useEffect(() => {
     try {
-      const data = await receptionService.getTurnosPendientes()
+      if (typeof window !== 'undefined' && window.localStorage) {
+        if (activeReceptionTurnoId || activeReceptionTurno) {
+          window.localStorage.setItem(
+            ADMISSION_ACTIVE_TURNO_STORAGE_KEY,
+            JSON.stringify({
+              activeReceptionTurnoId: activeReceptionTurnoId || activeReceptionTurno?.id || null,
+              activeReceptionTurno,
+              unregisteredPatientAlert: unregisteredPatientAlert || ''
+            })
+          )
+        } else {
+          window.localStorage.removeItem(ADMISSION_ACTIVE_TURNO_STORAGE_KEY)
+        }
+      }
+    } catch (error) {
+      console.warn('No se pudo persistir el turno activo de admisión:', error)
+    }
+
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(ADMISSION_STATE_CHANGED_EVENT))
+      }
+    } catch {
+      // Ignorar en entornos sin window
+    }
+  }, [activeReceptionTurnoId, activeReceptionTurno, unregisteredPatientAlert])
+
+  // Carga de cola pendiente y rehidratación del turno en atención desde el backend
+  const fetchReceptionQueue = useCallback(async () => {
+    const [pendientesResult, enAtencionResult] = await Promise.allSettled([
+      receptionService.getTurnosPendientes(),
+      receptionService.getTurnosEnAtencion()
+    ])
+
+    if (!isMountedRef.current) return
+
+    if (pendientesResult.status === 'fulfilled') {
+      const data = pendientesResult.value
       const list = Array.isArray(data) ? [...data] : []
       const priorityMap = { G: 1, Med: 2, Ext: 3, Csl: 4 }
       list.sort((a, b) => {
@@ -87,10 +195,95 @@ export default function AdmisionScreen() {
         return new Date(a.created_at) - new Date(b.created_at)
       })
       setReceptionQueue(list)
-    } catch (err) {
-      console.warn('Error al obtener cola de recepción:', err)
+    } else {
+      console.warn('Error al obtener cola de recepción:', pendientesResult.reason)
     }
-  }, [])
+
+    if (enAtencionResult.status !== 'fulfilled') {
+      console.warn('Error al obtener turnos en atención de recepción:', enAtencionResult.reason)
+      return
+    }
+
+    if (isCallingTurnoRef.current) {
+      return
+    }
+
+    const enAtencionList = Array.isArray(enAtencionResult.value) ? enAtencionResult.value : []
+
+    if (enAtencionList.length > 0) {
+      const latestTurno = enAtencionList[0]
+      setActiveReceptionTurno(latestTurno)
+      setActiveReceptionTurnoId(latestTurno.id)
+
+      const { prefijo, secuencia, dni: turnoDni } = parseTurnoCallParts(latestTurno)
+      const currentForm = formDataRef.current || {}
+      const hasDraftDni = Boolean(String(currentForm.dni || '').trim())
+      const hasDraftNumero = Boolean(String(currentForm.numeroLlamado || '').trim())
+      const hasUserTypedEdits = Boolean(
+        String(currentForm.nombre || '').trim() ||
+          String(currentForm.apellido || '').trim() ||
+          String(currentForm.numeroAfiliado || '').trim() ||
+          String(currentForm.justificacionOtro || '').trim() ||
+          (Array.isArray(currentForm.selectedStudies) && currentForm.selectedStudies.length > 0) ||
+          currentForm.pacienteId ||
+          existingPatientRef.current
+      )
+
+      const isSameDraftTurno =
+        hasDraftDni &&
+        hasDraftNumero &&
+        String(currentForm.dni).trim() === turnoDni &&
+        parseInt(String(currentForm.numeroLlamado).trim(), 10) === parseInt(secuencia, 10)
+
+      if (!hasDraftDni || !hasDraftNumero) {
+        if (!hasUserTypedEdits && !hasDraftDni && !hasDraftNumero) {
+          handleFieldChange('prefijoLlamado', prefijo)
+        } else if (!currentForm.prefijoLlamado) {
+          handleFieldChange('prefijoLlamado', prefijo)
+        }
+        if (!hasDraftNumero && secuencia) {
+          handleFieldChange('numeroLlamado', secuencia)
+        }
+        if (!hasDraftDni && turnoDni) {
+          handleFieldChange('dni', turnoDni)
+        }
+      }
+
+      const shouldLookupPatient =
+        hydratedTurnoIdRef.current !== latestTurno.id &&
+        turnoDni &&
+        ((!hasUserTypedEdits && !isSameDraftTurno) ||
+          (isSameDraftTurno &&
+            !hasUserTypedEdits &&
+            !unregisteredAlertRef.current &&
+            !existingPatientRef.current))
+
+      hydratedTurnoIdRef.current = latestTurno.id
+
+      if (shouldLookupPatient) {
+        try {
+          const pacienteEncontrado = await searchPatientByDniApi(turnoDni)
+          if (!isMountedRef.current) return
+          if (pacienteEncontrado) {
+            handleLoadPatient(pacienteEncontrado)
+            setUnregisteredPatientAlert('')
+          } else {
+            setUnregisteredPatientAlert(
+              `El DNI ${turnoDni} no figura en el padrón de pacientes. Complete Nombre, Apellido y Obra Social antes de cargar los estudios.`
+            )
+          }
+        } catch (lookupErr) {
+          console.warn('No se pudo consultar padrón al restaurar turno de recepción:', lookupErr)
+        }
+      }
+    } else if (activeTurnoIdRef.current) {
+      hydratedTurnoIdRef.current = null
+      setActiveReceptionTurnoId(null)
+      setActiveReceptionTurno(null)
+      setUnregisteredPatientAlert('')
+      clearStoredActiveTurno()
+    }
+  }, [handleFieldChange, handleLoadPatient])
 
   useEffect(() => {
     fetchReceptionQueue()
@@ -146,63 +339,120 @@ export default function AdmisionScreen() {
   const handleCallReceptionTurno = useCallback(
     async (turno) => {
       if (!turno) return
+
+      const currentActiveId = activeReceptionTurnoId || activeReceptionTurno?.id
+      if (currentActiveId && currentActiveId !== turno.id) {
+        const activeLabel = activeReceptionTurno?.numero_llamado || enteredCallNumber || 'actual'
+        setAdmissionError(
+          `Ya hay un paciente en atención (${activeLabel}). Emita el ticket o cancele el turno actual antes de llamar a otro paciente.`
+        )
+        return
+      }
+      if (callingTurnoId) return
+
+      isCallingTurnoRef.current = true
       setCallingTurnoId(turno.id)
       setActiveReceptionTurnoId(turno.id)
       setActiveReceptionTurno(turno)
+      hydratedTurnoIdRef.current = turno.id
       setAdmissionError('')
       setUnregisteredPatientAlert('')
 
       // Quitarlo inmediatamente de la cola de espera local (feedback inmediato en UI)
       setReceptionQueue((prev) => prev.filter((item) => item.id !== turno.id))
 
+      let turnoLlamadoConfirmado = false
       try {
         // 1. Notificar al backend que se convocó (pasa a En Atención)
-        await receptionService.llamarTurno(turno.id).catch((e) => console.warn(e))
+        const updatedTurno = await receptionService.llamarTurno(turno.id)
+        turnoLlamadoConfirmado = true
+        if (!isMountedRef.current) return
+        if (updatedTurno && updatedTurno.id) {
+          setActiveReceptionTurno(updatedTurno)
+        }
 
         // 2. Precargar número de llamado en el formulario
-        const match = String(turno.numero_llamado || '').match(/^([A-Z]+)[-\s]?(\d+)$/i)
-        const prefijo = match ? match[1] : turno.prefijo || 'Ext'
-        const secuencia = match ? match[2] : ''
+        const { prefijo, secuencia, dni: turnoDni } = parseTurnoCallParts(updatedTurno || turno)
 
         handleFieldChange('prefijoLlamado', prefijo)
         handleFieldChange('numeroLlamado', secuencia)
-        handleFieldChange('dni', String(turno.dni || '').trim())
+        handleFieldChange('dni', turnoDni)
 
         // 3. Buscar si el paciente está registrado en el padrón
-        const pacienteEncontrado = await searchPatientByDniApi(turno.dni)
+        try {
+          const pacienteEncontrado = await searchPatientByDniApi(turnoDni)
+          if (!isMountedRef.current) return
 
-        if (pacienteEncontrado) {
-          // Paciente REGISTRADO: autocompletar todos sus datos
-          handleLoadPatient(pacienteEncontrado)
-          setUnregisteredPatientAlert('')
-        } else {
-          // Paciente NO REGISTRADO: mostrar alerta visible
-          setUnregisteredPatientAlert(
-            `El DNI ${turno.dni} no figura en el padrón de pacientes. Complete Nombre, Apellido y Obra Social antes de cargar los estudios.`
-          )
-          // Enfocar el input de nombre
-          setTimeout(() => {
-            const inputNombre = document.getElementById('admission-patient-name')
-            if (inputNombre) inputNombre.focus()
-          }, 150)
+          if (pacienteEncontrado) {
+            // Paciente REGISTRADO: autocompletar todos sus datos
+            handleLoadPatient(pacienteEncontrado)
+            setUnregisteredPatientAlert('')
+          } else {
+            // Paciente NO REGISTRADO: mostrar alerta visible
+            setUnregisteredPatientAlert(
+              `El DNI ${turnoDni} no figura en el padrón de pacientes. Complete Nombre, Apellido y Obra Social antes de cargar los estudios.`
+            )
+            // Enfocar el input de nombre
+            setTimeout(() => {
+              const inputNombre = document.getElementById('admission-patient-name')
+              if (inputNombre) inputNombre.focus()
+            }, 150)
+          }
+        } catch (lookupErr) {
+          console.warn('Error al consultar padrón tras convocar turno:', lookupErr)
+          if (isMountedRef.current) {
+            setAdmissionError(
+              'El turno fue convocado, pero no se pudo consultar el padrón de pacientes. Puede completar los datos manualmente.'
+            )
+          }
         }
       } catch (err) {
         console.error('Error al llamar turno de recepción:', err)
-        setAdmissionError(err.message || 'Error al convocar al turno de recepción.')
+        if (isMountedRef.current && !turnoLlamadoConfirmado) {
+          hydratedTurnoIdRef.current = null
+          setActiveReceptionTurnoId(null)
+          setActiveReceptionTurno(null)
+          setAdmissionError(err.message || 'Error al convocar al turno de recepción.')
+          fetchReceptionQueue()
+        }
       } finally {
-        setCallingTurnoId(null)
+        isCallingTurnoRef.current = false
+        if (isMountedRef.current) {
+          setCallingTurnoId(null)
+        }
       }
     },
-    [handleFieldChange, handleLoadPatient]
+    [
+      activeReceptionTurnoId,
+      activeReceptionTurno,
+      callingTurnoId,
+      enteredCallNumber,
+      handleFieldChange,
+      handleLoadPatient,
+      fetchReceptionQueue
+    ]
   )
 
   /**
    * Llamar al siguiente paciente disponible en la cola de espera.
    */
   const handleCallNextReceptionPatient = useCallback(() => {
+    if (activeReceptionTurnoId || activeReceptionTurno) {
+      const activeLabel = activeReceptionTurno?.numero_llamado || enteredCallNumber || 'actual'
+      setAdmissionError(
+        `Ya hay un paciente en atención (${activeLabel}). Emita el ticket o cancele el turno actual antes de llamar a otro paciente.`
+      )
+      return
+    }
     if (!receptionQueue || receptionQueue.length === 0) return
     handleCallReceptionTurno(receptionQueue[0])
-  }, [receptionQueue, handleCallReceptionTurno])
+  }, [
+    activeReceptionTurnoId,
+    activeReceptionTurno,
+    enteredCallNumber,
+    receptionQueue,
+    handleCallReceptionTurno
+  ])
 
   /**
    * Abrir modal para cancelar turno de recepción
@@ -247,11 +497,13 @@ export default function AdmisionScreen() {
         activeReceptionTurnoId === selectedTurnoForCancel.id ||
         activeReceptionTurno?.id === selectedTurnoForCancel.id
       ) {
+        hydratedTurnoIdRef.current = null
         setActiveReceptionTurnoId(null)
         setActiveReceptionTurno(null)
+        setUnregisteredPatientAlert('')
+        clearStoredActiveTurno()
         resetAdmissionForm()
         setAdmissionError('')
-        setUnregisteredPatientAlert('')
       }
       setSelectedTurnoForCancel(null)
     } catch (err) {
@@ -319,8 +571,10 @@ export default function AdmisionScreen() {
       // Finalizar explícitamente el turno de recepción convocado si existe
       if (activeReceptionTurnoId) {
         await receptionService.finalizarTurno(activeReceptionTurnoId).catch(() => {})
+        hydratedTurnoIdRef.current = null
         setActiveReceptionTurnoId(null)
         setActiveReceptionTurno(null)
+        clearStoredActiveTurno()
       }
 
       setIssuedTicket(generatedTicket)
@@ -381,11 +635,25 @@ export default function AdmisionScreen() {
             onSubmitForm={handleSubmitAdmission}
             onResetForm={() => {
               setAdmissionError('')
-              setUnregisteredPatientAlert('')
-              setActiveReceptionTurnoId(null)
-              setActiveReceptionTurno(null)
-              resetAdmissionForm()
-              fetchReceptionQueue()
+              const hasActive = Boolean(activeReceptionTurno || activeReceptionTurnoId)
+              if (hasActive) {
+                const turnoParts = activeReceptionTurno
+                  ? parseTurnoCallParts(activeReceptionTurno)
+                  : null
+                clearEditableFieldsKeepTurno({
+                  prefijoLlamado: turnoParts?.prefijo || formData.prefijoLlamado,
+                  numeroLlamado: turnoParts?.secuencia || formData.numeroLlamado,
+                  dni: turnoParts?.dni || formData.dni
+                })
+              } else {
+                setUnregisteredPatientAlert('')
+                hydratedTurnoIdRef.current = null
+                setActiveReceptionTurnoId(null)
+                setActiveReceptionTurno(null)
+                clearStoredActiveTurno()
+                resetAdmissionForm()
+                fetchReceptionQueue()
+              }
             }}
             isSubmitting={isSubmitting}
           />
@@ -445,6 +713,7 @@ export default function AdmisionScreen() {
                 onCancelTurno={handleOpenCancelModal}
                 callingTurnoId={callingTurnoId}
                 isProcessing={isSubmitting}
+                hasActiveTurno={Boolean(activeReceptionTurno || activeReceptionTurnoId)}
               />
             ) : (
               <RecentTicketsList

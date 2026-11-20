@@ -12,7 +12,10 @@ import {
   CATEGORIAS_CONFIG,
   RESULTADOS_CONFIG,
   ROLES_CONFIG,
-  ACCIONES_CATALOGO,
+  GEMINI_AI_CONFIG,
+  isGeminiAiEvent,
+  getAccionDisplayLabel,
+  extractPatientTraceMeta,
   formatHora
 } from '../constants/auditoriaConstants'
 import './EventosTable.css'
@@ -62,7 +65,7 @@ export default function EventosTable({
             <tr>
               <th scope="col" style={{ width: '85px' }}>Hora</th>
               <th scope="col" style={{ width: '180px' }}>Empleado</th>
-              <th scope="col" style={{ width: '180px' }}>Acción</th>
+              <th scope="col" style={{ width: '220px' }}>Acción</th>
               <th scope="col">Detalle / Recurso</th>
               <th scope="col" style={{ width: '170px' }}>IP y Ubicación</th>
               <th scope="col" style={{ width: '110px' }}>Resultado</th>
@@ -73,7 +76,8 @@ export default function EventosTable({
               const isSelected = selectedEventId === ev.id
               const cat = CATEGORIAS_CONFIG[ev.categoria] || CATEGORIAS_CONFIG.gestion
               const res = RESULTADOS_CONFIG[ev.resultado] || RESULTADOS_CONFIG.EXITO
-              const CatIcon = cat.Icon
+              const isGemini = isGeminiAiEvent(ev)
+              const CatIcon = isGemini ? GEMINI_AI_CONFIG.Icon : cat.Icon
               const ResIcon = res.Icon
 
               const isFallo = ev.resultado === 'FALLO'
@@ -89,7 +93,18 @@ export default function EventosTable({
                 ? (ROLES_CONFIG[ev.rol_usuario]?.label || ev.rol_usuario)
                 : 'Sin sesión'
 
-              const accionNombre = ACCIONES_CATALOGO[ev.accion] || ev.accion
+              const accionNombre = getAccionDisplayLabel(ev)
+              const catLabel = isGemini ? GEMINI_AI_CONFIG.label : cat.label
+              const badgeStyle = isGemini
+                ? {
+                    color: GEMINI_AI_CONFIG.color,
+                    backgroundColor: GEMINI_AI_CONFIG.bg,
+                    border: `1px solid ${GEMINI_AI_CONFIG.border}`
+                  }
+                : { color: cat.color, backgroundColor: cat.bg }
+
+              const trace = extractPatientTraceMeta(ev)
+              const hasTrace = Boolean(trace.turno || trace.dni || trace.numeroAfiliado)
 
               return (
                 <tr
@@ -129,8 +144,8 @@ export default function EventosTable({
                     <div className="eventos-table__action-cell">
                       <span
                         className="eventos-table__cat-badge"
-                        style={{ color: cat.color, backgroundColor: cat.bg }}
-                        title={`Categoría: ${cat.label}`}
+                        style={badgeStyle}
+                        title={isGemini ? 'Motor: IA Gemini' : `Categoría: ${cat.label}`}
                       >
                         <CatIcon size={14} />
                       </span>
@@ -138,8 +153,12 @@ export default function EventosTable({
                         <span className="eventos-table__action-title" title={accionNombre}>
                           {accionNombre}
                         </span>
-                        <span className="eventos-table__cat-label">
-                          {cat.label}
+                        <span
+                          className={`eventos-table__cat-label ${
+                            isGemini ? 'eventos-table__cat-label--gemini' : ''
+                          }`}
+                        >
+                          {catLabel}
                         </span>
                       </div>
                     </div>
@@ -147,18 +166,39 @@ export default function EventosTable({
 
                   {/* Detalle / Recurso */}
                   <td className="eventos-table__cell eventos-table__cell--detalle">
-                    <div className="eventos-table__detail-wrapper">
-                      <span className="eventos-table__detail-text" title={ev.descripcion}>
-                        {ev.descripcion}
-                      </span>
-                      {hasAlerts && (
-                        <span
-                          className="eventos-table__alert-indicator"
-                          title={ev.alertas.map((a) => a.texto).join(' | ')}
-                        >
-                          <AlertTriangle size={13} />
-                          {ev.alertas.length}
+                    <div className="eventos-table__detail-col">
+                      <div className="eventos-table__detail-wrapper">
+                        <span className="eventos-table__detail-text" title={ev.descripcion}>
+                          {ev.descripcion}
                         </span>
+                        {hasAlerts && (
+                          <span
+                            className="eventos-table__alert-indicator"
+                            title={ev.alertas.map((a) => a.texto).join(' | ')}
+                          >
+                            <AlertTriangle size={13} />
+                            {ev.alertas.length}
+                          </span>
+                        )}
+                      </div>
+                      {hasTrace && (
+                        <div className="eventos-table__trace-badges">
+                          {trace.turno && (
+                            <span className="eventos-table__trace-pill eventos-table__trace-pill--turno">
+                              Turno: {trace.turno}
+                            </span>
+                          )}
+                          {trace.dni && (
+                            <span className="eventos-table__trace-pill">
+                              DNI: {trace.dni}
+                            </span>
+                          )}
+                          {trace.numeroAfiliado && (
+                            <span className="eventos-table__trace-pill">
+                              Afiliado: {trace.numeroAfiliado}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </td>
