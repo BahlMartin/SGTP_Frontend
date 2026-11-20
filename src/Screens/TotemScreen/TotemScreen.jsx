@@ -207,6 +207,8 @@ export default function TotemScreen() {
     return valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
   }
 
+  const numeroLlamado = ticketEmitido?.numero_llamado?.toUpperCase()
+
   return (
     <div className="totem-container">
       {/* Cabecera del Tótem */}
@@ -396,7 +398,7 @@ export default function TotemScreen() {
                 <div className="totem-ticket-card__number-wrap">
                   <span className="totem-ticket-card__number-label">SU NÚMERO ES</span>
                   <div className="totem-ticket-card__big-number">
-                    {ticketEmitido.numero_llamado}
+                    {numeroLlamado}
                   </div>
                 </div>
 
@@ -424,7 +426,7 @@ export default function TotemScreen() {
                 <div className="totem-ticket-card__instruction">
                   <Volume2 size={24} className="totem-ticket-card__instruction-icon" />
                   <span>
-                    Aguarde a que su número <strong>{ticketEmitido.numero_llamado}</strong> sea convocado por los parlantes y pantallas hacia el mostrador de Recepción.
+                    Aguarde a que su número <strong>{numeroLlamado}</strong> sea convocado por los parlantes y pantallas hacia el mostrador de Recepción.
                   </span>
                 </div>
               </div>
@@ -452,7 +454,7 @@ export default function TotemScreen() {
 
               <div className="ticket-modal__call-box">
                 <span className="ticket-modal__call-label">TURNO DE RECEPCIÓN</span>
-                <span className="ticket-modal__call-number">{ticketEmitido.numero_llamado || 'S/N'}</span>
+                <span className="ticket-modal__call-number">{numeroLlamado || 'S/N'}</span>
                 <span className="ticket-modal__totem-id">
                   Motivo: {categoriaSeleccionada?.titulo || ticketEmitido.categoria_label || 'Atención'}
                 </span>
