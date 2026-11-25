@@ -118,6 +118,147 @@
   background: #e2e8f0;
 }
 
+.ticket-modal__print-labels-btn {
+  background: #0369a1;
+}
+
+.ticket-modal__print-labels-btn:hover {
+  background: #075985;
+}
+
+.ticket-modal__print-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .ticket-modal__actions {
+    flex-wrap: wrap;
+  }
+
+  .ticket-modal__print-btn {
+    min-width: 0;
+    padding: 9px 8px;
+    font-size: 0.78rem;
+  }
+}
+
+.ticket-modal__labels-panel {
+  width: 100%;
+  min-height: 0;
+  overflow: auto;
+  color: #334155;
+}
+
+.ticket-modal__labels-patient {
+  margin: 0 0 12px;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.ticket-modal__labels-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-bottom: 10px;
+  font-size: 0.82rem;
+}
+
+.ticket-modal__labels-modes label,
+.ticket-modal__label-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ticket-modal__labels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.ticket-modal__label-option {
+  min-height: 42px;
+  padding: 7px 9px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ticket-modal__label-option > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ticket-modal__label-option strong {
+  font-size: 0.82rem;
+}
+
+.ticket-modal__label-option small {
+  color: #64748b;
+  font-size: 0.74rem;
+}
+
+.ticket-modal__labels-empty,
+.ticket-modal__labels-error {
+  margin: 8px 0;
+  font-size: 0.82rem;
+}
+
+.ticket-modal__labels-error {
+  color: #b91c1c;
+}
+
+#printable-study-labels {
+  display: none;
+}
+
+.ticket-study-label {
+  box-sizing: border-box;
+  width: 50mm;
+  height: 20mm;
+  padding: 1.4mm 2mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5mm;
+  overflow: hidden;
+  color: #000;
+  background: #fff;
+  font-family: Arial, sans-serif;
+  line-height: 1.05;
+  page-break-after: always;
+  break-after: page;
+}
+
+.ticket-study-label:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+.ticket-study-label__patient {
+  overflow: hidden;
+  font-size: 8pt;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticket-study-label__dni,
+.ticket-study-label__sample {
+  font-size: 6.5pt;
+}
+
+.ticket-study-label__study {
+  overflow: hidden;
+  font-size: 8pt;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Reglas globales de aislamiento para la impresión térmica */
 body.ticket-printing {
   width: 80mm !important;
