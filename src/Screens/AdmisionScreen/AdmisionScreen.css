@@ -26,6 +26,12 @@
 }
 
 .admision-screen__header {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
@@ -40,6 +46,106 @@
   font-size: 0.95rem;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+.admision-screen__notifications {
+  position: relative;
+  z-index: 3;
+  flex-shrink: 0;
+}
+
+.admision-screen__notification-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 50%;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.admision-screen__notification-btn:hover,
+.admision-screen__notification-btn--unread {
+  border-color: #0284c7;
+  color: #0369a1;
+  background: #f0f9ff;
+}
+
+.admision-screen__notification-count {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.admision-screen__notification-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(390px, calc(100vw - 32px));
+  max-height: 360px;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+}
+
+.admision-screen__notification-panel h2 {
+  margin: 0 0 10px;
+  color: #0f172a;
+  font-size: 0.92rem;
+}
+
+.admision-screen__notification-panel ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admision-screen__notification-panel li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.8rem;
+}
+
+.admision-screen__notification-panel li strong {
+  color: #0f172a;
+}
+
+.admision-screen__notification-panel li small {
+  color: #64748b;
+  font-size: 0.73rem;
+}
+
+.admision-screen__notification-empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.82rem;
 }
 
 /* Grilla principal */

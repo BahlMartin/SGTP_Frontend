@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
-import { Radio, Clock } from 'lucide-react'
+import { Radio, Clock, Bell } from 'lucide-react'
 import Navbar from '../../components/Navbar/Navbar'
 import PatientSearch from '../../components/PatientSearch/PatientSearch'
 import TicketModal from '../../components/TicketModal/TicketModal'
@@ -16,11 +16,160 @@ import {
 } from '../../hooks/useAdmissionForm'
 import { useTodayTickets } from '../../hooks/useTodayTickets'
 import { useWebSocket } from '../../hooks/useWebSocket'
+import { getArgentinaDateString, getTodayLocalDateString } from '../../utils/formatters'
 import receptionService from '../../services/receptionService'
 import { searchPatientByDniApi } from '../../services/patientService'
 import './AdmisionScreen.css'
 
 export const ADMISSION_ACTIVE_TURNO_STORAGE_KEY = 'sgtp_admision_active_turno'
+const STUDY_CHANGE_NOTIFICATIONS_STORAGE_KEY = 'sgtp_admision_study_change_notifications'
+const TICKET_STUDY_SNAPSHOTS_STORAGE_KEY = 'sgtp_admision_ticket_study_snapshots'
+
+function readStoredStudyChangeNotifications() {
+  try {
+    const stored = window.localStorage.getItem(STUDY_CHANGE_NOTIFICATIONS_STORAGE_KEY)
+    const notifications = stored ? JSON.parse(stored) : []
+    if (!Array.isArray(notifications)) return []
+
+    return notifications
+      .filter((notification) =>
+        notification?.id &&
+        Array.isArray(notification.changes) &&
+        notification.changes.length > 0 &&
+        !Number.isNaN(new Date(notification.timestamp).getTime())
+      )
+      .map((notification) => ({
+        ...notification,
+        timestamp: new Date(notification.timestamp),
+        read: Boolean(notification.read)
+      }))
+  } catch (error) {
+    console.warn('No se pudieron leer las notificaciones de cambios de estudios:', error)
+    return []
+  }
+}
+
+function readStoredTicketStudySnapshots() {
+  try {
+    const stored = window.localStorage.getItem(TICKET_STUDY_SNAPSHOTS_STORAGE_KEY)
+    if (!stored) return new Map()
+
+    const snapshots = JSON.parse(stored)
+    if (!snapshots || typeof snapshots !== 'object' || Array.isArray(snapshots)) {
+      return new Map()
+    }
+
+    return new Map(Object.entries(snapshots).map(([ticketId, studies]) => [
+      ticketId,
+      new Map(Object.entries(studies || {}))
+    ]))
+  } catch (error) {
+    console.warn('No se pudo leer el estado previo de estudios de los tickets:', error)
+    return new Map()
+  }
+}
+
+function getHistoricalBoxStudyChanges(ticket) {
+  const rawStudies = Array.isArray(ticket.estudios_raw) ? ticket.estudios_raw : []
+  const changes = []
+
+  rawStudies.forEach((study) => {
+    if (!study || typeof study !== 'object') return
+    const name = study.estudio_detalle?.nombre || study.nombre || 'Estudio'
+    if (study.estado === 'Cancelado') {
+      changes.push(`Cancelado: ${name}`)
+    } else if (study.origen === 'box') {
+      changes.push(`Agregado: ${name}`)
+    }
+  })
+
+  return [...new Set(changes)]
+}
+
+function getTicketStudiesSnapshot(ticket) {
+  const rawStudies = Array.isArray(ticket.estudios_raw) && ticket.estudios_raw.length > 0
+    ? ticket.estudios_raw
+    : (ticket.estudios || [])
+
+  return new Map(rawStudies.map((study) => {
+    const detail = study?.estudio_detalle || study?.study_detail || {}
+    const name = typeof study === 'string'
+      ? study
+      : detail.nombre || study?.nombre || 'Estudio'
+    const id = typeof study === 'string'
+      ? `name:${study.trim().toLowerCase()}`
+      : String(study?.id ?? study?.estudio ?? detail.id ?? `name:${name.trim().toLowerCase()}`)
+
+    return [id, {
+      name,
+      cancelled: typeof study !== 'string' && study?.estado === 'Cancelado',
+      actor: typeof study !== 'string'
+        ? study?.modificado_por_nombre || study?.personal_box_nombre || study?.modificado_por || ''
+        : '',
+      timestamp: typeof study !== 'string'
+        ? study?.modificado_en || study?.fecha_modificacion || study?.updated_at || ''
+        : ''
+    }]
+  }))
+}
+
+function getStudyChanges(previousStudies, currentStudies) {
+  const changes = []
+
+  currentStudies.forEach((study, studyId) => {
+    const previous = previousStudies.get(studyId)
+    if (!previous) {
+      changes.push(`Agregado: ${study.name}`)
+    } else if (previous.cancelled !== study.cancelled) {
+      changes.push(`${study.cancelled ? 'Cancelado' : 'Reactivado'}: ${study.name}`)
+    }
+  })
+
+  previousStudies.forEach((study, studyId) => {
+    if (!currentStudies.has(studyId) && !study.cancelled) {
+      changes.push(`Quitado: ${study.name}`)
+    }
+  })
+
+  return changes
+}
+
+function getWebSocketActor(message) {
+  const sources = [message, message?.ticket, message?.data, message?.data?.ticket]
+  for (const source of sources) {
+    const actor = source?.modificado_por_nombre ||
+      source?.personal_box_nombre ||
+      source?.usuario_nombre ||
+      source?.nombre_personal ||
+      source?.modificado_por
+    if (typeof actor === 'string' && actor.trim()) return actor.trim()
+    if (actor && typeof actor === 'object') {
+      const name = actor.nombre || actor.apellidos || actor.matricula
+      if (name) return String(name)
+    }
+  }
+  return ''
+}
+
+function getWebSocketTimestamp(message) {
+  const sources = [message, message?.ticket, message?.data, message?.data?.ticket]
+  for (const source of sources) {
+    const value = source?.timestamp || source?.fecha_hora || source?.updated_at ||
+      source?.modificado_en || source?.fecha_modificacion
+    if (value && !Number.isNaN(new Date(value).getTime())) return new Date(value)
+  }
+  return new Date()
+}
+
+function formatNotificationTimestamp(date) {
+  return date.toLocaleString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
 
 function readStoredActiveTurno() {
   try {
@@ -103,6 +252,10 @@ export default function AdmisionScreen() {
   const [issuedTicket, setIssuedTicket] = useState(null)
   const [showOcrModal, setShowOcrModal] = useState(false)
   const [admissionError, setAdmissionError] = useState('')
+  const [studyChangeNotifications, setStudyChangeNotifications] = useState(
+    readStoredStudyChangeNotifications
+  )
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
 
   // Estado para la gestión del Tótem y Cola de Recepción (persistido ante F5)
   const [activeSideTab, setActiveSideTab] = useState('recepcion') // 'recepcion' | 'ingresos'
@@ -130,6 +283,11 @@ export default function AdmisionScreen() {
   const isCallingTurnoRef = useRef(false)
   const hydratedTurnoIdRef = useRef(null)
   const isMountedRef = useRef(true)
+  const ticketStudiesRef = useRef(null)
+  if (ticketStudiesRef.current === null) {
+    ticketStudiesRef.current = readStoredTicketStudySnapshots()
+  }
+  const wsStudyChangeRef = useRef(null)
 
   useEffect(() => {
     formDataRef.current = formData
@@ -295,6 +453,17 @@ export default function AdmisionScreen() {
   useEffect(() => {
     if (!wsTicketMessage) return
 
+    const wsEvent = wsTicketMessage.event || wsTicketMessage.action || wsTicketMessage.tipo_evento
+    if (['TICKET_UPDATED', 'TICKET_STUDIES_UPDATED', 'BOX_STUDIES_UPDATED', 'ESTUDIOS_MODIFICADOS'].includes(wsEvent)) {
+      const sourceTicket = wsTicketMessage.ticket || wsTicketMessage.data?.ticket
+      wsStudyChangeRef.current = {
+        ticketId: sourceTicket?.id || sourceTicket?.id_ticket ||
+          wsTicketMessage.ticket_id || wsTicketMessage.id_ticket || null,
+        actor: getWebSocketActor(wsTicketMessage),
+        timestamp: getWebSocketTimestamp(wsTicketMessage)
+      }
+    }
+
     const isTicketCreated =
       wsTicketMessage.event === 'TICKET_CREATED' ||
       wsTicketMessage.action === 'NEW_TICKET' ||
@@ -315,6 +484,100 @@ export default function AdmisionScreen() {
     }
   }, [wsTicketMessage, refreshTickets, fetchReceptionQueue])
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        STUDY_CHANGE_NOTIFICATIONS_STORAGE_KEY,
+        JSON.stringify(studyChangeNotifications)
+      )
+    } catch (error) {
+      console.error('No se pudieron guardar las notificaciones de cambios de estudios:', error)
+    }
+  }, [studyChangeNotifications])
+
+  useEffect(() => {
+    if (tickets.length === 0) return
+
+    const previousTicketStudies = ticketStudiesRef.current
+    const currentTicketStudies = new Map()
+    const notificationsToAdd = []
+
+    tickets.slice(0, 500).forEach((ticket) => {
+      if (ticket?.id == null) return
+      const ticketId = String(ticket.id)
+      const currentStudies = getTicketStudiesSnapshot(ticket)
+      const previousStudies = previousTicketStudies.get(ticketId)
+      const wsMetadata = wsStudyChangeRef.current
+      const matchesWebSocketEvent = wsMetadata &&
+        (!wsMetadata.ticketId || String(wsMetadata.ticketId) === ticketId)
+      let changes = []
+      let notificationId
+
+      if (previousStudies) {
+        changes = getStudyChanges(previousStudies, currentStudies)
+      } else if (
+        getArgentinaDateString(ticket.fecha_hora_admision) === getTodayLocalDateString()
+      ) {
+        changes = getHistoricalBoxStudyChanges(ticket)
+        if (changes.length > 0) {
+          notificationId = `history-${ticketId}-${changes.map(encodeURIComponent).join('|')}`
+        }
+      }
+
+      if (changes.length > 0) {
+        const studyValues = [...currentStudies.values()]
+        const studyTimestamp = studyValues.find((study) => study.timestamp)?.timestamp
+        const timestampValue = matchesWebSocketEvent
+          ? wsMetadata.timestamp
+          : studyTimestamp || ticket.updated_at || new Date()
+        const timestamp = new Date(timestampValue)
+        const safeTimestamp = Number.isNaN(timestamp.getTime()) ? new Date() : timestamp
+        const actor = (matchesWebSocketEvent ? wsMetadata.actor : '') ||
+          studyValues.find((study) => study.actor)?.actor ||
+          ticket.personal_box_nombre ||
+          (ticket.personal_box_matricula ? `Personal de Box (Mat. ${ticket.personal_box_matricula})` : '') ||
+          'Personal de Box'
+
+        notificationsToAdd.push({
+          id: notificationId || `${ticketId}-${safeTimestamp.getTime()}-${changes.join('|')}`,
+          ticketId,
+          ticketNumber: ticket.num_totem || ticket.num_llamado || ticketId,
+          changes,
+          actor,
+          timestamp: safeTimestamp,
+          read: false
+        })
+
+        if (matchesWebSocketEvent) wsStudyChangeRef.current = null
+      }
+
+      currentTicketStudies.set(ticketId, currentStudies)
+    })
+
+    ticketStudiesRef.current = currentTicketStudies
+    try {
+      const snapshots = Object.fromEntries([...currentTicketStudies].map(([ticketId, studies]) => [
+        ticketId,
+        Object.fromEntries(studies)
+      ]))
+      window.localStorage.setItem(TICKET_STUDY_SNAPSHOTS_STORAGE_KEY, JSON.stringify(snapshots))
+    } catch (error) {
+      console.error('No se pudo guardar el estado previo de estudios de los tickets:', error)
+    }
+
+    if (notificationsToAdd.length > 0) {
+      setStudyChangeNotifications((current) => {
+        const knownIds = new Set(current.map((notification) => notification.id))
+        const uniqueAdditions = notificationsToAdd.filter(
+          (notification) => !knownIds.has(notification.id)
+        )
+        return uniqueAdditions.length > 0
+          ? [...uniqueAdditions.reverse(), ...current].slice(0, 30)
+          : current
+      })
+    }
+  }, [tickets])
+
   // Filtrado de tickets emitidos hoy delegado al hook
   const todayTickets = useTodayTickets(tickets)
   const formattedSequence =
@@ -331,6 +594,11 @@ export default function AdmisionScreen() {
 
   const handleTicketItemClick = useCallback((selectedTicket) => {
     setIssuedTicket(selectedTicket)
+  }, [])
+
+  const handleCloseTicketModal = useCallback(() => {
+    setIssuedTicket(null)
+    setActiveSideTab('ingresos')
   }, [])
 
   /**
@@ -601,10 +869,59 @@ export default function AdmisionScreen() {
 
       <main className="admision-screen__main">
         <header className="admision-screen__header">
-          <h1 className="admision-screen__title">Admision</h1>
-          <p className="admision-screen__subtitle">
-            Registro de pacientes, clasificacion de triage y emision de tickets
-          </p>
+          <div>
+            <h1 className="admision-screen__title">Admision</h1>
+            <p className="admision-screen__subtitle">
+              Registro de pacientes, clasificacion de triage y emision de tickets
+            </p>
+          </div>
+          {userData?.rol === 'Admision' && (
+            <div className="admision-screen__notifications">
+              <button
+                type="button"
+                className={`admision-screen__notification-btn ${
+                  studyChangeNotifications.some((notification) => !notification.read)
+                    ? 'admision-screen__notification-btn--unread'
+                    : ''
+                }`}
+                aria-label={`Notificaciones de cambios de estudios: ${studyChangeNotifications.filter((notification) => !notification.read).length} sin leer`}
+                aria-expanded={isNotificationsOpen}
+                onClick={() => {
+                  setIsNotificationsOpen((isOpen) => !isOpen)
+                  setStudyChangeNotifications((current) =>
+                    current.map((notification) => ({ ...notification, read: true }))
+                  )
+                }}
+              >
+                <Bell size={20} />
+                {studyChangeNotifications.some((notification) => !notification.read) && (
+                  <span className="admision-screen__notification-count">
+                    {studyChangeNotifications.filter((notification) => !notification.read).length}
+                  </span>
+                )}
+              </button>
+              {isNotificationsOpen && (
+                <section className="admision-screen__notification-panel" aria-label="Cambios en estudios">
+                  <h2>Cambios de estudios en Box</h2>
+                  {studyChangeNotifications.length === 0 ? (
+                    <p className="admision-screen__notification-empty">Todavía no hay modificaciones.</p>
+                  ) : (
+                    <ul>
+                      {studyChangeNotifications.map((notification) => (
+                        <li key={notification.id}>
+                          <strong>Ticket {notification.ticketNumber}</strong>
+                          <span>{notification.changes.join(' · ')}</span>
+                          <small>
+                            {formatNotificationTimestamp(notification.timestamp)} · Por {notification.actor}
+                          </small>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              )}
+            </div>
+          )}
         </header>
 
         <div className="admision-screen__grid">
@@ -731,7 +1048,12 @@ export default function AdmisionScreen() {
 
       {/* Modal de Ticket Emitido */}
       {issuedTicket && (
-        <TicketModal ticket={issuedTicket} onClose={() => setIssuedTicket(null)} />
+        <TicketModal
+          ticket={issuedTicket}
+          onClose={handleCloseTicketModal}
+          canPrintLabels={userData?.rol === 'Admision'}
+          showCloseAction={false}
+        />
       )}
 
       {/* Modal de Escaneo OCR con Human-in-the-Loop */}
