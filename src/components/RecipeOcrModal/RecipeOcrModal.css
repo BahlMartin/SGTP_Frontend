@@ -1806,6 +1806,73 @@
   cursor: not-allowed;
 }
 
+.ocr-ai-editor__viewport-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.ocr-ai-editor__zoom-btn,
+.ocr-ai-editor__zoom-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 7px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ocr-ai-editor__zoom-reset-btn {
+  min-width: 52px;
+  justify-content: center;
+}
+
+.ocr-ai-editor__zoom-btn:hover:not(:disabled),
+.ocr-ai-editor__zoom-reset-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.ocr-ai-editor__zoom-btn:disabled,
+.ocr-ai-editor__zoom-reset-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ocr-ai-editor__fullscreen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 1px solid #7dd3fc;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ocr-ai-editor__fullscreen-btn:hover:not(:disabled) {
+  background: #bae6fd;
+  border-color: #38bdf8;
+  color: #075985;
+}
+
+.ocr-ai-editor__fullscreen-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .ocr-ai-editor__hint {
   margin: 0;
   font-size: 0.74rem;
@@ -1815,8 +1882,8 @@
 
 .ocr-ai-editor__workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   align-items: start;
 }
 
@@ -1836,26 +1903,51 @@
   letter-spacing: 0.02em;
 }
 
-.ocr-ai-editor__canvas-wrap,
-.ocr-ai-editor__preview-box {
-  background: #f8fafc;
+.ocr-ai-editor__canvas-wrap {
+  background: #e2e8f0;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
-  padding: 6px;
+  padding: 10px;
+  box-sizing: border-box;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 160px;
-  max-height: 360px;
-  overflow: hidden;
+  overflow: auto;
+  height: clamp(320px, 55vh, 560px);
+  min-height: 280px;
+  max-height: 58vh;
+}
+
+.ocr-ai-editor__canvas-wrap::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.ocr-ai-editor__canvas-wrap::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.ocr-ai-editor__canvas-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.ocr-ai-editor__canvas-wrap::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.ocr-ai-editor__canvas-stage {
+  margin: auto;
+  flex-shrink: 0;
+  line-height: 0;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.16);
 }
 
 .ocr-ai-editor__canvas {
   display: block;
-  width: 100%;
-  max-height: 340px;
-  height: auto;
-  object-fit: contain;
+  padding: 0;
+  border: 0;
   touch-action: none;
   user-select: none;
   border-radius: 4px;
@@ -1869,10 +1961,23 @@
   cursor: cell;
 }
 
+.ocr-ai-editor__preview-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  max-height: 210px;
+  overflow: hidden;
+}
+
 .ocr-ai-editor__preview-img {
   display: block;
   max-width: 100%;
-  max-height: 340px;
+  max-height: 192px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -1883,6 +1988,84 @@
 .ocr-ai-editor__preview-empty {
   font-size: 0.76rem;
   color: #64748b;
+}
+
+/* Portal de pantalla completa compartido para Recorte Manual y Privacidad PHI */
+.ocr-ai-editor__fullscreen-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(4px);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overscroll-behavior: contain;
+}
+
+.ocr-ai-editor__fullscreen-dialog {
+  width: min(96vw, 1520px);
+  height: 94dvh;
+  max-height: 94dvh;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.45);
+  box-sizing: border-box;
+}
+
+.ocr-ai-editor__fullscreen-dialog--manual {
+  background: #f0f9ff;
+  border: 1px solid #7dd3fc;
+  color: #0c4a6e;
+}
+
+.ocr-ai-editor__fullscreen-dialog--privacy {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #78350f;
+}
+
+.ocr-ai-editor--fullscreen {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.ocr-ai-editor--fullscreen .ocr-ai-editor__workspace {
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: stretch;
+}
+
+.ocr-ai-editor--fullscreen .ocr-ai-editor__canvas-panel,
+.ocr-ai-editor--fullscreen .ocr-ai-editor__preview-panel {
+  min-height: 0;
+  height: 100%;
+}
+
+.ocr-ai-editor--fullscreen .ocr-ai-editor__canvas-wrap {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+}
+
+.ocr-ai-editor--fullscreen .ocr-ai-editor__preview-box {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+}
+
+.ocr-ai-editor--fullscreen .ocr-ai-editor__preview-img,
+.ocr-ai-editor--fullscreen .ocr-manual-crop__preview-img {
+  max-height: 100%;
 }
 
 /* Selector interactivo de Recorte Manual en pestaña Por Recortes */
@@ -2199,8 +2382,34 @@
     grid-template-columns: 1fr;
   }
 
-  .ocr-ai-editor__canvas-wrap,
+  .ocr-ai-editor__canvas-wrap {
+    height: clamp(240px, 46vh, 380px);
+    min-height: 240px;
+    max-height: 48vh;
+  }
+
   .ocr-ai-editor__preview-box {
-    max-height: 280px;
+    max-height: 170px;
+  }
+
+  .ocr-ai-editor__fullscreen-backdrop {
+    padding: 6px;
+  }
+
+  .ocr-ai-editor__fullscreen-dialog {
+    width: 100%;
+    height: 96dvh;
+    max-height: 96dvh;
+    padding: 12px;
+  }
+
+  .ocr-ai-editor--fullscreen .ocr-ai-editor__workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .ocr-ai-editor--fullscreen .ocr-ai-editor__preview-box {
+    max-height: 130px;
+    flex: none;
   }
 }

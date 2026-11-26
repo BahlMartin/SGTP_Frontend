@@ -1,5 +1,23 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Crop, Square, Undo2, Trash2, RotateCcw, Sparkles, ShieldAlert } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import {
+  Crop,
+  Square,
+  Undo2,
+  Trash2,
+  RotateCcw,
+  Sparkles,
+  ShieldAlert,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2
+} from 'lucide-react'
+import {
+  MAX_EDITOR_DIM,
+  getCanvasNormalizedPoint,
+  useRecipeCanvasViewport
+} from './useRecipeCanvasViewport'
 
 const FULL_CROP = { x: 0, y: 0, w: 1, h: 1 }
 
@@ -77,6 +95,20 @@ export default function RecipeAiRedactionEditor({
 
   const loadedImg = loadedImgState && loadedImgState.src === imageSrc ? loadedImgState.img : null
 
+  const {
+    wrapRef,
+    displaySize,
+    isFullscreen,
+    toggleFullscreen,
+    zoomPercent,
+    canZoomIn,
+    canZoomOut,
+    isZoomed,
+    zoomIn,
+    zoomOut,
+    resetZoom
+  } = useRecipeCanvasViewport(loadedImg)
+
   const previewDataUrl = useMemo(
     () => buildSanitizedContextualDataUrl(loadedImg, cropRect, redactionBoxes),
     [loadedImg, cropRect, redactionBoxes]
@@ -87,8 +119,7 @@ export default function RecipeAiRedactionEditor({
     const canvas = canvasRef.current
     if (!canvas || !loadedImg || !loadedImg.naturalWidth || !loadedImg.naturalHeight) return
 
-    const maxEditorDim = 820
-    const scale = Math.min(1, maxEditorDim / Math.max(loadedImg.naturalWidth, loadedImg.naturalHeight))
+    const scale = Math.min(1, MAX_EDITOR_DIM / Math.max(loadedImg.naturalWidth, loadedImg.naturalHeight))
     const cw = Math.max(120, Math.round(loadedImg.naturalWidth * scale))
     const ch = Math.max(120, Math.round(loadedImg.naturalHeight * scale))
 
@@ -104,6 +135,7 @@ export default function RecipeAiRedactionEditor({
     ctx.drawImage(loadedImg, 0, 0, cw, ch)
 
     // Cuadros blancos ya confirmados
+    const confirmedBoxStroke = Math.max(1.5, cw / 520)
     for (const box of redactionBoxes) {
       const bx = box.x * cw
       const by = box.y * ch
@@ -113,7 +145,7 @@ export default function RecipeAiRedactionEditor({
       ctx.fillRect(bx, by, bw, bh)
       ctx.save()
       ctx.strokeStyle = '#94a3b8'
-      ctx.lineWidth = 1.5
+      ctx.lineWidth = confirmedBoxStroke
       ctx.setLineDash([4, 3])
       ctx.strokeRect(bx, by, bw, bh)
       ctx.restore()
@@ -125,20 +157,21 @@ export default function RecipeAiRedactionEditor({
       const dy = dragDraft.y * ch
       const dw = dragDraft.w * cw
       const dh = dragDraft.h * ch
+      const draftStroke = Math.max(2, cw / 420)
 
       if (tool === 'redact') {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.92)'
         ctx.fillRect(dx, dy, dw, dh)
         ctx.save()
         ctx.strokeStyle = '#dc2626'
-        ctx.lineWidth = 2
+        ctx.lineWidth = draftStroke
         ctx.setLineDash([5, 3])
         ctx.strokeRect(dx, dy, dw, dh)
         ctx.restore()
       } else {
         ctx.save()
         ctx.strokeStyle = '#0284c7'
-        ctx.lineWidth = 2.5
+        ctx.lineWidth = draftStroke
         ctx.setLineDash([6, 4])
         ctx.strokeRect(dx, dy, dw, dh)
         ctx.restore()
@@ -163,25 +196,15 @@ export default function RecipeAiRedactionEditor({
     ctx.fillRect(cx + crw, cy, Math.max(0, cw - (cx + crw)), crh)
 
     ctx.strokeStyle = '#0ea5e9'
-    ctx.lineWidth = 2.5
+    ctx.lineWidth = Math.max(2.5, cw / 360)
     ctx.strokeRect(cx, cy, crw, crh)
     ctx.restore()
   }, [loadedImg, cropRect, redactionBoxes, dragDraft, tool])
 
-  const getNormalizedCoords = (event) => {
-    const canvas = canvasRef.current
-    if (!canvas) return null
-    const rect = canvas.getBoundingClientRect()
-    if (!rect.width || !rect.height) return null
-    return {
-      x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
-      y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height))
-    }
-  }
-
   const handlePointerDown = (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
     if (isSubmitting || !loadedImg) return
-    const pt = getNormalizedCoords(e)
+    const pt = getCanvasNormalizedPoint(canvasRef.current, e)
     if (!pt) return
     e.currentTarget.setPointerCapture?.(e.pointerId)
     dragOriginRef.current = pt
@@ -193,7 +216,7 @@ export default function RecipeAiRedactionEditor({
   const handlePointerMove = (e) => {
     const origin = dragOriginRef.current
     if (!origin) return
-    const pt = getNormalizedCoords(e)
+    const pt = getCanvasNormalizedPoint(canvasRef.current, e)
     if (!pt) return
     const x = Math.min(origin.x, pt.x)
     const y = Math.min(origin.y, pt.y)
@@ -236,8 +259,12 @@ export default function RecipeAiRedactionEditor({
     }
   }
 
-  return (
-    <div className="ocr-ai-editor" role="region" aria-label="Editor de privacidad contextual para Gemini">
+  const editorContent = (
+    <div
+      className={`ocr-ai-editor${isFullscreen ? ' ocr-ai-editor--fullscreen' : ''}`}
+      role="region"
+      aria-label="Editor de privacidad contextual para Gemini"
+    >
       <div className="ocr-modal__privacy-guard-header">
         <ShieldAlert size={18} className="ocr-modal__privacy-guard-icon" />
         <div>
@@ -303,6 +330,47 @@ export default function RecipeAiRedactionEditor({
             <span>Restablecer recorte</span>
           </button>
         </div>
+
+        <div className="ocr-ai-editor__viewport-controls">
+          <button
+            type="button"
+            className="ocr-ai-editor__zoom-btn"
+            onClick={zoomOut}
+            disabled={!loadedImg || !canZoomOut}
+            aria-label="Alejar imagen"
+            title="Alejar"
+          >
+            <ZoomOut size={13} />
+          </button>
+          <button
+            type="button"
+            className="ocr-ai-editor__zoom-reset-btn"
+            onClick={resetZoom}
+            disabled={!loadedImg || !isZoomed}
+            title="Ajustar al contenedor"
+          >
+            {isZoomed ? `${zoomPercent}% · Ajustar` : `${zoomPercent}%`}
+          </button>
+          <button
+            type="button"
+            className="ocr-ai-editor__zoom-btn"
+            onClick={zoomIn}
+            disabled={!loadedImg || !canZoomIn}
+            aria-label="Acercar imagen"
+            title="Acercar"
+          >
+            <ZoomIn size={13} />
+          </button>
+          <button
+            type="button"
+            className="ocr-ai-editor__fullscreen-btn"
+            onClick={toggleFullscreen}
+            disabled={isSubmitting}
+          >
+            {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            <span>{isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}</span>
+          </button>
+        </div>
       </div>
 
       <p className="ocr-ai-editor__hint">
@@ -314,17 +382,24 @@ export default function RecipeAiRedactionEditor({
       <div className="ocr-ai-editor__workspace">
         <div className="ocr-ai-editor__canvas-panel">
           <span className="ocr-ai-editor__panel-label">Editor sobre receta original</span>
-          <div className="ocr-ai-editor__canvas-wrap">
-            <canvas
-              ref={canvasRef}
-              className={`ocr-ai-editor__canvas ${
-                tool === 'crop' ? 'ocr-ai-editor__canvas--crop' : 'ocr-ai-editor__canvas--redact'
-              }`}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={finalizeDrag}
-              onPointerCancel={finalizeDrag}
-            />
+          <div ref={wrapRef} className="ocr-ai-editor__canvas-wrap">
+            <div className="ocr-ai-editor__canvas-stage">
+              <canvas
+                ref={canvasRef}
+                className={`ocr-ai-editor__canvas ${
+                  tool === 'crop' ? 'ocr-ai-editor__canvas--crop' : 'ocr-ai-editor__canvas--redact'
+                }`}
+                style={
+                  displaySize
+                    ? { width: `${displaySize.width}px`, height: `${displaySize.height}px` }
+                    : undefined
+                }
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={finalizeDrag}
+                onPointerCancel={finalizeDrag}
+              />
+            </div>
           </div>
         </div>
 
@@ -371,4 +446,22 @@ export default function RecipeAiRedactionEditor({
       </div>
     </div>
   )
+
+  if (isFullscreen && typeof document !== 'undefined') {
+    return createPortal(
+      <div className="ocr-ai-editor__fullscreen-backdrop">
+        <div
+          className="ocr-ai-editor__fullscreen-dialog ocr-ai-editor__fullscreen-dialog--privacy"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Editor de privacidad IA en pantalla completa"
+        >
+          {editorContent}
+        </div>
+      </div>,
+      document.body
+    )
+  }
+
+  return editorContent
 }

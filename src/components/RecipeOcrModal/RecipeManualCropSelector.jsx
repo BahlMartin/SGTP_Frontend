@@ -1,5 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Crop, Eye, Sparkles, Eraser, Plus } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import {
+  Crop,
+  Eye,
+  Sparkles,
+  Eraser,
+  Plus,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2
+} from 'lucide-react'
+import {
+  MAX_EDITOR_DIM,
+  getCanvasNormalizedPoint,
+  useRecipeCanvasViewport
+} from './useRecipeCanvasViewport'
 
 /**
  * Selector interactivo sobre la receta para recortar manualmente un renglón/estudio omitido
@@ -42,14 +58,27 @@ export default function RecipeManualCropSelector({
 
   const loadedImg = loadedImgState && loadedImgState.src === activeSrc ? loadedImgState.img : null
 
+  const {
+    wrapRef,
+    displaySize,
+    isFullscreen,
+    toggleFullscreen,
+    zoomPercent,
+    canZoomIn,
+    canZoomOut,
+    isZoomed,
+    zoomIn,
+    zoomOut,
+    resetZoom
+  } = useRecipeCanvasViewport(loadedImg)
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !loadedImg || !loadedImg.naturalWidth || !loadedImg.naturalHeight) return
 
-    const maxEditorDim = 820
     const scale = Math.min(
       1,
-      maxEditorDim / Math.max(loadedImg.naturalWidth, loadedImg.naturalHeight)
+      MAX_EDITOR_DIM / Math.max(loadedImg.naturalWidth, loadedImg.naturalHeight)
     )
     const cw = Math.max(120, Math.round(loadedImg.naturalWidth * scale))
     const ch = Math.max(120, Math.round(loadedImg.naturalHeight * scale))
@@ -71,7 +100,7 @@ export default function RecipeManualCropSelector({
       ctx.save()
       ctx.strokeStyle = 'rgba(22, 163, 74, 0.7)'
       ctx.fillStyle = 'rgba(22, 163, 74, 0.08)'
-      ctx.lineWidth = 1.5
+      ctx.lineWidth = Math.max(1.5, cw / 520)
       ctx.setLineDash([4, 3])
       const bx = box.x * cw
       const by = box.y * ch
@@ -97,7 +126,7 @@ export default function RecipeManualCropSelector({
       ctx.fillRect(sx + sw, sy, Math.max(0, cw - (sx + sw)), sh)
 
       ctx.strokeStyle = dragDraft ? '#0284c7' : '#2563eb'
-      ctx.lineWidth = 2.5
+      ctx.lineWidth = Math.max(2.5, cw / 360)
       if (dragDraft) {
         ctx.setLineDash([6, 4])
       }
@@ -133,20 +162,10 @@ export default function RecipeManualCropSelector({
     return out.toDataURL('image/png')
   }, [loadedImg, selectionRect])
 
-  const getNormalizedCoords = (event) => {
-    const canvas = canvasRef.current
-    if (!canvas) return null
-    const rect = canvas.getBoundingClientRect()
-    if (!rect.width || !rect.height) return null
-    return {
-      x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
-      y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height))
-    }
-  }
-
   const handlePointerDown = (e) => {
     if (isProcessing || !loadedImg) return
-    const pt = getNormalizedCoords(e)
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    const pt = getCanvasNormalizedPoint(canvasRef.current, e)
     if (!pt) return
     e.currentTarget.setPointerCapture?.(e.pointerId)
     dragOriginRef.current = pt
@@ -158,7 +177,7 @@ export default function RecipeManualCropSelector({
   const handlePointerMove = (e) => {
     const origin = dragOriginRef.current
     if (!origin) return
-    const pt = getNormalizedCoords(e)
+    const pt = getCanvasNormalizedPoint(canvasRef.current, e)
     if (!pt) return
     const nextDraft = {
       x: Math.min(origin.x, pt.x),
@@ -186,9 +205,9 @@ export default function RecipeManualCropSelector({
     }
   }
 
-  return (
+  const editorContent = (
     <div
-      className="ocr-manual-crop"
+      className={isFullscreen ? 'ocr-manual-crop ocr-ai-editor--fullscreen' : 'ocr-manual-crop'}
       role="region"
       aria-label="Selector de recorte manual para agregar estudio faltante"
     >
@@ -244,6 +263,47 @@ export default function RecipeManualCropSelector({
             <span>Limpiar selección</span>
           </button>
         </div>
+
+        <div className="ocr-ai-editor__viewport-controls">
+          <button
+            type="button"
+            className="ocr-ai-editor__zoom-btn"
+            onClick={zoomOut}
+            disabled={!loadedImg || !canZoomOut}
+            aria-label="Alejar imagen"
+            title="Alejar"
+          >
+            <ZoomOut size={13} />
+          </button>
+          <button
+            type="button"
+            className="ocr-ai-editor__zoom-reset-btn"
+            onClick={resetZoom}
+            disabled={!loadedImg || !isZoomed}
+            title="Ajustar al contenedor"
+          >
+            {isZoomed ? `${zoomPercent}% · Ajustar` : `${zoomPercent}%`}
+          </button>
+          <button
+            type="button"
+            className="ocr-ai-editor__zoom-btn"
+            onClick={zoomIn}
+            disabled={!loadedImg || !canZoomIn}
+            aria-label="Acercar imagen"
+            title="Acercar"
+          >
+            <ZoomIn size={13} />
+          </button>
+          <button
+            type="button"
+            className="ocr-ai-editor__fullscreen-btn"
+            onClick={toggleFullscreen}
+            disabled={isProcessing}
+          >
+            {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            <span>{isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}</span>
+          </button>
+        </div>
       </div>
 
       <div className="ocr-ai-editor__workspace">
@@ -251,15 +311,22 @@ export default function RecipeManualCropSelector({
           <span className="ocr-ai-editor__panel-label">
             Dibujá el recuadro del estudio faltante
           </span>
-          <div className="ocr-ai-editor__canvas-wrap">
-            <canvas
-              ref={canvasRef}
-              className="ocr-ai-editor__canvas ocr-ai-editor__canvas--crop"
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={finalizeDrag}
-              onPointerCancel={finalizeDrag}
-            />
+          <div ref={wrapRef} className="ocr-ai-editor__canvas-wrap">
+            <div className="ocr-ai-editor__canvas-stage">
+              <canvas
+                ref={canvasRef}
+                className="ocr-ai-editor__canvas ocr-ai-editor__canvas--crop"
+                style={
+                  displaySize
+                    ? { width: `${displaySize.width}px`, height: `${displaySize.height}px` }
+                    : undefined
+                }
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={finalizeDrag}
+                onPointerCancel={finalizeDrag}
+              />
+            </div>
           </div>
         </div>
 
@@ -304,4 +371,22 @@ export default function RecipeManualCropSelector({
       </div>
     </div>
   )
+
+  if (isFullscreen && typeof document !== 'undefined') {
+    return createPortal(
+      <div className="ocr-ai-editor__fullscreen-backdrop">
+        <div
+          className="ocr-ai-editor__fullscreen-dialog ocr-ai-editor__fullscreen-dialog--manual"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Recorte manual en pantalla completa"
+        >
+          {editorContent}
+        </div>
+      </div>,
+      document.body
+    )
+  }
+
+  return editorContent
 }
