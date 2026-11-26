@@ -48,14 +48,23 @@ export async function createPatientApi(patientData) {
     dni: Number(String(patientData.dni).replace(/\D/g, '')),
     nombre: String(patientData.nombre || '').trim(),
     apellidos: String(patientData.apellidos || patientData.apellido || '').trim(),
-    obra_social: String(patientData.obra_social || patientData.obraSocial || 'Particular').trim(),
-    num_obra_social: String(patientData.num_obra_social || patientData.numObraSocial || '').trim()
+    obra_social: String(patientData.obra_social || patientData.obraSocial || 'IOMA').trim(),
+    num_obra_social: String(
+      patientData.num_obra_social || patientData.numObraSocial || patientData.numeroAfiliado || ''
+    ).trim()
   }
   return normalizePersonFields(await apiClient.post('/patients/', normalizePersonFields(payload)))
 }
 
 export async function updatePatientApi(idPaciente, partialData) {
-  const normalizedData = normalizePersonFields(partialData)
+  const sanitized = { ...partialData }
+  if (typeof sanitized.obra_social === 'string') {
+    sanitized.obra_social = sanitized.obra_social.trim()
+  }
+  if (typeof sanitized.num_obra_social === 'string') {
+    sanitized.num_obra_social = sanitized.num_obra_social.trim()
+  }
+  const normalizedData = normalizePersonFields(sanitized)
   return normalizePersonFields(await apiClient.patch(`/patients/${idPaciente}/`, normalizedData))
 }
 
@@ -63,28 +72,35 @@ export async function deletePatientApi(idPaciente) {
   return await apiClient.delete(`/patients/${idPaciente}/`)
 }
 
-export async function searchPatientByDniApi(dni) {
-  const cleanDni = Number(String(dni).replace(/\D/g, ''))
+export async function searchPatientByDniApi(dni, { signal } = {}) {
+  const cleanDni = String(dni ?? '').replace(/\D/g, '')
   if (!cleanDni) return null
 
-  try {
-    const data = await apiClient.post('/patients/buscar-por-dni/', { dni: cleanDni })
-    return normalizePersonFields({
-      id: data.id_paciente,
-      id_paciente: data.id_paciente,
-      dni: data.dni,
-      nombre: data.nombre,
-      apellido: data.apellidos,
-      apellidos: data.apellidos,
-      obraSocial: data.obra_social,
-      obra_social: data.obra_social,
-      numObraSocial: data.num_obra_social,
-      numeroAfiliado: data.num_obra_social
-    })
-  } catch (err) {
-    if (err.status === 404) {
-      return null
-    }
-    throw err
-  }
+  const params = new URLSearchParams({
+    q: cleanDni,
+    scope: 'dni',
+    exact: 'true'
+  })
+
+  const response = await apiClient.get(
+    `/patients/buscar/?${params.toString()}`,
+    signal ? { signal } : {}
+  )
+  const results = Array.isArray(response) ? response : response?.results || []
+  const data = results[0]
+  if (!data) return null
+
+  return normalizePersonFields({
+    id: data.id_paciente ?? data.id,
+    id_paciente: data.id_paciente ?? data.id,
+    dni: data.dni,
+    nombre: data.nombre,
+    apellido: data.apellidos || data.apellido || '',
+    apellidos: data.apellidos || data.apellido || '',
+    obraSocial: data.obra_social || data.obraSocial || '',
+    obra_social: data.obra_social || data.obraSocial || '',
+    numObraSocial: data.num_obra_social || data.numeroAfiliado || '',
+    num_obra_social: data.num_obra_social || data.numeroAfiliado || '',
+    numeroAfiliado: data.num_obra_social || data.numeroAfiliado || ''
+  })
 }

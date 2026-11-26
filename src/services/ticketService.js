@@ -87,9 +87,25 @@ export function normalizeTicket(t) {
  * Si porAtender es true, consulta únicamente los tickets pendientes y en atención activa,
  * evitando recorrer páginas históricas de tickets finalizados.
  */
-export async function fetchTicketsApi({ porAtender = false } = {}) {
+export async function fetchTicketsApi({
+  porAtender = false,
+  fecha = null,
+  allToday = false,
+  cacheBust = false
+} = {}) {
+  const buildQuery = (page = null) => {
+    const params = new URLSearchParams()
+    if (porAtender) params.append('por_atender', 'true')
+    if (fecha) params.append('fecha', String(fecha))
+    if (allToday) params.append('all_today', 'true')
+    if (page && page > 1) params.append('page', String(page))
+    if (cacheBust || porAtender) params.append('_t', String(Date.now()))
+    const qs = params.toString()
+    return qs ? `?${qs}` : ''
+  }
+
   if (porAtender) {
-    const response = await apiClient.get(`/tickets/?por_atender=true&_t=${Date.now()}`)
+    const response = await apiClient.get(`/tickets/${buildQuery()}`)
     const list = Array.isArray(response) ? response : response?.results || []
     return list.map(normalizeTicket)
   }
@@ -99,7 +115,7 @@ export async function fetchTicketsApi({ porAtender = false } = {}) {
   let hasNextPage = true
 
   while (hasNextPage) {
-    const response = await apiClient.get(page === 1 ? '/tickets/' : `/tickets/?page=${page}`)
+    const response = await apiClient.get(`/tickets/${buildQuery(page)}`)
     if (Array.isArray(response)) {
       allTickets.push(...response)
       hasNextPage = false
@@ -131,14 +147,15 @@ export async function fetchColaEsperaApi() {
 /**
  * Obtiene un ticket específico por su ID / UUID.
  */
-export async function fetchTicketByIdApi(idTicket) {
-  const response = await apiClient.get(`/tickets/${idTicket}/`)
+export async function fetchTicketByIdApi(idTicket, { cacheBust = true } = {}) {
+  const query = cacheBust ? `?_t=${Date.now()}` : ''
+  const response = await apiClient.get(`/tickets/${idTicket}/${query}`)
   return normalizeTicket(response)
 }
 
 /**
  * Emite un nuevo ticket en Admisión.
- * Soporta paciente_datos (alta automática) y estudios_ids.
+ * Soporta paciente_datos (alta automática), estudios_ids y reservation_token.
  */
 export async function createTicketApi(ticketData) {
   const payload = {
@@ -148,6 +165,11 @@ export async function createTicketApi(ticketData) {
     ),
     justificacion_otro: ticketData.justificacion_otro || '',
     estudios_ids: ticketData.estudios_ids || []
+  }
+
+  const reservationToken = ticketData.reservation_token || ticketData.reservationToken
+  if (reservationToken) {
+    payload.reservation_token = String(reservationToken).trim()
   }
 
   if (ticketData.paciente_id) {
@@ -160,7 +182,7 @@ export async function createTicketApi(ticketData) {
       obra_social: ticketData.paciente_obra_social || ticketData.obra_social || ticketData.obraSocial || 'IOMA',
       num_obra_social: String(
         ticketData.paciente_numero_afiliado || ticketData.numeroAfiliado || ''
-      ).replace(/\D/g, '')
+      ).trim()
     }
   }
 
@@ -206,58 +228,87 @@ export async function deleteTicketApi(ticketId) {
 }
 
 /**
- * Búsqueda asistencial de antecedentes de pacientes.
+ * Búsqueda asistencial de antecedentes de pacientes por DNI o N° de afiliado vía GET.
  */
-export async function searchPatientsApi(query) {
-  const cleanDni = String(query || '').replace(/\D/g, '')
-  if (!cleanDni) return []
+export async function searchPatientsApi(query, { scope = 'all', signal } = {}) {
+  const raw = String(query || '')
+  const clean =
+    scope === 'dni'
+      ? raw.replace(/\D/g, '')
+      : raw.replace(/[^0-9a-zA-Z-]/g, '')
 
-  if (cleanDni.length >= 4) {
-    try {
-      const found = await apiClient.post('/patients/buscar-por-dni/', { dni: Number(cleanDni) })
-      if (found) {
-        return [
-          {
-            dni: String(found.dni),
-            nombre: normalizePersonName(found.nombre),
-            apellido: normalizePersonName(found.apellidos),
-            num_obra_social: found.num_obra_social || '',
-            numeroAfiliado: found.num_obra_social || '',
-            id_paciente: found.id_paciente
-          }
-        ]
-      }
-    } catch {
-      // Si no coincide por DNI exacto, buscar en lista general
+  if (!clean) return []
+
+  const params = new URLSearchParams({
+    q: clean,
+    scope,
+    limit: '20'
+  })
+
+  const response = await apiClient.get(
+    `/patients/buscar/?${params.toString()}`,
+    signal ? { signal } : {}
+  )
+  const list = Array.isArray(response) ? response : response?.results || []
+
+  return list.map((p) => {
+    const obraSocial = p.obra_social || p.obraSocial || ''
+    const numAfiliado = p.num_obra_social || p.numeroAfiliado || ''
+    return {
+      id: p.id_paciente ?? p.id,
+      id_paciente: p.id_paciente ?? p.id,
+      dni: String(p.dni ?? ''),
+      nombre: normalizePersonName(p.nombre || ''),
+      apellido: normalizePersonName(p.apellidos || p.apellido || ''),
+      apellidos: normalizePersonName(p.apellidos || p.apellido || ''),
+      obra_social: obraSocial,
+      obraSocial,
+      num_obra_social: numAfiliado,
+      numeroAfiliado: numAfiliado
     }
-  }
+  })
+}
 
-  try {
-    const allPatients = await apiClient.get('/patients/')
-    const list = Array.isArray(allPatients) ? allPatients : allPatients.results || []
-    const q = cleanDni
-    return list
-      .filter((p) =>
-        String(p.dni).includes(q) ||
-        String(p.num_obra_social || '').includes(q)
-      )
-      .sort((a, b) => {
-        const aStarts = String(a.dni).startsWith(q) ? 1 : 0
-        const bStarts = String(b.dni).startsWith(q) ? 1 : 0
-        if (aStarts !== bStarts) return bStarts - aStarts
-        return String(a.dni).localeCompare(String(b.dni))
-      })
-      .map((p) => ({
-        dni: String(p.dni),
-        nombre: normalizePersonName(p.nombre),
-        apellido: normalizePersonName(p.apellidos),
-        num_obra_social: p.num_obra_social || '',
-        numeroAfiliado: p.num_obra_social || '',
-        id_paciente: p.id_paciente
-      }))
-  } catch (err) {
-    console.error('Error al buscar pacientes:', err)
-    return []
+/**
+ * Obtiene las notificaciones persistidas de modificaciones de estudios en Box para Admisión.
+ */
+export async function fetchStudyNotificationsApi() {
+  const response = await apiClient.get(`/tickets/notificaciones-estudios/?_t=${Date.now()}`)
+  const rawResults = Array.isArray(response) ? response : response?.results || []
+  const results = rawResults.map((n) => ({
+    ...n,
+    paciente_nombre: normalizePersonName(n.paciente_nombre || ''),
+    paciente_apellido: normalizePersonName(n.paciente_apellido || ''),
+    actor_nombre: normalizePersonName(n.actor_nombre || '')
+  }))
+
+  return {
+    ...(typeof response === 'object' && !Array.isArray(response) ? response : {}),
+    results,
+    unread_count:
+      typeof response?.unread_count === 'number'
+        ? response.unread_count
+        : results.filter((n) => !n.leida).length
+  }
+}
+
+/**
+ * Marca todas las notificaciones pendientes de estudios como leídas en BD.
+ */
+export async function markAllStudyNotificationsReadApi() {
+  return await apiClient.post('/tickets/notificaciones-estudios/marcar-todas-leidas/', {})
+}
+
+/**
+ * Marca como impresas las etiquetas de los estudios indicados de un ticket.
+ */
+export async function markTicketLabelsPrintedApi(ticketId, studyIds = []) {
+  const response = await apiClient.post(`/tickets/${ticketId}/marcar-etiquetas-impresas/`, {
+    study_ids: Array.isArray(studyIds) ? studyIds : []
+  })
+  return {
+    ...response,
+    ticket: response?.ticket ? normalizeTicket(response.ticket) : null
   }
 }
 

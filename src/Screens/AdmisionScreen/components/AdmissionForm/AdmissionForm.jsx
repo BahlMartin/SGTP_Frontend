@@ -4,6 +4,7 @@ import TriageSelector from '../TriageSelector/TriageSelector'
 import StudiesSelector from '../../../../components/StudiesSelector/StudiesSelector'
 import PatientDropdown from '../../../../components/PatientDropdown/PatientDropdown'
 import { searchPatientsApi } from '../../../../services/ticketService'
+import { splitAffiliateNumber, composeAffiliateNumber, normalizeAffiliateSuffix } from '../../../../utils/affiliateNumber.utils'
 import './AdmissionForm.css'
 
 /**
@@ -22,9 +23,16 @@ export default function AdmissionForm({
   pendingTurnosCount = 0,
   isCallingTurno = false,
   hasActiveTurno = false,
+  isReceptionTurnActive = false,
+  onCallNumberBlur = () => {},
   onCancelActiveTurno = () => {},
   onLoadPatient = () => {},
   onFieldChange = () => {},
+  numeroAfiliadoBase,
+  numeroAfiliadoSufijo,
+  onAffiliateBaseChange,
+  onAffiliateSuffixChange,
+  onAffiliateSuffixBlur,
   onToggleStudy = () => {},
   onOpenOcrModal = () => {},
   onSubmitForm = () => {},
@@ -36,6 +44,41 @@ export default function AdmissionForm({
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef(null)
   const searchRequestIdRef = useRef(0)
+  const searchTimeoutRef = useRef(null)
+  const searchAbortRef = useRef(null)
+
+  const fallbackParts = splitAffiliateNumber(formData.numeroAfiliado)
+  const effectiveAffiliateBase =
+    numeroAfiliadoBase !== undefined ? numeroAfiliadoBase : fallbackParts.base
+  const effectiveAffiliateSuffix =
+    numeroAfiliadoSufijo !== undefined ? numeroAfiliadoSufijo : fallbackParts.suffix
+
+  const handleBaseChange = (rawVal) => {
+    if (onAffiliateBaseChange) {
+      onAffiliateBaseChange(rawVal)
+    } else {
+      const cleanBase = String(rawVal || '').replace(/\D/g, '')
+      onFieldChange('numeroAfiliado', composeAffiliateNumber(cleanBase, effectiveAffiliateSuffix))
+    }
+  }
+
+  const handleSuffixChange = (rawVal) => {
+    if (onAffiliateSuffixChange) {
+      onAffiliateSuffixChange(rawVal)
+    } else {
+      const cleanSuffix = String(rawVal || '').replace(/\D/g, '').slice(0, 2)
+      onFieldChange('numeroAfiliado', composeAffiliateNumber(effectiveAffiliateBase, cleanSuffix))
+    }
+  }
+
+  const handleSuffixBlur = () => {
+    if (onAffiliateSuffixBlur) {
+      onAffiliateSuffixBlur()
+    } else if (effectiveAffiliateBase) {
+      const padded = normalizeAffiliateSuffix(effectiveAffiliateSuffix)
+      onFieldChange('numeroAfiliado', composeAffiliateNumber(effectiveAffiliateBase, padded))
+    }
+  }
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -46,6 +89,12 @@ export default function AdmissionForm({
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+      if (searchAbortRef.current) {
+        searchAbortRef.current.abort()
+      }
     }
   }, [])
 
@@ -53,27 +102,43 @@ export default function AdmissionForm({
     const numericOnlyValue = event.target.value.replace(/\D/g, '')
     onFieldChange('dni', numericOnlyValue)
 
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+      searchTimeoutRef.current = null
+    }
+    if (searchAbortRef.current) {
+      searchAbortRef.current.abort()
+      searchAbortRef.current = null
+    }
+
     if (numericOnlyValue.length >= 2) {
       setIsSearching(true)
       setShowDropdown(true)
       const currentRequestId = ++searchRequestIdRef.current
 
-      searchPatientsApi(numericOnlyValue)
-        .then((results) => {
-          if (searchRequestIdRef.current === currentRequestId) {
-            setSearchResults(results || [])
-          }
-        })
-        .catch(() => {
-          if (searchRequestIdRef.current === currentRequestId) {
-            setSearchResults([])
-          }
-        })
-        .finally(() => {
-          if (searchRequestIdRef.current === currentRequestId) {
-            setIsSearching(false)
-          }
-        })
+      searchTimeoutRef.current = setTimeout(() => {
+        const controller = new AbortController()
+        searchAbortRef.current = controller
+
+        searchPatientsApi(numericOnlyValue, { scope: 'dni', signal: controller.signal })
+          .then((results) => {
+            if (searchRequestIdRef.current === currentRequestId) {
+              setSearchResults(results || [])
+              setShowDropdown(true)
+            }
+          })
+          .catch((err) => {
+            if (err?.name === 'AbortError') return
+            if (searchRequestIdRef.current === currentRequestId) {
+              setSearchResults([])
+            }
+          })
+          .finally(() => {
+            if (searchRequestIdRef.current === currentRequestId) {
+              setIsSearching(false)
+            }
+          })
+      }, 250)
     } else {
       searchRequestIdRef.current += 1
       setSearchResults([])
@@ -89,11 +154,22 @@ export default function AdmissionForm({
   }
 
   const handleResetForm = () => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+      searchTimeoutRef.current = null
+    }
+    if (searchAbortRef.current) {
+      searchAbortRef.current.abort()
+      searchAbortRef.current = null
+    }
     setSearchResults([])
     setShowDropdown(false)
+    setIsSearching(false)
     searchRequestIdRef.current += 1
     onResetForm()
   }
+
+  const isCallLocked = Boolean(isReceptionTurnActive)
 
   return (
     <div className="admission-form-card">
@@ -220,6 +296,8 @@ export default function AdmissionForm({
             </label>
             <div
               className={`admission-form__call-group ${
+                isCallLocked ? 'admission-form__call-group--locked' : ''
+              } ${
                 (ticketNumberError || validationErrors.numeroLlamado)
                   ? 'admission-form__call-group--error'
                   : ''
@@ -229,7 +307,11 @@ export default function AdmissionForm({
                 id="admission-call-prefix"
                 className="admission-form__prefix-select"
                 value={formData.prefijoLlamado || 'Ext'}
+                disabled={isCallLocked || isSubmitting}
                 onChange={(event) => onFieldChange('prefijoLlamado', event.target.value)}
+                onBlur={(event) => {
+                  if (!isCallLocked) onCallNumberBlur(event)
+                }}
                 aria-label="Prefijo de llamado externo"
               >
                 <option value="Ext">Ext (Extracción)</option>
@@ -249,11 +331,18 @@ export default function AdmissionForm({
                 className="admission-form__seq-input"
                 placeholder="ej: 01"
                 value={formData.numeroLlamado || ''}
+                readOnly={isCallLocked}
+                disabled={isCallLocked || isSubmitting}
                 onChange={(event) => {
+                  if (isCallLocked) return
                   const numericOnly = event.target.value.replace(/\D/g, '')
                   onFieldChange('numeroLlamado', numericOnly)
                 }}
+                onBlur={(event) => {
+                  if (!isCallLocked) onCallNumberBlur(event)
+                }}
                 aria-required="true"
+                aria-readonly={isCallLocked}
                 aria-invalid={Boolean(ticketNumberError || validationErrors.numeroLlamado)}
               />
             </div>
@@ -332,26 +421,51 @@ export default function AdmissionForm({
 
           <div className="admission-form__field">
             <label htmlFor="admission-patient-numero-afiliado" className="admission-form__label">
-              N° de afiliado
+              N° de afiliado <span className="admission-form__required-dot">*</span>
             </label>
-            <input
-              id="admission-patient-numero-afiliado"
-              type="text"
-              inputMode="numeric"
-              className={`admission-form__input ${
-                validationErrors.numeroAfiliado ? 'admission-form__input--error' : ''
+            <div
+              className={`admission-form__call-group ${
+                validationErrors.numeroAfiliado ? 'admission-form__call-group--error' : ''
               }`}
-              placeholder="Número de afiliado"
-              value={formData.numeroAfiliado}
-              onChange={(event) =>
-                onFieldChange('numeroAfiliado', event.target.value.replace(/\D/g, ''))
-              }
-              pattern="[0-9]*"
-              autoComplete="off"
-              aria-invalid={Boolean(validationErrors.numeroAfiliado)}
-            />
+            >
+              <input
+                id="admission-patient-numero-afiliado"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                className="admission-form__affiliate-base-input"
+                placeholder="ej: 34567"
+                value={effectiveAffiliateBase}
+                onChange={(event) => handleBaseChange(event.target.value)}
+                onBlur={handleSuffixBlur}
+                autoComplete="off"
+                aria-required="true"
+                aria-invalid={Boolean(validationErrors.numeroAfiliado)}
+              />
+
+              <span className="admission-form__call-dash">-</span>
+
+              <input
+                id="admission-patient-numero-afiliado-sufijo"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={2}
+                className="admission-form__affiliate-suffix-input"
+                placeholder="00"
+                value={effectiveAffiliateSuffix}
+                onChange={(event) => handleSuffixChange(event.target.value)}
+                onBlur={handleSuffixBlur}
+                autoComplete="off"
+                aria-label="Sufijo de número de afiliado"
+                aria-required="true"
+                aria-invalid={Boolean(validationErrors.numeroAfiliado)}
+              />
+            </div>
             {validationErrors.numeroAfiliado && (
-              <span className="admission-form__error-text">{validationErrors.numeroAfiliado}</span>
+              <span className="admission-form__error-text" role="alert">
+                {validationErrors.numeroAfiliado}
+              </span>
             )}
           </div>
         </div>

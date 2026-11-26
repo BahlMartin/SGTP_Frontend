@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { AlertCircle, X, Check, UserPen, Loader2 } from 'lucide-react'
+import {
+  splitAffiliateNumber,
+  composeAffiliateNumber,
+  normalizeAffiliateSuffix
+} from '../../utils/affiliateNumber.utils'
 import './EditPatientModal.css'
 
 function getInitialFormData(patient) {
@@ -8,17 +13,22 @@ function getInitialFormData(patient) {
       nombre: '',
       apellidos: '',
       dni: '',
-      obra_social: 'Particular',
-      num_obra_social: ''
+      obra_social: 'IOMA',
+      num_obra_social_base: '',
+      num_obra_social_sufijo: ''
     }
   }
+
+  const rawAffiliate = patient.num_obra_social || patient.numeroAfiliado || ''
+  const { base, suffix } = splitAffiliateNumber(rawAffiliate)
 
   return {
     nombre: patient.nombre || '',
     apellidos: patient.apellidos || patient.apellido || '',
     dni: patient.dni ? String(patient.dni) : '',
-    obra_social: patient.obra_social || patient.obraSocial || 'Particular',
-    num_obra_social: patient.num_obra_social || patient.numeroAfiliado || ''
+    obra_social: patient.obra_social || patient.obraSocial || 'IOMA',
+    num_obra_social_base: base,
+    num_obra_social_sufijo: suffix
   }
 }
 
@@ -61,6 +71,35 @@ export default function EditPatientModal({
     }))
   }
 
+  const handleAffiliateBaseChange = (e) => {
+    const cleanBase = e.target.value.replace(/\D/g, '')
+    setFormData((prev) => ({
+      ...prev,
+      num_obra_social_base: cleanBase
+    }))
+  }
+
+  const handleAffiliateSuffixChange = (e) => {
+    const cleanSuffix = e.target.value.replace(/\D/g, '').slice(0, 2)
+    setFormData((prev) => ({
+      ...prev,
+      num_obra_social_sufijo: cleanSuffix
+    }))
+  }
+
+  const handleAffiliateBlur = () => {
+    setFormData((prev) => {
+      const cleanBase = String(prev.num_obra_social_base || '').replace(/\D/g, '')
+      if (!cleanBase) {
+        return { ...prev, num_obra_social_sufijo: '' }
+      }
+      return {
+        ...prev,
+        num_obra_social_sufijo: normalizeAffiliateSuffix(prev.num_obra_social_sufijo)
+      }
+    })
+  }
+
   const validateForm = () => {
     if (!formData.nombre.trim() || formData.nombre.trim().length < 2) {
       return 'El nombre es obligatorio y debe contener al menos 2 letras.'
@@ -73,7 +112,10 @@ export default function EditPatientModal({
       return 'El DNI es obligatorio y debe ser un número válido positivo.'
     }
     if (!formData.obra_social.trim()) {
-      return 'Debe especificar la obra social o cobertura médica (ej: Particular, IOMA, OSDE).'
+      return 'Debe especificar la obra social o cobertura médica (ej: IOMA, OSDE).'
+    }
+    if (!String(formData.num_obra_social_base || '').replace(/\D/g, '')) {
+      return 'El número de afiliado es obligatorio.'
     }
     return null
   }
@@ -88,6 +130,11 @@ export default function EditPatientModal({
       return
     }
 
+    const composedAffiliate = composeAffiliateNumber(
+      formData.num_obra_social_base,
+      formData.num_obra_social_sufijo
+    )
+
     setIsSaving(true)
     try {
       const payload = {
@@ -95,7 +142,7 @@ export default function EditPatientModal({
         apellidos: formData.apellidos.trim(),
         dni: Number(String(formData.dni).replace(/\D/g, '')),
         obra_social: formData.obra_social.trim(),
-        num_obra_social: formData.num_obra_social.trim()
+        num_obra_social: composedAffiliate
       }
 
       await onSubmit(patientId, payload)
@@ -213,23 +260,47 @@ export default function EditPatientModal({
                 type="text"
                 required
                 disabled={isSaving}
-                placeholder="ej: Particular, IOMA, OSDE"
+                placeholder="ej: IOMA, OSDE, PAMI"
                 value={formData.obra_social}
                 onChange={handleChange}
               />
             </div>
 
             <div className="edit-patient-modal__field">
-              <label htmlFor="edit-patient-num-afiliado">N° de Afiliado</label>
-              <input
-                id="edit-patient-num-afiliado"
-                name="num_obra_social"
-                type="text"
-                disabled={isSaving}
-                placeholder="ej: 04-8921-02 (opcional)"
-                value={formData.num_obra_social}
-                onChange={handleChange}
-              />
+              <label htmlFor="edit-patient-num-afiliado">N° de Afiliado *</label>
+              <div className="edit-patient-modal__affiliate-group">
+                <input
+                  id="edit-patient-num-afiliado"
+                  name="num_obra_social_base"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  required
+                  disabled={isSaving}
+                  className="edit-patient-modal__affiliate-base"
+                  placeholder="ej: 34567"
+                  value={formData.num_obra_social_base}
+                  onChange={handleAffiliateBaseChange}
+                  onBlur={handleAffiliateBlur}
+                />
+                <span className="edit-patient-modal__affiliate-dash">-</span>
+                <input
+                  id="edit-patient-num-afiliado-sufijo"
+                  name="num_obra_social_sufijo"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={2}
+                  required
+                  disabled={isSaving}
+                  className="edit-patient-modal__affiliate-suffix"
+                  placeholder="00"
+                  aria-label="Sufijo de número de afiliado"
+                  value={formData.num_obra_social_sufijo}
+                  onChange={handleAffiliateSuffixChange}
+                  onBlur={handleAffiliateBlur}
+                />
+              </div>
             </div>
           </div>
 

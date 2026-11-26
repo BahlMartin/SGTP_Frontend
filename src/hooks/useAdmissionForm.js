@@ -1,6 +1,11 @@
 import { useState, useCallback, useEffect } from 'react'
 import { INITIAL_ADMISSION_FORM_STATE } from '../constants/admision.constants'
 import { validatePersonName, validateDni } from '../utils/validators'
+import {
+  normalizeAffiliateSuffix,
+  splitAffiliateNumber,
+  composeAffiliateNumber
+} from '../utils/affiliateNumber.utils'
 
 export const ADMISSION_FORM_DRAFT_STORAGE_KEY = 'sgtp_admision_form_draft'
 export const ADMISSION_STATE_CHANGED_EVENT = 'sgtp:admision_state_changed'
@@ -10,6 +15,22 @@ const PREFIX_TO_TRIAGE_MAP = {
   Med: 'Médicos',
   Ext: 'Extracción sin turno',
   Csl: 'Otro'
+}
+
+function createReservationToken() {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID()
+    }
+  } catch {
+    // Fallback para entornos sin crypto.randomUUID
+  }
+  return `res-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function getNormalizedAffiliateComparable(value) {
+  const { base, suffix } = splitAffiliateNumber(value)
+  return composeAffiliateNumber(base, suffix)
 }
 
 function readAdmissionFormDraft() {
@@ -24,7 +45,20 @@ function readAdmissionFormDraft() {
   }
 }
 
-function isAdmissionDraftEmpty(formData, existingPatient) {
+function getInitialAffiliateParts(draft) {
+  if (draft && (draft.numeroAfiliadoBase !== undefined || draft.numeroAfiliadoSufijo !== undefined)) {
+    return {
+      base: String(draft.numeroAfiliadoBase ?? '').replace(/\D/g, ''),
+      suffix: String(draft.numeroAfiliadoSufijo ?? '').replace(/\D/g, '').slice(0, 2)
+    }
+  }
+  if (draft?.formData?.numeroAfiliado) {
+    return splitAffiliateNumber(draft.formData.numeroAfiliado)
+  }
+  return { base: '', suffix: '' }
+}
+
+function isAdmissionDraftEmpty(formData, existingPatient, numeroAfiliadoBase = '', numeroAfiliadoSufijo = '') {
   if (existingPatient) return false
   if (!formData || typeof formData !== 'object') return true
 
@@ -32,6 +66,8 @@ function isAdmissionDraftEmpty(formData, existingPatient) {
     !formData.pacienteId &&
     !String(formData.dni || '').trim() &&
     !String(formData.numeroAfiliado || '').trim() &&
+    !String(numeroAfiliadoBase || '').trim() &&
+    !String(numeroAfiliadoSufijo || '').trim() &&
     !String(formData.nombre || '').trim() &&
     !String(formData.apellido || '').trim() &&
     (formData.obraSocial ?? INITIAL_ADMISSION_FORM_STATE.obraSocial) ===
@@ -64,15 +100,32 @@ export function useAdmissionForm() {
   const [formData, setFormData] = useState(() => {
     const draft = readAdmissionFormDraft()
     if (draft?.formData && typeof draft.formData === 'object') {
+      const initialParts = getInitialAffiliateParts(draft)
+      const composed = composeAffiliateNumber(initialParts.base, initialParts.suffix)
       return {
         ...INITIAL_ADMISSION_FORM_STATE,
         ...draft.formData,
+        numeroAfiliado: composed || String(draft.formData.numeroAfiliado || ''),
         selectedStudies: Array.isArray(draft.formData.selectedStudies)
           ? draft.formData.selectedStudies
           : []
       }
     }
     return INITIAL_ADMISSION_FORM_STATE
+  })
+  const [numeroAfiliadoBase, setNumeroAfiliadoBase] = useState(() => {
+    const draft = readAdmissionFormDraft()
+    return getInitialAffiliateParts(draft).base
+  })
+  const [numeroAfiliadoSufijo, setNumeroAfiliadoSufijo] = useState(() => {
+    const draft = readAdmissionFormDraft()
+    return getInitialAffiliateParts(draft).suffix
+  })
+  const [reservationToken, setReservationToken] = useState(() => {
+    const draft = readAdmissionFormDraft()
+    return typeof draft?.reservationToken === 'string' && draft.reservationToken.trim()
+      ? draft.reservationToken.trim()
+      : createReservationToken()
   })
   const [validationErrors, setValidationErrors] = useState({})
   const [existingPatient, setExistingPatient] = useState(() => {
@@ -85,12 +138,18 @@ export function useAdmissionForm() {
   useEffect(() => {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
-        if (isAdmissionDraftEmpty(formData, existingPatient)) {
+        if (isAdmissionDraftEmpty(formData, existingPatient, numeroAfiliadoBase, numeroAfiliadoSufijo)) {
           window.localStorage.removeItem(ADMISSION_FORM_DRAFT_STORAGE_KEY)
         } else {
           window.localStorage.setItem(
             ADMISSION_FORM_DRAFT_STORAGE_KEY,
-            JSON.stringify({ formData, existingPatient })
+            JSON.stringify({
+              formData,
+              existingPatient,
+              numeroAfiliadoBase,
+              numeroAfiliadoSufijo,
+              reservationToken
+            })
           )
         }
       }
@@ -98,17 +157,57 @@ export function useAdmissionForm() {
       console.warn('No se pudo persistir el borrador de admisión:', error)
     }
     notifyAdmisionStateChanged()
-  }, [formData, existingPatient])
+  }, [formData, existingPatient, numeroAfiliadoBase, numeroAfiliadoSufijo, reservationToken])
+
+  const resetReservationToken = useCallback(() => {
+    const nextToken = createReservationToken()
+    setReservationToken(nextToken)
+    return nextToken
+  }, [])
+
+  const applyAffiliateMismatchCheck = useCallback(
+    (updatedErrors, nextComposed) => {
+      if (!existingPatient) return updatedErrors
+      const originalRaw = String(
+        existingPatient.numeroAfiliado || existingPatient.num_obra_social || ''
+      ).trim()
+      const originalComparable = getNormalizedAffiliateComparable(originalRaw)
+      const currentComparable = getNormalizedAffiliateComparable(nextComposed)
+      if (originalComparable && currentComparable && originalComparable !== currentComparable) {
+        updatedErrors.numeroAfiliado = `El N° de afiliado no coincide con el registrado (${originalRaw}) para este DNI.`
+      }
+      return updatedErrors
+    },
+    [existingPatient]
+  )
 
   /**
    * Actualiza un campo individual y valida en tiempo real.
    */
   const handleFieldChange = useCallback((fieldName, fieldValue) => {
+    if (fieldName === 'numeroAfiliado') {
+      const parts = splitAffiliateNumber(fieldValue)
+      const composed = composeAffiliateNumber(parts.base, parts.suffix)
+      setNumeroAfiliadoBase(parts.base)
+      setNumeroAfiliadoSufijo(parts.suffix)
+      setFormData((previousFormData) => ({
+        ...previousFormData,
+        numeroAfiliado: composed,
+        ...(previousFormData.numeroAfiliado !== composed ? { pacienteId: null } : {})
+      }))
+      setValidationErrors((previousErrors) => {
+        const updatedErrors = { ...previousErrors }
+        delete updatedErrors.numeroAfiliado
+        return applyAffiliateMismatchCheck(updatedErrors, composed)
+      })
+      return
+    }
+
     setFormData((previousFormData) => ({
       ...previousFormData,
       [fieldName]: fieldValue,
       ...(
-        ['dni', 'nombre', 'apellido', 'numeroAfiliado', 'obraSocial'].includes(fieldName) &&
+        ['dni', 'nombre', 'apellido', 'obraSocial'].includes(fieldName) &&
         previousFormData[fieldName] !== fieldValue
           ? { pacienteId: null }
           : {}
@@ -124,17 +223,6 @@ export function useAdmissionForm() {
       const updatedErrors = { ...previousErrors }
       delete updatedErrors[fieldName]
 
-      // Validación reactiva: si el paciente ya existe en el sistema y se ingresa un número de afiliado distinto
-      if (fieldName === 'numeroAfiliado' && existingPatient) {
-        const originalAffiliate = String(
-          existingPatient.numeroAfiliado || existingPatient.num_obra_social || ''
-        ).trim()
-        const newAffiliate = String(fieldValue).trim()
-        if (originalAffiliate && newAffiliate && originalAffiliate !== newAffiliate) {
-          updatedErrors.numeroAfiliado = `El N° de afiliado no coincide con el registrado (${originalAffiliate}) para este DNI.`
-        }
-      }
-
       if (fieldName === 'dni' && existingPatient) {
         if (String(fieldValue).trim() !== String(existingPatient.dni).trim()) {
           setExistingPatient(null)
@@ -143,7 +231,70 @@ export function useAdmissionForm() {
 
       return updatedErrors
     })
-  }, [existingPatient])
+  }, [existingPatient, applyAffiliateMismatchCheck])
+
+  const handleAffiliateBaseChange = useCallback(
+    (rawBaseValue) => {
+      const cleanBase = String(rawBaseValue ?? '').replace(/\D/g, '')
+      const composed = composeAffiliateNumber(cleanBase, numeroAfiliadoSufijo)
+      setNumeroAfiliadoBase(cleanBase)
+      setFormData((previousFormData) => ({
+        ...previousFormData,
+        numeroAfiliado: composed,
+        ...(previousFormData.numeroAfiliado !== composed ? { pacienteId: null } : {})
+      }))
+      setValidationErrors((previousErrors) => {
+        const updatedErrors = { ...previousErrors }
+        delete updatedErrors.numeroAfiliado
+        return applyAffiliateMismatchCheck(updatedErrors, composed)
+      })
+    },
+    [numeroAfiliadoSufijo, applyAffiliateMismatchCheck]
+  )
+
+  const handleAffiliateSuffixChange = useCallback(
+    (rawSuffixValue) => {
+      const cleanSuffix = String(rawSuffixValue ?? '').replace(/\D/g, '').slice(0, 2)
+      const composed = composeAffiliateNumber(numeroAfiliadoBase, cleanSuffix)
+      setNumeroAfiliadoSufijo(cleanSuffix)
+      setFormData((previousFormData) => ({
+        ...previousFormData,
+        numeroAfiliado: composed,
+        ...(previousFormData.numeroAfiliado !== composed ? { pacienteId: null } : {})
+      }))
+      setValidationErrors((previousErrors) => {
+        const updatedErrors = { ...previousErrors }
+        delete updatedErrors.numeroAfiliado
+        return applyAffiliateMismatchCheck(updatedErrors, composed)
+      })
+    },
+    [numeroAfiliadoBase, applyAffiliateMismatchCheck]
+  )
+
+  const handleAffiliateSuffixBlur = useCallback(() => {
+    const cleanBase = String(numeroAfiliadoBase ?? '').replace(/\D/g, '')
+    if (!cleanBase) {
+      setNumeroAfiliadoSufijo('')
+      setFormData((previousFormData) => ({
+        ...previousFormData,
+        numeroAfiliado: ''
+      }))
+      return
+    }
+
+    const paddedSuffix = normalizeAffiliateSuffix(numeroAfiliadoSufijo)
+    const composed = composeAffiliateNumber(cleanBase, paddedSuffix)
+    setNumeroAfiliadoSufijo(paddedSuffix)
+    setFormData((previousFormData) => ({
+      ...previousFormData,
+      numeroAfiliado: composed
+    }))
+    setValidationErrors((previousErrors) => {
+      const updatedErrors = { ...previousErrors }
+      delete updatedErrors.numeroAfiliado
+      return applyAffiliateMismatchCheck(updatedErrors, composed)
+    })
+  }, [numeroAfiliadoBase, numeroAfiliadoSufijo, applyAffiliateMismatchCheck])
 
   /**
    * Agrega o remueve un estudio del listado seleccionado.
@@ -216,12 +367,18 @@ export function useAdmissionForm() {
   const handleLoadPatient = useCallback((patientData) => {
     if (!patientData) return
 
+    const rawAffiliate = String(patientData.numeroAfiliado || patientData.num_obra_social || '')
+    const { base, suffix } = splitAffiliateNumber(rawAffiliate)
+    const composed = composeAffiliateNumber(base, suffix)
+
     setExistingPatient(patientData)
+    setNumeroAfiliadoBase(base)
+    setNumeroAfiliadoSufijo(suffix)
     setFormData((previousFormData) => ({
       ...previousFormData,
       pacienteId: patientData.id_paciente || patientData.id || null,
       dni: String(patientData.dni || ''),
-      numeroAfiliado: String(patientData.numeroAfiliado || patientData.num_obra_social || ''),
+      numeroAfiliado: composed,
       nombre: patientData.nombre || '',
       apellido: patientData.apellido || patientData.apellidos || '',
       obraSocial: patientData.obra_social || patientData.obraSocial || 'IOMA'
@@ -256,14 +413,18 @@ export function useAdmissionForm() {
       calculatedErrors.obraSocial = 'El nombre de la obra social es obligatorio.'
     }
 
-    // Regla de Integridad: Si el paciente está registrado previamente, el N° de afiliado debe coincidir
-    if (existingPatient && existingPatient.dni) {
-      const originalAffiliate = String(
+    const cleanBase = String(numeroAfiliadoBase || '').replace(/\D/g, '')
+    if (!cleanBase) {
+      calculatedErrors.numeroAfiliado = 'El número de afiliado es obligatorio.'
+    } else if (existingPatient && existingPatient.dni) {
+      // Regla de Integridad: Si el paciente está registrado previamente, el N° de afiliado debe coincidir
+      const originalRaw = String(
         existingPatient.numeroAfiliado || existingPatient.num_obra_social || ''
       ).trim()
-      const currentAffiliate = String(formData.numeroAfiliado || '').trim()
-      if (originalAffiliate && currentAffiliate && originalAffiliate !== currentAffiliate) {
-        calculatedErrors.numeroAfiliado = `El N° de afiliado no coincide con el registrado (${originalAffiliate}) para este DNI.`
+      const originalComparable = getNormalizedAffiliateComparable(originalRaw)
+      const currentComparable = composeAffiliateNumber(cleanBase, numeroAfiliadoSufijo)
+      if (originalComparable && currentComparable && originalComparable !== currentComparable) {
+        calculatedErrors.numeroAfiliado = `El N° de afiliado no coincide con el registrado (${originalRaw}) para este DNI.`
       }
     }
 
@@ -282,7 +443,7 @@ export function useAdmissionForm() {
 
     setValidationErrors(calculatedErrors)
     return Object.keys(calculatedErrors).length === 0
-  }, [formData, existingPatient])
+  }, [formData, existingPatient, numeroAfiliadoBase, numeroAfiliadoSufijo])
 
   /**
    * Restablece únicamente los campos editables manteniendo el turno convocado activo
@@ -312,6 +473,8 @@ export function useAdmissionForm() {
           PREFIX_TO_TRIAGE_MAP[keptPrefix] || INITIAL_ADMISSION_FORM_STATE.selectedTriage
       }
     })
+    setNumeroAfiliadoBase('')
+    setNumeroAfiliadoSufijo('')
     setValidationErrors({})
     setExistingPatient(null)
   }, [])
@@ -321,8 +484,11 @@ export function useAdmissionForm() {
    */
   const resetAdmissionForm = useCallback(() => {
     setFormData(INITIAL_ADMISSION_FORM_STATE)
+    setNumeroAfiliadoBase('')
+    setNumeroAfiliadoSufijo('')
     setValidationErrors({})
     setExistingPatient(null)
+    setReservationToken(createReservationToken())
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem(ADMISSION_FORM_DRAFT_STORAGE_KEY)
@@ -335,14 +501,21 @@ export function useAdmissionForm() {
 
   return {
     formData,
+    numeroAfiliadoBase,
+    numeroAfiliadoSufijo,
+    reservationToken,
     validationErrors,
     existingPatient,
     handleFieldChange,
+    handleAffiliateBaseChange,
+    handleAffiliateSuffixChange,
+    handleAffiliateSuffixBlur,
     handleToggleStudy,
     handleSetStudies,
     handleLoadPatient,
     validateAdmissionForm,
     resetAdmissionForm,
+    resetReservationToken,
     clearEditableFieldsKeepTurno,
     resetEditableFields: clearEditableFieldsKeepTurno
   }

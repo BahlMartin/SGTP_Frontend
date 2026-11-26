@@ -141,7 +141,7 @@ export default function PatientInAttentionCard({
                   <ShieldCheck className="patient-ticket__pill-icon" size={14} />
                   <span className="patient-ticket__pill-label">N° Afiliado:</span>
                   <strong className="patient-ticket__pill-value">
-                    {patientInBox.paciente_numero_afiliado || '1'}
+                    {patientInBox.paciente_numero_afiliado || 'Sin informar'}
                   </strong>
                 </div>
 

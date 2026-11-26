@@ -189,6 +189,12 @@ body.ticket-printing #printable-ticket {
   body.ticket-printing #printable-ticket * {
     visibility: visible;
   }
+
+  body.labels-printing #printable-ticket,
+  body.labels-printing #printable-ticket * {
+    display: none !important;
+    visibility: hidden !important;
+  }
 }
 
 /* Banner de fecha de retiro estimada */

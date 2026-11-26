@@ -54,7 +54,39 @@ export const receptionService = {
     return apiClient.post(`/turnos-recepcion/${id}/cancelar/`, {
       motivo: String(motivo || '').trim()
     })
+  },
+
+  /**
+   * Reserva temporalmente un número de llamado manual en mostrador para sincronizarlo con el Tótem.
+   * @param {{ prefijo: string, numero: string|number, reservationToken: string }} data
+   */
+  async reservarNumeroManual({ prefijo, numero, reservationToken }) {
+    return reservarNumeroManualApi({ prefijo, numero, reservationToken })
+  },
+
+  /**
+   * Libera una reserva manual activa asociada al reservationToken.
+   * @param {string} reservationToken
+   */
+  async liberarReservaManual(reservationToken) {
+    return liberarReservaManualApi(reservationToken)
   }
+}
+
+export async function reservarNumeroManualApi({ prefijo, numero, reservationToken }) {
+  return apiClient.post('/turnos-recepcion/reservar-manual/', {
+    prefijo: String(prefijo || '').trim(),
+    numero: Number(String(numero ?? '').replace(/\D/g, '')),
+    reservation_token: String(reservationToken || '').trim()
+  })
+}
+
+export async function liberarReservaManualApi(reservationToken) {
+  const token = String(reservationToken || '').trim()
+  if (!token) return { released: false }
+  return apiClient.post('/turnos-recepcion/liberar-reserva-manual/', {
+    reservation_token: token
+  })
 }
 
 export default receptionService

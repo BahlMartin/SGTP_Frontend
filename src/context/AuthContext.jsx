@@ -4,6 +4,24 @@ import { normalizePersonFields } from '../utils/personName.utils'
 
 const STORAGE_KEY = 'sgtp_session_user'
 const TOKEN_KEY = 'token'
+const ADMISSION_DRAFT_KEY = 'sgtp_admision_form_draft'
+const ADMISSION_ACTIVE_TURNO_KEY = 'sgtp_admision_active_turno'
+const ADMISSION_STATE_CHANGED_EVENT = 'sgtp:admision_state_changed'
+
+function clearLocalSessionData() {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(ADMISSION_DRAFT_KEY)
+    localStorage.removeItem(ADMISSION_ACTIVE_TURNO_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(ADMISSION_STATE_CHANGED_EVENT))
+    }
+  } catch (e) {
+    console.warn('Error al limpiar almacenamiento local:', e)
+  }
+}
 
 export const AuthContext = createContext({
   isLogged: false,
@@ -54,13 +72,7 @@ export const AuthContextProvider = ({ children }) => {
     const handleUnauthorized = () => {
       setUserData(null)
       setIsLogged(false)
-      try {
-        localStorage.removeItem(STORAGE_KEY)
-        localStorage.removeItem(TOKEN_KEY)
-        sessionStorage.removeItem(TOKEN_KEY)
-      } catch (e) {
-        console.warn('Error al limpiar almacenamiento local:', e)
-      }
+      clearLocalSessionData()
     }
 
     const handleStorageChange = (event) => {
@@ -126,13 +138,7 @@ export const AuthContextProvider = ({ children }) => {
       if (!blockedByActiveAttention) {
         setUserData(null)
         setIsLogged(false)
-        try {
-          localStorage.removeItem(STORAGE_KEY)
-          localStorage.removeItem(TOKEN_KEY)
-          sessionStorage.removeItem(TOKEN_KEY)
-        } catch (e) {
-          console.warn('Error al limpiar almacenamiento local:', e)
-        }
+        clearLocalSessionData()
       }
     }
   }, [])

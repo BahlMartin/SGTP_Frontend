@@ -110,6 +110,10 @@
   padding: 9px 18px;
   font-size: 0.92rem;
   border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -156,6 +160,62 @@
   font-weight: 700;
 }
 
+.ticket-modal__print-confirm {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  background: #f0f9ff;
+}
+
+.ticket-modal__print-confirm-text {
+  margin: 0 0 8px;
+  color: #0c4a6e;
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+
+.ticket-modal__print-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ticket-modal__confirm-yes-btn,
+.ticket-modal__confirm-no-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.ticket-modal__confirm-yes-btn {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.ticket-modal__confirm-yes-btn:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.ticket-modal__confirm-no-btn {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.ticket-modal__confirm-no-btn:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.ticket-modal__confirm-yes-btn:disabled,
+.ticket-modal__confirm-no-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .ticket-modal__labels-modes {
   display: flex;
   flex-wrap: wrap;
@@ -187,20 +247,79 @@
   cursor: pointer;
 }
 
+.ticket-modal__label-option--cancelled {
+  background: #fef2f2;
+  border-color: #fecaca;
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
 .ticket-modal__label-option > span {
   display: flex;
   min-width: 0;
+  flex: 1;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+}
+
+.ticket-modal__label-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
 .ticket-modal__label-option strong {
   font-size: 0.82rem;
+  word-break: break-word;
+}
+
+.ticket-modal__label-name--cancelled {
+  text-decoration: line-through;
+  color: #991b1b;
+}
+
+.ticket-modal__label-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ticket-modal__label-badge--added {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.ticket-modal__label-badge--modified {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.ticket-modal__label-badge--printed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.ticket-modal__label-badge--cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .ticket-modal__label-option small {
   color: #64748b;
   font-size: 0.74rem;
+}
+
+.ticket-modal__label-cancel-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #b91c1c !important;
+  font-weight: 600;
 }
 
 .ticket-modal__labels-empty,
@@ -213,53 +332,68 @@
   color: #b91c1c;
 }
 
+/* Contenedor de etiquetas para impresión continua LP4206D (50-58mm) */
 #printable-study-labels {
   display: none;
 }
 
 .ticket-study-label {
   box-sizing: border-box;
-  width: 50mm;
-  height: 20mm;
-  padding: 1.4mm 2mm;
+  width: 48mm;
+  min-height: 18mm;
+  height: auto;
+  padding: 1.5mm 1.5mm;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.5mm;
-  overflow: hidden;
-  color: #000;
-  background: #fff;
+  gap: 0.6mm;
+  color: #000000;
+  background: #ffffff;
   font-family: Arial, sans-serif;
-  line-height: 1.05;
-  page-break-after: always;
-  break-after: page;
+  line-height: 1.15;
+  border-bottom: 0.3mm dashed #475569;
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .ticket-study-label:last-child {
-  page-break-after: auto;
-  break-after: auto;
+  border-bottom: 0;
 }
 
-.ticket-study-label__patient {
-  overflow: hidden;
+.ticket-study-label__patient,
+.ticket-study-label__study {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+}
+
+.ticket-study-label__text--lg {
   font-size: 8pt;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.ticket-study-label__text--md {
+  font-size: 7pt;
+}
+
+.ticket-study-label__text--sm {
+  font-size: 6.2pt;
+}
+
+.ticket-study-label__text--xs {
+  font-size: 5.5pt;
 }
 
 .ticket-study-label__dni,
 .ticket-study-label__sample {
   font-size: 6.5pt;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
 }
 
-.ticket-study-label__study {
-  overflow: hidden;
-  font-size: 8pt;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Reglas globales de aislamiento para la impresión térmica */
+/* Reglas globales de aislamiento para la impresión térmica de tickets (80mm) */
 body.ticket-printing {
   width: 80mm !important;
   min-width: 0 !important;
@@ -297,27 +431,94 @@ body.ticket-printing .ticket-modal__card {
   max-height: none !important;
   overflow: visible !important;
   padding: 0 !important;
+  border-radius: 0 !important;
 }
 
-body.ticket-printing .ticket-modal__card> :not(#printable-ticket) {
+body.ticket-printing .ticket-modal__card > :not(#printable-ticket) {
   display: none !important;
 }
 
+/* Reglas globales de aislamiento para la impresión continua de etiquetas (50mm) */
+body.labels-printing {
+  width: 50mm !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+}
+
+body.labels-printing .ticket-print-hidden {
+  display: none !important;
+}
+
+body.labels-printing .ticket-print-ancestor {
+  display: block !important;
+  position: static !important;
+  width: 50mm !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+}
+
+body.labels-printing .ticket-modal {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  padding: 0 !important;
+}
+
+body.labels-printing .ticket-modal__card {
+  background: transparent !important;
+  box-shadow: none !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+body.labels-printing .ticket-modal__card > :not(#printable-study-labels) {
+  display: none !important;
+}
+
+body.labels-printing #printable-study-labels {
+  display: block !important;
+  width: 48mm !important;
+  margin: 0 auto !important;
+}
+
 @media print {
-  @page {
-    size: 80mm auto;
-    margin: 0;
+  html {
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  html,
-  body {
+  body.ticket-printing {
     width: 80mm !important;
     min-width: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
   }
 
-  body.ticket-printing * {
+  body.labels-printing {
+    width: 50mm !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.ticket-printing *,
+  body.labels-printing * {
     visibility: hidden;
+  }
+
+  body.labels-printing #printable-study-labels,
+  body.labels-printing #printable-study-labels * {
+    visibility: visible;
   }
 }

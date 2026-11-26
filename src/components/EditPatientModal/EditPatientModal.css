@@ -148,6 +148,50 @@
   cursor: not-allowed;
 }
 
+.edit-patient-modal__affiliate-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.edit-patient-modal__affiliate-group:focus-within {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.edit-patient-modal__field input.edit-patient-modal__affiliate-base,
+.edit-patient-modal__field input.edit-patient-modal__affiliate-suffix {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.edit-patient-modal__field input.edit-patient-modal__affiliate-base {
+  flex: 1;
+  min-width: 0;
+}
+
+.edit-patient-modal__affiliate-dash {
+  padding: 0 6px;
+  font-weight: 700;
+  color: #475569;
+  user-select: none;
+}
+
+.edit-patient-modal__field input.edit-patient-modal__affiliate-suffix {
+  width: 52px;
+  flex: 0 0 52px;
+  text-align: center;
+  background: #f8fafc;
+  border-left: 1px solid #cbd5e1;
+  padding: 9px 6px;
+  font-weight: 700;
+}
+
 /* Botones de acción */
 .edit-patient-modal__actions {
   display: flex;

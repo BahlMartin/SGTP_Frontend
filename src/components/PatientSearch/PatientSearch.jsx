@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Search, UserCheck, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { searchPatientsApi } from '../../services/ticketService'
 import { fetchPatientHistoryApi } from '../../services/patientService'
 import PatientHistoryModal from '../PatientHistoryModal/PatientHistoryModal'
@@ -17,6 +17,9 @@ export default function PatientSearch({ onSelectPatient }) {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const [historyError, setHistoryError] = useState('')
   const searchContainerRef = useRef(null)
+  const debounceTimerRef = useRef(null)
+  const abortControllerRef = useRef(null)
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
     const handleClickOutside = (mouseEvent) => {
@@ -31,31 +34,69 @@ export default function PatientSearch({ onSelectPatient }) {
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
     }
   }, [])
 
-  const handleSearch = async (searchValue) => {
-    const numericValue = searchValue.replace(/\D/g, '')
-    setQuery(numericValue)
+  const handleSearch = (searchValue) => {
+    const sanitizedValue = String(searchValue || '').replace(/[^0-9-]/g, '')
+    setQuery(sanitizedValue)
     setSearchError('')
-    if (!numericValue) {
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = null
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+
+    const hasSearchableChars = sanitizedValue.replace(/-/g, '').trim().length >= 1
+    if (!hasSearchableChars) {
+      requestIdRef.current += 1
+      setIsSearching(false)
       setResults([])
       setShowDropdown(false)
       return
     }
 
     setIsSearching(true)
-    try {
-      const data = await searchPatientsApi(numericValue)
-      setResults(data)
-      setShowDropdown(true)
-    } catch (err) {
-      console.error(err)
-      setSearchError(err.message || 'No se pudo buscar el paciente.')
-      setResults([])
-    } finally {
-      setIsSearching(false)
-    }
+    setShowDropdown(true)
+    const currentRequestId = ++requestIdRef.current
+
+    debounceTimerRef.current = setTimeout(async () => {
+      const controller = new AbortController()
+      abortControllerRef.current = controller
+
+      try {
+        const data = await searchPatientsApi(sanitizedValue, {
+          scope: 'all',
+          signal: controller.signal
+        })
+        if (requestIdRef.current === currentRequestId) {
+          setResults(data)
+          setShowDropdown(true)
+        }
+      } catch (err) {
+        if (err?.name === 'AbortError') return
+        console.error(err)
+        if (requestIdRef.current === currentRequestId) {
+          setSearchError(err.message || 'No se pudo buscar el paciente.')
+          setResults([])
+          setShowDropdown(true)
+        }
+      } finally {
+        if (requestIdRef.current === currentRequestId) {
+          setIsSearching(false)
+        }
+      }
+    }, 250)
   }
 
   const handleSelect = async (patient) => {
@@ -77,6 +118,16 @@ export default function PatientSearch({ onSelectPatient }) {
   }
 
   const clearSearch = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = null
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    requestIdRef.current += 1
+    setIsSearching(false)
     setQuery('')
     setResults([])
     setShowDropdown(false)
@@ -89,13 +140,13 @@ export default function PatientSearch({ onSelectPatient }) {
       <div className="patient-search__input-wrapper">
         <input
           type="text"
-          inputMode="numeric"
-          pattern="[0-9]*"
+          inputMode="text"
           className="patient-search__input"
-          placeholder="DNI o número de afiliado"
+          placeholder="Buscar por DNI o N° de afiliado (ej: 34567-00)"
+          aria-label="Buscar paciente por DNI o número de afiliado"
           value={query}
           onChange={(event) => handleSearch(event.target.value)}
-          onFocus={() => query.trim() && setShowDropdown(true)}
+          onFocus={() => query.replace(/-/g, '').trim() && setShowDropdown(true)}
         />
         {query.length > 0 ? (
           <button
