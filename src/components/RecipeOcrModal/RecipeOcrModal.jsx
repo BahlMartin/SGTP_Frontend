@@ -120,6 +120,38 @@ function isCandidatePenalized(line, study) {
   return matchingTraces.every((trace) => votes[trace.recorteId] === 'down')
 }
 
+function applyLineSelectionWithAutoTraceVotes(line, nextSelectedIds) {
+  const nextVotes = { ...(line.traceVotes || {}) }
+  const nextAutoVotes = { ...(line.autoTraceVotes || {}) }
+  const selectedNumSet = new Set((nextSelectedIds || []).map((id) => Number(id)))
+  const trazos = Array.isArray(line.trazosCoincidentes) ? line.trazosCoincidentes : []
+
+  for (const trace of trazos) {
+    if (!trace || trace.recorteId === undefined || trace.recorteId === null) continue
+    const recId = trace.recorteId
+    const hasSelectedStudy =
+      Array.isArray(trace.estudiosIds) &&
+      trace.estudiosIds.some((id) => selectedNumSet.has(Number(id)))
+
+    if (hasSelectedStudy) {
+      if (!nextVotes[recId]) {
+        nextVotes[recId] = 'up'
+        nextAutoVotes[recId] = true
+      }
+    } else if (nextAutoVotes[recId] && nextVotes[recId] === 'up') {
+      delete nextVotes[recId]
+      delete nextAutoVotes[recId]
+    }
+  }
+
+  return {
+    ...line,
+    selectedIds: nextSelectedIds,
+    traceVotes: nextVotes,
+    autoTraceVotes: nextAutoVotes
+  }
+}
+
 function renderStudyOriginBadge(study) {
   const scoreNumber = Math.round(Number(study.score) || 0)
   if (study.origenDeteccion === 'COMBO_RUTINA') {
@@ -358,6 +390,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
           imagenesMuestraConocidas: knownTraceImages,
           trazosCoincidentes,
           traceVotes: {},
+          autoTraceVotes: {},
           removedTraceCandidates: {},
           discarded: false,
           isAiDiscovered: false,
@@ -401,7 +434,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     }))
   }
 
-  // Marcar / desmarcar un estudio dentro de un renglón específico
+  // Marcar / desmarcar un estudio dentro de un renglón específico y ponderar automáticamente trazos coincidentes
   const toggleStudyInLine = (lineId, studyId) => {
     let wasUnchecked = false
     setLinesReview((prev) =>
@@ -411,12 +444,10 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         if (exists) {
           wasUnchecked = true
         }
-        return {
-          ...line,
-          selectedIds: exists
-            ? line.selectedIds.filter((id) => id !== studyId)
-            : [...line.selectedIds, studyId]
-        }
+        const nextSelectedIds = exists
+          ? line.selectedIds.filter((id) => id !== studyId)
+          : [...line.selectedIds, studyId]
+        return applyLineSelectionWithAutoTraceVotes(line, nextSelectedIds)
       })
     )
     if (wasUnchecked) {
@@ -435,6 +466,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         if (line.id !== lineId) return line
         const currentVotes = line.traceVotes || {}
         const nextVotes = { ...currentVotes }
+        const nextAutoVotes = { ...(line.autoTraceVotes || {}) }
+        delete nextAutoVotes[recorteId]
         if (nextVotes[recorteId] === vote) {
           delete nextVotes[recorteId]
         } else {
@@ -446,7 +479,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         if (!targetTrace || !Array.isArray(targetTrace.estudiosIds)) {
           return {
             ...line,
-            traceVotes: nextVotes
+            traceVotes: nextVotes,
+            autoTraceVotes: nextAutoVotes
           }
         }
 
@@ -499,6 +533,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         return {
           ...line,
           traceVotes: nextVotes,
+          autoTraceVotes: nextAutoVotes,
           candidates: nextCandidates,
           selectedIds: nextSelectedIds,
           removedTraceCandidates: nextRemoved
@@ -514,9 +549,24 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
       setLineSearchQuery('')
     }
     setLinesReview((prev) =>
-      prev.map((line) =>
-        line.id === lineId ? { ...line, discarded } : line
-      )
+      prev.map((line) => {
+        if (line.id !== lineId) return line
+        if (discarded) {
+          const nextVotes = { ...(line.traceVotes || {}) }
+          for (const [recId, isAuto] of Object.entries(line.autoTraceVotes || {})) {
+            if (isAuto && nextVotes[recId] === 'up') {
+              delete nextVotes[recId]
+            }
+          }
+          return {
+            ...line,
+            discarded: true,
+            traceVotes: nextVotes,
+            autoTraceVotes: {}
+          }
+        }
+        return applyLineSelectionWithAutoTraceVotes({ ...line, discarded: false }, line.selectedIds)
+      })
     )
   }
 
@@ -611,6 +661,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
             imagenesMuestraConocidas: [],
             trazosCoincidentes: [],
             traceVotes: {},
+            autoTraceVotes: {},
             removedTraceCandidates: {},
             discarded: false,
             isAiDiscovered: true,
@@ -718,6 +769,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         totalColsInRow: 1,
         trazosCoincidentes: trazosManuales,
         traceVotes: {},
+        autoTraceVotes: {},
         removedTraceCandidates: {},
         discarded: false,
         isManualCrop: true,
@@ -778,13 +830,15 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         const nextRemoved = { ...(line.removedTraceCandidates || {}) }
         delete nextRemoved[studyFromApi.id]
 
-        return {
-          ...line,
-          discarded: false,
-          candidates: nextCandidates,
-          removedTraceCandidates: nextRemoved,
-          selectedIds: nextSelectedIds
-        }
+        return applyLineSelectionWithAutoTraceVotes(
+          {
+            ...line,
+            discarded: false,
+            candidates: nextCandidates,
+            removedTraceCandidates: nextRemoved
+          },
+          nextSelectedIds
+        )
       })
     )
     clearInlineSearchState()
@@ -950,7 +1004,10 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
       setLinesReview((prev) =>
         prev.map((line) =>
           line.id === primaryLineId && !line.selectedIds.includes(studyFromApi.id)
-            ? { ...line, discarded: false, selectedIds: [...line.selectedIds, studyFromApi.id] }
+            ? applyLineSelectionWithAutoTraceVotes(
+                { ...line, discarded: false },
+                [...line.selectedIds, studyFromApi.id]
+              )
             : line
         )
       )
@@ -984,7 +1041,10 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
       setLinesReview((prev) =>
         prev.map((line) =>
           line.selectedIds.includes(uniqueItem.id)
-            ? { ...line, selectedIds: line.selectedIds.filter((id) => id !== uniqueItem.id) }
+            ? applyLineSelectionWithAutoTraceVotes(
+                line,
+                line.selectedIds.filter((id) => id !== uniqueItem.id)
+              )
             : line
         )
       )
@@ -997,7 +1057,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
       setLinesReview((prev) =>
         prev.map((line) =>
           line.id === primaryLineId && !line.selectedIds.includes(uniqueItem.id)
-            ? { ...line, selectedIds: [...line.selectedIds, uniqueItem.id] }
+            ? applyLineSelectionWithAutoTraceVotes(line, [...line.selectedIds, uniqueItem.id])
             : line
         )
       )
