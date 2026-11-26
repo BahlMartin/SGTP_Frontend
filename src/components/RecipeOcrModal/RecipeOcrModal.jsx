@@ -520,7 +520,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
     )
   }
 
-  // Consultar Gemini 3.6 Flash únicamente con la imagen única recortada/tapada enviada por Admisión
+  // Consultar Gemini IA únicamente con la imagen única recortada/tapada enviada por Admisión
   const handleConfirmContextualAi = async (sanitizedImageDataUrl) => {
     if (!sanitizedImageDataUrl || isConsultingAi) return
 
@@ -625,6 +625,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
 
       setShowAiPrivacyAlert(false)
 
+      const modeloLabel = res.modeloUsado || 'Gemini IA'
       const totalResolved =
         resultados.filter((r) => (r.recomendados || []).length > 0).length +
         renglonesNuevos.filter((r) => (r.recomendados || []).length > 0).length
@@ -635,19 +636,19 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
             ? ` (${renglonesNuevos.length} renglón(es) adicional(es) recuperado(s))`
             : ''
         setAiConsultMessage(
-          `Gemini (gemini-3.6-flash) sugirió ${totalResolved} estudio(s) en contexto${extraTxt}. Tilde los que correspondan.`
+          `Gemini (${modeloLabel}) sugirió ${totalResolved} estudio(s) en contexto${extraTxt}. Tilde los que correspondan.`
         )
       } else {
         setAiConsultError(
-          'Gemini (gemini-3.6-flash) no pudo identificar estudios del catálogo en la imagen enviada. Revisá o asigná manualmente.'
+          `Gemini (${modeloLabel}) no pudo identificar estudios del catálogo en la imagen enviada. Revisá o asigná manualmente.`
         )
       }
     } catch (err) {
       console.error('Error al consultar Gemini en contexto:', err)
       setAiConsultError(
         err?.message
-          ? `No se pudo consultar a Gemini (gemini-3.6-flash): ${err.message}`
-          : 'No se pudo consultar al asistente Gemini (gemini-3.6-flash).'
+          ? `No se pudo consultar a Gemini IA: ${err.message}`
+          : 'No se pudo consultar al asistente Gemini IA.'
       )
     } finally {
       setIsConsultingAi(false)
@@ -832,17 +833,6 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
   const pendingLinesCount = useMemo(
     () => linesReview.filter((l) => !l.discarded && l.selectedIds.length === 0).length,
     [linesReview]
-  )
-
-  const initialAiRedactionRects = useMemo(
-    () =>
-      normalizeLineBboxes(
-        linesReview.filter((l) => l.discarded),
-        ocrResult?.preprocessedWidth,
-        ocrResult?.preprocessedHeight,
-        0.008
-      ),
-    [linesReview, ocrResult]
   )
 
   const existingNormalizedBoxes = useMemo(
@@ -1477,8 +1467,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                     <div className="ocr-modal__ai-batch-info">
                       <span>
                         {linesReview.length > 0
-                          ? '🔒 Privacidad: recortá datos del paciente y tapá firma/sello en blanco antes de enviar la receta en contexto a Gemini (gemini-3.6-flash).'
-                          : 'Si PaddleOCR no detectó renglones, podés recortar un estudio manualmente o consultar la orden en contexto con Gemini (gemini-3.6-flash).'}
+                          ? '🔒 Privacidad: recortá datos del paciente y tapá firma/sello en blanco antes de enviar la receta en contexto a Gemini IA.'
+                          : 'Si PaddleOCR no detectó renglones, podés recortar un estudio manualmente o consultar la orden en contexto con Gemini IA.'}
                       </span>
                       {aiConsultMessage && (
                         <strong className="ocr-modal__ai-batch-status">{aiConsultMessage}</strong>
@@ -1618,7 +1608,6 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                   <div className="ocr-modal__privacy-guard">
                     <RecipeAiRedactionEditor
                       imageSrc={imagePreview}
-                      initialRedactionRects={initialAiRedactionRects}
                       isSubmitting={isConsultingAi}
                       onCancel={() => setShowAiPrivacyAlert(false)}
                       onConfirm={handleConfirmContextualAi}

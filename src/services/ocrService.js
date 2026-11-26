@@ -77,7 +77,7 @@ export async function mapStudiesFromTextApi(textos = [], firmasVisuales = [], re
 
 /**
  * Envía una única imagen contextual saneada (zona clínica recortada + rectángulos blancos sobre
- * datos sensibles/firma) al backend para que Gemini 3.6 Flash interprete los estudios en contexto.
+ * datos sensibles/firma) al backend para que Gemini IA interprete los estudios en contexto.
  *
  * @param {{ imagenContextual: string, contextoRenglones?: Array<{ indice: number, texto_ocr: string }> }} payload
  */
@@ -92,7 +92,7 @@ export async function interpretContextualRecipeWithAiApi({
       renglonesNuevos: [],
       diagnosticoDetectado: '',
       notasMuestra: '',
-      modeloUsado: 'gemini-3.6-flash',
+      modeloUsado: 'gemini-3.8-flash',
       errorIa: 'No se preparó la imagen contextual para enviar a IA.'
     }
   }
@@ -121,7 +121,7 @@ export async function interpretContextualRecipeWithAiApi({
     renglonesNuevos: rawNuevos.map(mapIaItem),
     diagnosticoDetectado: response?.diagnostico_detectado || '',
     notasMuestra: response?.notas_muestra || '',
-    modeloUsado: response?.modelo_usado || 'gemini-3.6-flash',
+    modeloUsado: response?.modelo_usado || 'gemini-3.8-flash',
     errorIa: response?.error_ia || ''
   }
 }

@@ -268,7 +268,7 @@ export default function RecipeAiRedactionEditor({
       <div className="ocr-modal__privacy-guard-header">
         <ShieldAlert size={18} className="ocr-modal__privacy-guard-icon" />
         <div>
-          <strong>Preparar imagen en contexto para Gemini (gemini-3.6-flash)</strong>
+          <strong>Preparar imagen en contexto para Gemini IA</strong>
           <p className="ocr-modal__privacy-guard-desc">
             Recortá para dejar solo la zona clínica (diagnóstico, estudios e indicaciones de muestra) y tapá
             con cuadros blancos la firma, el sello o cualquier dato sensible del paciente antes de enviar.
@@ -439,8 +439,8 @@ export default function RecipeAiRedactionEditor({
           <Sparkles size={14} />
           <span>
             {isSubmitting
-              ? 'Consultando Gemini 3.6 Flash...'
-              : 'Confirmar y Enviar a Gemini 3.6 Flash'}
+              ? 'Consultando Gemini IA...'
+              : 'Confirmar y Enviar a Gemini IA'}
           </span>
         </button>
       </div>
