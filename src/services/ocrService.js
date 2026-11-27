@@ -431,6 +431,36 @@ export async function reportOcrFeedbackApi(feedbackData = {}) {
 }
 
 /**
+ * Consulta la configuración operativa y de entrenamiento del módulo OCR.
+ * @returns {Promise<{ entrenamientoHabilitado: boolean, totalVotosPositivos: number, totalVotosNegativos: number, fechaActualizacion: string|null }>}
+ */
+export async function fetchOcrConfigApi() {
+  const response = await apiClient.get('/ocr/configuracion/')
+  return {
+    entrenamientoHabilitado: Boolean(response?.entrenamiento_habilitado),
+    totalVotosPositivos: Number(response?.total_votos_positivos || 0),
+    totalVotosNegativos: Number(response?.total_votos_negativos || 0),
+    fechaActualizacion: response?.fecha_actualizacion || null
+  }
+}
+
+/**
+ * Habilita o bloquea el modo Entrenamiento / Por Recortes OCR (exclusivo Jefatura/Admin).
+ * @param {boolean} entrenamientoHabilitado
+ */
+export async function updateOcrConfigApi(entrenamientoHabilitado) {
+  const response = await apiClient.patch('/ocr/configuracion/', {
+    entrenamiento_habilitado: Boolean(entrenamientoHabilitado)
+  })
+  return {
+    entrenamientoHabilitado: Boolean(response?.entrenamiento_habilitado),
+    totalVotosPositivos: Number(response?.total_votos_positivos || 0),
+    totalVotosNegativos: Number(response?.total_votos_negativos || 0),
+    fechaActualizacion: response?.fecha_actualizacion || null
+  }
+}
+
+/**
  * @deprecated Función heredada de compatibilidad. Utilice processRecipeFullFlow.
  */
 export async function parseRecipeImageApi(imageSource, onProgress) {

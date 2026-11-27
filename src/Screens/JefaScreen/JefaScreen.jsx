@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { RefreshCw, ShieldCheck, Users, Clock } from 'lucide-react'
+import { RefreshCw, ShieldCheck, Users, Clock, ScanText } from 'lucide-react'
 import JefaLayout from './components/JefaLayout'
 import JefaHeader from './components/JefaHeader'
 import LabMatrixCard from './components/LabMatrixCard'
@@ -7,6 +7,7 @@ import ActiveStaffCard from './components/ActiveStaffCard'
 import StaffShiftsCard from './components/StaffShiftsCard'
 import StaffSecurityCard from './components/StaffSecurityCard/StaffSecurityCard'
 import SlaConfigCard from './components/SlaConfigCard/SlaConfigCard'
+import OcrConfigCard from './components/OcrConfigCard/OcrConfigCard'
 import AddStaffModal from './components/AddStaffModal'
 import EditStaffModal from './components/EditStaffModal'
 import AuthorizeOvertimeModal from './components/AuthorizeOvertimeModal'
@@ -443,6 +444,18 @@ export default function JefaScreen() {
                 <Clock className="jefa-screen__view-tab-icon" />
                 <span>Tiempos de espera (SLA)</span>
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeCenterTab === 'ocr'}
+                className={`jefa-screen__view-tab ${
+                  activeCenterTab === 'ocr' ? 'jefa-screen__view-tab--active' : ''
+                }`}
+                onClick={() => setActiveCenterTab('ocr')}
+              >
+                <ScanText className="jefa-screen__view-tab-icon" />
+                <span>OCR y Entrenamiento</span>
+              </button>
             </div>
             {activeCenterTab === 'shifts' ? (
               <StaffShiftsCard
@@ -464,8 +477,10 @@ export default function JefaScreen() {
                 onUnlockStaff={handleUnlockStaff}
                 onLockStaff={handleLockStaff}
               />
-            ) : (
+            ) : activeCenterTab === 'sla' ? (
               <SlaConfigCard onNotice={showNotice} />
+            ) : (
+              <OcrConfigCard onNotice={showNotice} />
             )}
           </div>
         }
@@ -512,6 +527,18 @@ export default function JefaScreen() {
                 <Clock className="jefa-screen__view-tab-icon" />
                 <span>Tiempos de espera (SLA)</span>
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeCenterTab === 'ocr'}
+                className={`jefa-screen__view-tab ${
+                  activeCenterTab === 'ocr' ? 'jefa-screen__view-tab--active' : ''
+                }`}
+                onClick={() => setActiveCenterTab('ocr')}
+              >
+                <ScanText className="jefa-screen__view-tab-icon" />
+                <span>OCR y Entrenamiento</span>
+              </button>
             </div>
             {activeCenterTab === 'shifts' ? (
               <StaffShiftsCard
@@ -533,8 +560,10 @@ export default function JefaScreen() {
                 onUnlockStaff={handleUnlockStaff}
                 onLockStaff={handleLockStaff}
               />
-            ) : (
+            ) : activeCenterTab === 'sla' ? (
               <SlaConfigCard onNotice={showNotice} />
+            ) : (
+              <OcrConfigCard onNotice={showNotice} />
             )}
           </div>
         }

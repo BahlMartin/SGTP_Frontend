@@ -1381,6 +1381,59 @@
   color: #ffffff;
 }
 
+.ocr-modal__tab-btn--active:hover {
+  background: #0369a1;
+  border-color: #0369a1;
+  color: #ffffff;
+}
+
+.ocr-modal__tab-btn--locked,
+.ocr-modal__tab-btn--locked:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.ocr-modal__other-options-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ocr-modal__other-options-toggle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px dashed #94a3b8;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.77rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ocr-modal__other-options-toggle:hover {
+  background: #f1f5f9;
+  border-color: #64748b;
+  color: #0f172a;
+}
+
+.ocr-modal__other-options-section {
+  padding-top: 4px;
+}
+
+.ocr-modal__study-item--secondary {
+  background: #ffffff;
+  border-style: dashed;
+  border-color: #cbd5e1;
+}
+
 .ocr-modal__general-view {
   display: flex;
   flex-direction: column;
