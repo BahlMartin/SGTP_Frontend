@@ -76,7 +76,7 @@ function buildCandidateFromTrace(
     codigoPractica: catalogStudy?.codigo_practica || '',
     score: Number(trace?.similitudScore) || 0,
     textoOrigen: lineTexto || '',
-    origenDeteccion: 'MEMORIA_APRENDIDA',
+    origenDeteccion: 'TRAZO_VISUAL',
     preseleccionado: false,
     vecesConfirmado: 1,
     imagenMuestra: trace?.imagenMuestra || null
@@ -110,7 +110,9 @@ function isCandidatePenalized(line, study) {
   if (
     !line ||
     !study ||
-    (study.origenDeteccion !== 'MEMORIA_APRENDIDA' && study.origenDeteccion !== 'COMBO_RUTINA')
+    (study.origenDeteccion !== 'MEMORIA_APRENDIDA' &&
+      study.origenDeteccion !== 'TRAZO_VISUAL' &&
+      study.origenDeteccion !== 'COMBO_RUTINA')
   ) {
     return false
   }
@@ -172,7 +174,18 @@ function renderStudyOriginBadge(study) {
   if (study.origenDeteccion === 'MEMORIA_APRENDIDA') {
     return (
       <span className="ocr-modal__origin-badge ocr-modal__origin-badge--memory">
-        Memoria / Trazado (x{study.vecesConfirmado || 1})
+        {scoreNumber > 0
+          ? `Memoria texto · ${scoreNumber}%`
+          : `Memoria texto (x${study.vecesConfirmado || 1})`}
+      </span>
+    )
+  }
+  if (study.origenDeteccion === 'TRAZO_VISUAL') {
+    return (
+      <span className="ocr-modal__origin-badge ocr-modal__origin-badge--trace">
+        {scoreNumber > 0
+          ? `Trazo visual · ${scoreNumber}%`
+          : `Trazo visual (x${study.vecesConfirmado || 1})`}
       </span>
     )
   }
@@ -200,9 +213,8 @@ function renderStudyOriginBadge(study) {
   if (scoreNumber > 0) {
     return (
       <span
-        className={`ocr-modal__study-score ${
-          scoreNumber >= 85 ? 'ocr-modal__study-score--high' : 'ocr-modal__study-score--medium'
-        }`}
+        className={`ocr-modal__study-score ${scoreNumber >= 85 ? 'ocr-modal__study-score--high' : 'ocr-modal__study-score--medium'
+          }`}
       >
         {scoreNumber}% coincidencia
       </span>
@@ -212,20 +224,21 @@ function renderStudyOriginBadge(study) {
 }
 
 const INITIAL_VISIBLE_TRACES = 6
+const GENERAL_VISUAL_TRACE_MIN_SCORE = 39
 const GENERAL_MEMORY_MIN_SCORE = 65
 const GENERAL_DIRECT_MIN_SCORE = 75
 const ORIGIN_PRIORITY = {
-  BUSQUEDA_MANUAL: 5,
-  VISION_IA: 4,
-  COMBO_RUTINA: 3,
-  VALIDADO_POR_CONTEXTO: 2,
-  MEMORIA_APRENDIDA: 1,
+  BUSQUEDA_MANUAL: 6,
+  VISION_IA: 5,
+  COMBO_RUTINA: 4,
+  VALIDADO_POR_CONTEXTO: 3,
+  MEMORIA_APRENDIDA: 2,
+  TRAZO_VISUAL: 1,
   OCR_DIRECTO: 0
 }
 
-function isPrimaryGeneralStudy(study) {
+function isCandidateScorePrimary(study) {
   if (!study) return false
-  if (study.isSelected) return true
   if (
     ['VISION_IA', 'COMBO_RUTINA', 'BUSQUEDA_MANUAL', 'VALIDADO_POR_CONTEXTO'].includes(
       study.origenDeteccion
@@ -234,10 +247,20 @@ function isPrimaryGeneralStudy(study) {
     return true
   }
   const scoreVal = Number(study.score) || 0
+  if (study.origenDeteccion === 'TRAZO_VISUAL') {
+    return scoreVal >= GENERAL_VISUAL_TRACE_MIN_SCORE
+  }
   if (study.origenDeteccion === 'MEMORIA_APRENDIDA') {
-    return !study.isPenalized && scoreVal >= GENERAL_MEMORY_MIN_SCORE
+    return scoreVal >= GENERAL_MEMORY_MIN_SCORE
   }
   return scoreVal >= GENERAL_DIRECT_MIN_SCORE
+}
+
+function isPrimaryGeneralStudy(study) {
+  if (!study) return false
+  if (study.isSelected) return true
+  if (typeof study.hasPrimaryMatch === 'boolean') return study.hasPrimaryMatch
+  return !study.isPenalized && isCandidateScorePrimary(study)
 }
 
 export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
@@ -318,7 +341,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         setAllCatalogStudies(activeStudies)
         setQuickCatalogStudies(activeStudies.slice(0, 12))
       })
-      .catch(() => {})
+      .catch(() => { })
     return () => {
       mounted = false
     }
@@ -566,7 +589,11 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
 
           if (allDown) {
             const existingCand = nextCandidates.find((c) => Number(c.id) === numId)
-            if (existingCand && existingCand.origenDeteccion === 'MEMORIA_APRENDIDA') {
+            if (
+              existingCand &&
+              (existingCand.origenDeteccion === 'MEMORIA_APRENDIDA' ||
+                existingCand.origenDeteccion === 'TRAZO_VISUAL')
+            ) {
               nextRemoved[numId] = existingCand
               nextCandidates = nextCandidates.filter((c) => Number(c.id) !== numId)
               nextSelectedIds = nextSelectedIds.filter((id) => Number(id) !== numId)
@@ -890,18 +917,18 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         const nextCandidates = alreadyCandidate
           ? line.candidates
           : [
-              ...line.candidates,
-              {
-                id: studyFromApi.id,
-                nombre: studyFromApi.nombre,
-                categoria: studyFromApi.tipo_muestra || 'Otro',
-                codigoPractica: studyFromApi.codigo_practica || '',
-                score: 100,
-                textoOrigen: line.texto,
-                origenDeteccion: 'BUSQUEDA_MANUAL',
-                preseleccionado: true
-              }
-            ]
+            ...line.candidates,
+            {
+              id: studyFromApi.id,
+              nombre: studyFromApi.nombre,
+              categoria: studyFromApi.tipo_muestra || 'Otro',
+              codigoPractica: studyFromApi.codigo_practica || '',
+              score: 100,
+              textoOrigen: line.texto,
+              origenDeteccion: 'BUSQUEDA_MANUAL',
+              preseleccionado: true
+            }
+          ]
         const nextSelectedIds = line.selectedIds.includes(studyFromApi.id)
           ? line.selectedIds
           : [...line.selectedIds, studyFromApi.id]
@@ -1030,12 +1057,14 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
       for (const candidate of line.candidates) {
         const isLineSelected = line.selectedIds.includes(candidate.id)
         const linePenalized = isCandidatePenalized(line, candidate)
+        const candQualifies = !linePenalized && isCandidateScorePrimary(candidate)
         const existing = mapById.get(candidate.id)
         if (!existing) {
           mapById.set(candidate.id, {
             ...candidate,
             isSelected: isLineSelected,
             isPenalized: linePenalized,
+            hasPrimaryMatch: candQualifies,
             lineIds: [line.id],
             rowLabels: [rowLabel]
           })
@@ -1049,14 +1078,19 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
           const candPri = ORIGIN_PRIORITY[candidate.origenDeteccion] ?? 0
           const existPri = ORIGIN_PRIORITY[existing.origenDeteccion] ?? 0
           if (
-            candPri > existPri ||
-            (candPri === existPri && (candidate.score || 0) > (existing.score || 0))
+            (candQualifies && !existing.hasPrimaryMatch) ||
+            (candQualifies === existing.hasPrimaryMatch &&
+              (candPri > existPri ||
+                (candPri === existPri && (candidate.score || 0) > (existing.score || 0))))
           ) {
-            existing.score = Math.max(Number(candidate.score) || 0, Number(existing.score) || 0)
-            existing.origenDeteccion = candidate.origenDeteccion
-          } else if ((candidate.score || 0) > (existing.score || 0)) {
             existing.score = candidate.score
+            existing.origenDeteccion = candidate.origenDeteccion
           }
+          existing.hasPrimaryMatch = existing.hasPrimaryMatch || candQualifies
+          existing.vecesConfirmado = Math.max(
+            existing.vecesConfirmado || 0,
+            candidate.vecesConfirmado || 0
+          )
         }
       }
     }
@@ -1121,18 +1155,18 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
         prev.some((s) => s.id === studyFromApi.id)
           ? prev
           : [
-              ...prev,
-              {
-                id: studyFromApi.id,
-                nombre: studyFromApi.nombre,
-                categoria: studyFromApi.tipo_muestra || 'Otro',
-                codigoPractica: studyFromApi.codigo_practica || '',
-                score: 100,
-                textoOrigen: 'Búsqueda manual en Vista General',
-                origenDeteccion: 'BUSQUEDA_MANUAL',
-                preseleccionado: true
-              }
-            ]
+            ...prev,
+            {
+              id: studyFromApi.id,
+              nombre: studyFromApi.nombre,
+              categoria: studyFromApi.tipo_muestra || 'Otro',
+              codigoPractica: studyFromApi.codigo_practica || '',
+              score: 100,
+              textoOrigen: 'Búsqueda manual en Vista General',
+              origenDeteccion: 'BUSQUEDA_MANUAL',
+              preseleccionado: true
+            }
+          ]
       )
     }
 
@@ -1636,9 +1670,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                     aria-selected={effectiveReviewTab === 'crops'}
                     aria-disabled={!ocrTrainingEnabled}
                     disabled={!ocrTrainingEnabled}
-                    className={`ocr-modal__tab-btn ${
-                      effectiveReviewTab === 'crops' ? 'ocr-modal__tab-btn--active' : ''
-                    } ${!ocrTrainingEnabled ? 'ocr-modal__tab-btn--locked' : ''}`}
+                    className={`ocr-modal__tab-btn ${effectiveReviewTab === 'crops' ? 'ocr-modal__tab-btn--active' : ''
+                      } ${!ocrTrainingEnabled ? 'ocr-modal__tab-btn--locked' : ''}`}
                     onClick={() => handleSelectReviewTab('crops')}
                     title={
                       ocrTrainingEnabled
@@ -1670,9 +1703,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                     <div className="ocr-modal__general-bar-actions">
                       <button
                         type="button"
-                        className={`ocr-modal__manual-crop-btn ${
-                          showManualCropSelector ? 'ocr-modal__manual-crop-btn--active' : ''
-                        }`}
+                        className={`ocr-modal__manual-crop-btn ${showManualCropSelector ? 'ocr-modal__manual-crop-btn--active' : ''
+                          }`}
                         disabled={!imagePreview || isAddingManualCrop || isConsultingAi}
                         onClick={() => {
                           setManualCropError('')
@@ -1722,9 +1754,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                     <div className="ocr-modal__general-bar-actions">
                       <button
                         type="button"
-                        className={`ocr-modal__line-search-toggle ${
-                          activeSearchLineId === 'general' ? 'ocr-modal__line-search-toggle--active' : ''
-                        }`}
+                        className={`ocr-modal__line-search-toggle ${activeSearchLineId === 'general' ? 'ocr-modal__line-search-toggle--active' : ''
+                          }`}
                         onClick={() => handleToggleLineSearch('general')}
                         title="Buscar y agregar un estudio en Vista General"
                       >
@@ -1818,9 +1849,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                         {primaryGeneralStudies.map((study) => (
                           <label
                             key={`gen-${study.id}`}
-                            className={`ocr-modal__study-item ${
-                              study.isSelected ? 'ocr-modal__study-item--selected' : ''
-                            }`}
+                            className={`ocr-modal__study-item ${study.isSelected ? 'ocr-modal__study-item--selected' : ''
+                              }`}
                           >
                             <input
                               type="checkbox"
@@ -1845,7 +1875,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                         <AlertCircle size={16} />
                         <span>
                           {otherGeneralStudies.length > 0
-                            ? 'No hubo coincidencias de alta confianza (>= 65% memoria/trazo o >= 75% directa). Revisá "Mostrar otras opciones", usá "Buscar estudio" o "Escanear con IA".'
+                            ? 'No hubo coincidencias de alta confianza (>= 39% trazo visual, >= 65% memoria de texto o >= 75% directa). Revisá "Mostrar otras opciones", usá "Buscar estudio" o "Escanear con IA".'
                             : 'Todavía no hay estudios sugeridos. Usá "Buscar estudio" o "Escanear con IA (en contexto)".'}
                         </span>
                       </div>
@@ -1877,9 +1907,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                               {otherGeneralStudies.map((study) => (
                                 <label
                                   key={`gen-other-${study.id}`}
-                                  className={`ocr-modal__study-item ocr-modal__study-item--secondary ${
-                                    study.isSelected ? 'ocr-modal__study-item--selected' : ''
-                                  }`}
+                                  className={`ocr-modal__study-item ocr-modal__study-item--secondary ${study.isSelected ? 'ocr-modal__study-item--selected' : ''
+                                    }`}
                                 >
                                   <input
                                     type="checkbox"
@@ -1934,11 +1963,10 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                       return (
                         <div
                           key={line.id}
-                          className={`ocr-modal__line-card ${
-                            hasSelected
+                          className={`ocr-modal__line-card ${hasSelected
                               ? 'ocr-modal__line-card--matched'
                               : 'ocr-modal__line-card--attention'
-                          }`}
+                            }`}
                         >
                           {/* Encabezado del Renglón: Recorte + Texto leído + Acciones */}
                           <div className="ocr-modal__line-header">
@@ -2029,9 +2057,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                             <div className="ocr-modal__line-actions">
                               <button
                                 type="button"
-                                className={`ocr-modal__line-search-toggle ${
-                                  isSearchOpen ? 'ocr-modal__line-search-toggle--active' : ''
-                                }`}
+                                className={`ocr-modal__line-search-toggle ${isSearchOpen ? 'ocr-modal__line-search-toggle--active' : ''
+                                  }`}
                                 onClick={() => handleToggleLineSearch(line.id)}
                                 title="Buscar estudio manualmente para este renglón"
                               >
@@ -2081,13 +2108,12 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                                     return (
                                       <div
                                         key={`${line.id}-matched-trace-${trace.recorteId}`}
-                                        className={`ocr-modal__trace-chip ${
-                                          currentVote === 'up'
+                                        className={`ocr-modal__trace-chip ${currentVote === 'up'
                                             ? 'ocr-modal__trace-chip--good'
                                             : currentVote === 'down'
                                               ? 'ocr-modal__trace-chip--bad'
                                               : ''
-                                        }`}
+                                          }`}
                                       >
                                         {trace.imagenMuestra && (
                                           <img
@@ -2108,9 +2134,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                                           <button
                                             type="button"
                                             aria-pressed={currentVote === 'up'}
-                                            className={`ocr-modal__trace-vote-btn ocr-modal__trace-vote-btn--good ${
-                                              currentVote === 'up' ? 'ocr-modal__trace-vote-btn--active' : ''
-                                            }`}
+                                            className={`ocr-modal__trace-vote-btn ocr-modal__trace-vote-btn--good ${currentVote === 'up' ? 'ocr-modal__trace-vote-btn--active' : ''
+                                              }`}
                                             onClick={() => toggleTraceVote(line.id, trace.recorteId, 'up')}
                                             title="Marcar trazo como coincidencia correcta"
                                           >
@@ -2120,9 +2145,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                                           <button
                                             type="button"
                                             aria-pressed={currentVote === 'down'}
-                                            className={`ocr-modal__trace-vote-btn ocr-modal__trace-vote-btn--bad ${
-                                              currentVote === 'down' ? 'ocr-modal__trace-vote-btn--active' : ''
-                                            }`}
+                                            className={`ocr-modal__trace-vote-btn ocr-modal__trace-vote-btn--bad ${currentVote === 'down' ? 'ocr-modal__trace-vote-btn--active' : ''
+                                              }`}
                                             onClick={() => toggleTraceVote(line.id, trace.recorteId, 'down')}
                                             title="Marcar trazo como coincidencia errónea"
                                           >
@@ -2193,9 +2217,8 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                                     return (
                                       <label
                                         key={`${line.id}-${study.id}`}
-                                        className={`ocr-modal__study-item ${
-                                          isSelected ? 'ocr-modal__study-item--selected' : ''
-                                        } ${penalized ? 'ocr-modal__study-item--penalized' : ''}`}
+                                        className={`ocr-modal__study-item ${isSelected ? 'ocr-modal__study-item--selected' : ''
+                                          } ${penalized ? 'ocr-modal__study-item--penalized' : ''}`}
                                       >
                                         <input
                                           type="checkbox"

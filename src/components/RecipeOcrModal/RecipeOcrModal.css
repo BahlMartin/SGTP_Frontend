@@ -714,6 +714,12 @@
   border: 1px solid #86efac;
 }
 
+.ocr-modal__origin-badge--trace {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
+}
+
 .ocr-modal__origin-badge--context {
   background: #cffafe;
   color: #0e7490;
