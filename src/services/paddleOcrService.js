@@ -451,10 +451,40 @@ function analyzeRowInkProfile(canvas, minY, maxY) {
   const bandHeight = Math.max(4, bandY2 - bandY1)
   if (bandY1 >= canvas.height || bandHeight <= 0) return null
 
+  const width = canvas.width
+  const cleanMaskObj = canvas.__cleanInkMask
+  if (
+    cleanMaskObj?.data &&
+    cleanMaskObj.width === width &&
+    cleanMaskObj.height === canvas.height
+  ) {
+    const maskData = cleanMaskObj.data
+    const hasInk = new Uint8Array(width)
+    const maxDarkCols = Math.floor(bandHeight * 0.85)
+
+    for (let x = 0; x < width; x++) {
+      let darkCount = 0
+      let firstDarkY = -1
+      let lastDarkY = -1
+      for (let y = bandY1; y < bandY2; y++) {
+        if (maskData[y * width + x] > 0) {
+          darkCount++
+          if (firstDarkY === -1) firstDarkY = y
+          lastDarkY = y
+        }
+      }
+      const span = lastDarkY - firstDarkY
+      if (darkCount >= 2 && darkCount <= maxDarkCols && span >= 3) {
+        hasInk[x] = 1
+      }
+    }
+    return hasInk
+  }
+
   try {
     const ctx = canvas.getContext('2d')
     if (!ctx) return null
-    const { data, width } = ctx.getImageData(0, bandY1, canvas.width, bandHeight)
+    const { data } = ctx.getImageData(0, bandY1, width, bandHeight)
     const hasInk = new Uint8Array(width)
     const maxDarkCols = Math.floor(bandHeight * 0.78)
 
@@ -581,76 +611,412 @@ function segmentRowIntoInkColumns(
 }
 
 /**
- * Detecta si una receta tiene un canal vertical central (separación en 2 columnas) analizando
- * la proyección de tinta únicamente dentro de las bandas horizontales escritas válidas.
+ * Suavizado 1D por media móvil de ventana `(2 * radius + 1)` en O(n) con bordes acotados.
  *
- * @param {Int32Array} bandColInk
+ * @param {Float32Array} src
+ * @param {number} radius
+ * @returns {Float32Array}
+ */
+function smooth1DBoxSame(src, radius) {
+  const n = src.length
+  const out = new Float32Array(n)
+  if (n === 0) return out
+  const k = 2 * radius + 1
+  const prefix = new Float64Array(n + 1)
+  for (let i = 0; i < n; i++) {
+    prefix[i + 1] = prefix[i] + src[i]
+  }
+  for (let i = 0; i < n; i++) {
+    const a = i > radius ? i - radius : 0
+    const b = i + radius < n ? i + radius : n - 1
+    out[i] = (prefix[b + 1] - prefix[a]) / k
+  }
+  return out
+}
+
+/**
+ * Detecta un canal vertical central genuino de 2 columnas (Exp C) buscando en `x in 38%..64%`:
+ * - Masa mínima de tinta en ambas mitades (`minSide >= paperH * 0.025`).
+ * - Corredor silencioso continuo `>= 3%` del ancho (`minVal <= minSide * 0.12`).
+ * - `<= 15%` de filas activas con tinta cruzando el centro `[bestX - 8 .. bestX + 8]`.
+ * - `>= 30%` de cobertura vertical activa en la mitad izquierda y en la mitad derecha.
+ *
+ * @param {Uint8Array} inkMask Máscara binaria (0 o 1) de tamaño `width * height`
  * @param {number} width
- * @param {Array<{ minX: number, maxX: number, minY: number, maxY: number }>} preliminaryBlocks
+ * @param {number} height
+ * @param {number} [paperMinY=0]
+ * @param {number} [paperMaxY=height - 1]
  * @returns {number|null}
  */
-function detectCentralColumnGutter(bandColInk, width, preliminaryBlocks) {
-  if (!bandColInk || width < 120) return null
+export function detectCentralColumnGutter(
+  inkMask,
+  width,
+  height,
+  paperMinY = 0,
+  paperMaxY = height - 1
+) {
+  if (!inkMask || width < 120 || height < 40) return null
 
-  const searchMinX = Math.floor(width * 0.4)
-  const searchMaxX = Math.ceil(width * 0.64)
-  if (searchMaxX <= searchMinX) return null
+  const minY = Math.max(0, paperMinY)
+  const maxY = Math.min(height - 1, paperMaxY)
+  const paperH = Math.max(1, maxY - minY + 1)
 
-  const smoothCol = new Float32Array(width)
-  const win = 10
-  for (let x = 0; x < width; x++) {
-    let acc = 0
-    let cnt = 0
-    const xStart = Math.max(0, x - win)
-    const xEnd = Math.min(width - 1, x + win)
-    for (let xx = xStart; xx <= xEnd; xx++) {
-      acc += bandColInk[xx]
-      cnt++
-    }
-    smoothCol[x] = acc / Math.max(1, cnt)
-  }
-
-  let bestGutterX = Math.round(width * 0.52)
-  let minValleyVal = Infinity
-  for (let x = searchMinX; x <= searchMaxX; x++) {
-    const val = smoothCol[x]
-    if (
-      val < minValleyVal - 0.25 ||
-      (Math.abs(val - minValleyVal) <= 0.25 &&
-        Math.abs(x - width * 0.52) < Math.abs(bestGutterX - width * 0.52))
-    ) {
-      minValleyVal = val
-      bestGutterX = x
+  const colProj = new Float32Array(width)
+  for (let y = minY; y <= maxY; y++) {
+    const rowOff = y * width
+    for (let x = 0; x < width; x++) {
+      if (inkMask[rowOff + x] > 0) {
+        colProj[x]++
+      }
     }
   }
 
+  const win = Math.max(8, Math.round(width * 0.012))
+  const smooth = smooth1DBoxSame(colProj, win)
+
+  const sMin = Math.round(width * 0.38)
+  const sMax = Math.round(width * 0.64)
+  if (sMax <= sMin) return null
+
+  let bestX = sMin
+  let minVal = smooth[sMin]
+  for (let x = sMin + 1; x <= sMax; x++) {
+    if (smooth[x] < minVal) {
+      minVal = smooth[x]
+      bestX = x
+    }
+  }
+
+  const leftStart = Math.floor(width * 0.05)
+  const leftEnd = Math.max(Math.floor(width * 0.06), bestX - Math.floor(width * 0.05))
   let leftPeak = 0
-  for (let x = Math.floor(width * 0.05); x < bestGutterX - Math.round(width * 0.05); x++) {
-    if (smoothCol[x] > leftPeak) leftPeak = smoothCol[x]
+  for (let x = leftStart; x < leftEnd; x++) {
+    if (smooth[x] > leftPeak) leftPeak = smooth[x]
   }
+
+  const rightStart = Math.min(width - 2, bestX + Math.floor(width * 0.05))
+  const rightEnd = Math.floor(width * 0.95)
   let rightPeak = 0
-  for (let x = bestGutterX + Math.round(width * 0.05); x < Math.ceil(width * 0.95); x++) {
-    if (smoothCol[x] > rightPeak) rightPeak = smoothCol[x]
+  for (let x = rightStart; x < rightEnd; x++) {
+    if (smooth[x] > rightPeak) rightPeak = smooth[x]
   }
 
-  if (leftPeak <= 0 || rightPeak <= 0) return null
+  const minSide = Math.min(leftPeak, rightPeak)
+  if (minSide < paperH * 0.025) return null
+  if (minVal > minSide * 0.12) return null
 
-  let leftCount = 0
-  let rightCount = 0
-  for (const blk of preliminaryBlocks) {
-    const cx = (blk.minX + blk.maxX) / 2
-    const blkW = blk.maxX - blk.minX
-    if (blkW > width * 0.55) continue
-    if (cx < bestGutterX - width * 0.04) leftCount++
-    else if (cx > bestGutterX + width * 0.04) rightCount++
+  const quietThr = Math.max(2.0, minSide * 0.15)
+  let qx1 = bestX
+  const qx1Floor = Math.max(0, sMin - 40)
+  while (qx1 > qx1Floor && smooth[qx1] <= quietThr) {
+    qx1--
+  }
+  let qx2 = bestX
+  const qx2Ceil = Math.min(width - 1, sMax + 40)
+  while (qx2 < qx2Ceil && smooth[qx2] <= quietThr) {
+    qx2++
   }
 
-  const minSidePeak = Math.min(leftPeak, rightPeak)
-  const hasClearValley = minValleyVal <= minSidePeak * 0.3
-  if (hasClearValley && leftCount >= 2 && rightCount >= 2) {
-    return bestGutterX
+  const corridorW = qx2 - qx1
+  if (corridorW < width * 0.03) return null
+
+  const leftMarginX = Math.floor(width * 0.04)
+  const rightMarginX = Math.floor(width * 0.96)
+  const stripStart = Math.max(0, bestX - 8)
+  const stripEnd = Math.min(width, bestX + 9)
+
+  let activeRows = 0
+  let leftActiveRows = 0
+  let rightActiveRows = 0
+  let crossingRows = 0
+
+  for (let y = minY; y <= maxY; y++) {
+    const rowOff = y * width
+    let lSum = 0
+    for (let x = leftMarginX; x < qx1; x++) {
+      if (inkMask[rowOff + x] > 0) lSum++
+    }
+    let rSum = 0
+    for (let x = qx2; x < rightMarginX; x++) {
+      if (inkMask[rowOff + x] > 0) rSum++
+    }
+    const hasLeft = lSum >= 4
+    const hasRight = rSum >= 4
+    if (hasLeft) leftActiveRows++
+    if (hasRight) rightActiveRows++
+    if (hasLeft || hasRight) activeRows++
+
+    for (let x = stripStart; x < stripEnd; x++) {
+      if (inkMask[rowOff + x] > 0) {
+        crossingRows++
+        break
+      }
+    }
   }
-  return null
+
+  if (activeRows < 30) return null
+  if (crossingRows / activeRows > 0.15) return null
+  if (leftActiveRows < activeRows * 0.3 || rightActiveRows < activeRows * 0.3) {
+    return null
+  }
+
+  return Math.round(0.5 * (qx1 + qx2))
+}
+
+/**
+ * Segmenta una columna (o la página completa en 1 columna) en bloques horizontales limpios (Exp C):
+ * - Divide bandas verticales altas (> max(130, 17% del alto)) por valles locales entre picos de
+ *   proyección horizontal suavizada en lugar de descartarlas.
+ * - Separa fragmentos alejados horizontalmente por huecos blancos amplios (> 14% del ancho).
+ * - Filtra tildes/marcas diminutas sueltas (`bw < 70 && bh < 85`, o `bw < 95 && bw / bh < 1.35`)
+ *   conservando siglas reales cortas (CPK, ESD, Urea).
+ *
+ * @param {Uint8Array} inkMask
+ * @param {number} fullWidth
+ * @param {number} paperMinY
+ * @param {number} paperMaxY
+ * @param {number} xStart
+ * @param {number} xEnd
+ * @returns {Array<{ minX: number, maxX: number, minY: number, maxY: number }>}
+ */
+export function segmentColumnLinesFromMask(
+  inkMask,
+  fullWidth,
+  paperMinY,
+  paperMaxY,
+  xStart,
+  xEnd
+) {
+  const colW = xEnd - xStart
+  const paperH = Math.max(0, paperMaxY - paperMinY + 1)
+  if (!inkMask || colW < 20 || paperH < 20) return []
+
+  const rowProj = new Float32Array(paperH)
+  for (let yRel = 0; yRel < paperH; yRel++) {
+    const rowOff = (paperMinY + yRel) * fullWidth
+    let cnt = 0
+    for (let x = xStart; x < xEnd; x++) {
+      if (inkMask[rowOff + x] > 0) cnt++
+    }
+    rowProj[yRel] = cnt
+  }
+
+  const smooth = smooth1DBoxSame(rowProj, 3)
+  const nz = []
+  for (let i = 0; i < paperH; i++) {
+    if (smooth[i] > 2.0) nz.push(smooth[i])
+  }
+  if (nz.length === 0) return []
+
+  nz.sort((a, b) => a - b)
+  const p15Idx = Math.floor((nz.length - 1) * 0.15)
+  const thresh = Math.max(4.0, nz[p15Idx] * 0.35)
+
+  const rawBands = []
+  let y = 0
+  while (y < paperH) {
+    if (smooth[y] > thresh) {
+      const y0 = y
+      while (y < paperH && smooth[y] > thresh) {
+        y++
+      }
+      if (y - y0 >= 14) {
+        rawBands.push([y0, y])
+      }
+    } else {
+      y++
+    }
+  }
+
+  // Unir micro-cortes verticales (< 6px) dentro de un mismo renglón si la altura combinada sigue siendo acotada
+  const maxMergeH = Math.max(90, Math.floor(paperH * 0.14))
+  const merged = []
+  for (const [y0, y1] of rawBands) {
+    const prev = merged[merged.length - 1]
+    if (prev && y0 - prev[1] < 6 && y1 - prev[0] < maxMergeH) {
+      prev[1] = y1
+    } else {
+      merged.push([y0, y1])
+    }
+  }
+
+  // Dividir bandas altas por valles entre picos locales de proyección horizontal suavizada
+  const maxSingleBandH = Math.max(130, Math.round(paperH * 0.17))
+  const minPeakDist = Math.max(45, Math.round(paperH * 0.07))
+  const lineBands = []
+
+  for (const [y0, y1] of merged) {
+    const bh = y1 - y0
+    if (bh <= maxSingleBandH) {
+      lineBands.push([y0, y1])
+      continue
+    }
+
+    const sub = smooth.subarray(y0, y1)
+    const kS = Math.max(15, Math.min(27, Math.floor(bh / 6) | 1))
+    const subS = smooth1DBoxSame(sub, Math.floor(kS / 2))
+
+    let subMax = 0
+    for (let i = 0; i < subS.length; i++) {
+      if (subS[i] > subMax) subMax = subS[i]
+    }
+    const pMin = Math.max(12.0, subMax * 0.22)
+    const rad = Math.max(12, Math.floor(minPeakDist / 3))
+    const peaks = []
+
+    for (let i = 6; i < subS.length - 6; i++) {
+      const val = subS[i]
+      if (val < pMin) continue
+      const wStart = Math.max(0, i - rad)
+      const wEnd = Math.min(subS.length - 1, i + rad)
+      let localMax = val
+      for (let j = wStart; j <= wEnd; j++) {
+        if (subS[j] > localMax) {
+          localMax = subS[j]
+          break
+        }
+      }
+      if (val === localMax) {
+        if (peaks.length === 0 || i - peaks[peaks.length - 1] >= minPeakDist) {
+          peaks.push(i)
+        } else if (val > subS[peaks[peaks.length - 1]]) {
+          peaks[peaks.length - 1] = i
+        }
+      }
+    }
+
+    if (peaks.length <= 1) {
+      lineBands.push([y0, y1])
+    } else {
+      const cuts = [0]
+      for (let pi = 0; pi < peaks.length - 1; pi++) {
+        const p1 = peaks[pi]
+        const p2 = peaks[pi + 1]
+        let minIdx = p1
+        let minV = subS[p1]
+        for (let j = p1 + 1; j <= p2; j++) {
+          if (subS[j] < minV) {
+            minV = subS[j]
+            minIdx = j
+          }
+        }
+        cuts.push(minIdx)
+      }
+      cuts.push(sub.length)
+
+      for (let ci = 0; ci < cuts.length - 1; ci++) {
+        const cy0 = y0 + cuts[ci]
+        const cy1 = y0 + cuts[ci + 1]
+        if (cy1 - cy0 >= 18) {
+          lineBands.push([cy0, cy1])
+        }
+      }
+    }
+  }
+
+  const blocks = []
+  const colSums = new Int32Array(colW)
+  const bigGap = Math.max(60, Math.round(colW * 0.14))
+
+  for (const [ly1, ly2] of lineBands) {
+    colSums.fill(0)
+    for (let yRel = ly1; yRel < ly2; yRel++) {
+      const rowOff = (paperMinY + yRel) * fullWidth
+      for (let xRel = 0; xRel < colW; xRel++) {
+        if (inkMask[rowOff + xStart + xRel] > 0) {
+          colSums[xRel]++
+        }
+      }
+    }
+
+    let firstX = -1
+    let lastX = -1
+    let activeCols = 0
+    for (let xRel = 0; xRel < colW; xRel++) {
+      if (colSums[xRel] >= 1) {
+        if (firstX === -1) firstX = xRel
+        lastX = xRel
+        activeCols++
+      }
+    }
+    if (activeCols < 16 || firstX === -1) continue
+
+    const segs = []
+    let inSeg = false
+    let s0 = 0
+    let sLast = 0
+    let gap = 0
+
+    for (let xRel = firstX; xRel <= lastX; xRel++) {
+      if (colSums[xRel] >= 2) {
+        if (!inSeg) {
+          inSeg = true
+          s0 = xRel
+        }
+        sLast = xRel
+        gap = 0
+      } else if (inSeg) {
+        gap++
+        if (gap >= bigGap) {
+          if (sLast - s0 >= 28) {
+            segs.push([s0, sLast])
+          }
+          inSeg = false
+          gap = 0
+        }
+      }
+    }
+    if (inSeg && sLast - s0 >= 28) {
+      segs.push([s0, sLast])
+    }
+    if (segs.length === 0) {
+      segs.push([firstX, lastX])
+    }
+
+    for (const [sx1, sx2] of segs) {
+      let minX = colW
+      let maxX = -1
+      let minY = ly2
+      let maxY = -1
+      let inkPixels = 0
+
+      for (let yRel = ly1; yRel < ly2; yRel++) {
+        const rowOff = (paperMinY + yRel) * fullWidth
+        for (let xRel = sx1; xRel <= sx2; xRel++) {
+          if (inkMask[rowOff + xStart + xRel] > 0) {
+            inkPixels++
+            if (xRel < minX) minX = xRel
+            if (xRel > maxX) maxX = xRel
+            if (yRel < minY) minY = yRel
+            if (yRel > maxY) maxY = yRel
+          }
+        }
+      }
+
+      if (inkPixels < 25 || maxX < minX || maxY < minY) continue
+
+      const bx1 = xStart + minX
+      const bx2 = xStart + maxX + 1
+      const by1 = paperMinY + minY
+      const by2 = paperMinY + maxY + 1
+      const bw = bx2 - bx1
+      const bh = by2 - by1
+
+      // Filtrar tildes, rayas o marcas diminutas sueltas (ej. '/' en R3) preservando siglas reales (CPK, ESD, Urea)
+      if (bw < 70 && bh < 85) continue
+      if (bw < 95 && bw / Math.max(1, bh) < 1.35) continue
+      if (bw >= 50 && bh >= 16) {
+        blocks.push({
+          minX: bx1,
+          maxX: bx2,
+          minY: by1,
+          maxY: by2
+        })
+      }
+    }
+  }
+
+  return blocks
 }
 
 /**
@@ -754,9 +1120,9 @@ export function detectPaperVerticalBounds(canvas) {
 }
 
 /**
- * Analiza la distribución 2D de tinta en el canvas preprocesado: detecta el canal central de
- * 2 columnas (si existe) y segmenta todas las filas y columnas escritas respetando los límites
- * de la hoja de papel.
+ * Analiza la distribución 2D de tinta en el canvas preprocesado (Exp C): reutiliza `canvas.__cleanInkMask`
+ * cuando está disponible (con fallback limpio a umbral en escala de grises), detecta el canal central
+ * de 2 columnas y segmenta cada columna respetando bandas altas y límites de la hoja.
  *
  * @param {HTMLCanvasElement|null} canvas
  * @returns {{ blocks: Array<{ minX: number, maxX: number, minY: number, maxY: number }>, centralGutterX: number|null, paperBounds: { minY: number, maxY: number } }}
@@ -771,150 +1137,60 @@ function analyzeCanvasInkLayout(canvas) {
   const paperH = Math.max(1, paperMaxY - paperMinY + 1)
 
   try {
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return { blocks: [], centralGutterX: null, paperBounds: { minY: paperMinY, maxY: paperMaxY } }
-    const { data } = ctx.getImageData(0, 0, width, height)
-
-    const marginX = Math.floor(width * 0.04)
-    const maxSafeX = Math.ceil(width * 0.96)
-    const colDarkTotals = new Int32Array(width)
-    const inkMask = new Uint8Array(width * height)
-
-    for (let y = paperMinY; y <= paperMaxY; y++) {
-      const rowOff = y * width
-      for (let x = marginX; x < maxSafeX; x++) {
-        const lum = data[(rowOff + x) * 4]
-        if (lum < 152 && lum > 8) {
-          inkMask[rowOff + x] = 1
-          colDarkTotals[x]++
-        }
+    let inkMask = null
+    const cleanMaskObj = canvas.__cleanInkMask
+    if (
+      cleanMaskObj?.data &&
+      cleanMaskObj.width === width &&
+      cleanMaskObj.height === height
+    ) {
+      inkMask = cleanMaskObj.data
+    } else {
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        return { blocks: [], centralGutterX: null, paperBounds: { minY: paperMinY, maxY: paperMaxY } }
       }
-    }
+      const { data } = ctx.getImageData(0, 0, width, height)
+      const marginX = Math.max(6, Math.floor(width * 0.015))
+      const maxSafeX = width - marginX
+      const colDarkTotals = new Int32Array(width)
+      const rawMask = new Uint8Array(width * height)
 
-    // Suprimir bordes verticales de formularios u orillas oscuras continuas (ej. dedos/sombra en el borde)
-    const maxColDensity = paperH * 0.28
-    const rowCounts = new Float32Array(height)
-    for (let y = paperMinY; y <= paperMaxY; y++) {
-      const rowOff = y * width
-      let rowInk = 0
-      for (let x = marginX; x < maxSafeX; x++) {
-        if (inkMask[rowOff + x] === 1 && colDarkTotals[x] <= maxColDensity) {
-          rowInk++
-        }
-      }
-      rowCounts[y] = rowInk
-    }
-
-    // Suavizado vertical ventana 5px dentro de la hoja
-    const smoothed = new Float32Array(height)
-    const sortedVals = []
-    for (let y = paperMinY; y <= paperMaxY; y++) {
-      let acc = 0
-      let cnt = 0
-      for (let dy = -2; dy <= 2; dy++) {
-        const yy = y + dy
-        if (yy >= paperMinY && yy <= paperMaxY) {
-          acc += rowCounts[yy]
-          cnt++
-        }
-      }
-      const val = acc / Math.max(1, cnt)
-      smoothed[y] = val
-      sortedVals.push(val)
-    }
-
-    sortedVals.sort((a, b) => a - b)
-    const p25 = sortedVals[Math.floor(sortedVals.length * 0.25)] || 0
-    const rowThreshold = Math.max(14, p25 * 1.8)
-
-    const rawBands = []
-    let y = paperMinY
-    while (y <= paperMaxY) {
-      if (smoothed[y] > rowThreshold) {
-        const bandStart = y
-        while (y <= paperMaxY && smoothed[y] > rowThreshold) {
-          y++
-        }
-        rawBands.push({ y1: bandStart, y2: y })
-      } else {
-        y++
-      }
-    }
-
-    // Unir micro-cortes verticales (< 8px) dentro de un mismo renglón
-    const mergedBands = []
-    for (const band of rawBands) {
-      const prev = mergedBands[mergedBands.length - 1]
-      if (prev && band.y1 - prev.y2 < 8) {
-        prev.y2 = band.y2
-      } else {
-        mergedBands.push({ ...band })
-      }
-    }
-
-    const maxBandHeight = Math.max(120, Math.round(height * 0.35))
-    const colWhiteGap = Math.max(34, Math.round(width * 0.075))
-    const gutterHeaderSkipY = paperH >= 800 ? paperMinY + Math.floor(paperH * 0.2) : paperMinY
-    const bandEntries = []
-    const preliminaryBlocks = []
-    const bandColInk = new Int32Array(width)
-
-    for (const band of mergedBands) {
-      const bandH = band.y2 - band.y1
-      if (bandH < 16 || bandH > maxBandHeight) continue
-
-      const y1 = Math.max(paperMinY, band.y1 - 4)
-      const y2 = Math.min(paperMaxY + 1, band.y2 + 4)
-      const hasInk = analyzeRowInkProfile(canvas, y1, y2)
-      if (!hasInk) continue
-
-      for (let yy = Math.max(y1, gutterHeaderSkipY); yy < y2; yy++) {
-        const rowOff = yy * width
+      for (let y = paperMinY; y <= paperMaxY; y++) {
+        const rowOff = y * width
         for (let x = marginX; x < maxSafeX; x++) {
-          if (inkMask[rowOff + x] === 1 && colDarkTotals[x] <= maxColDensity) {
-            bandColInk[x]++
+          const lum = data[(rowOff + x) * 4]
+          if (lum < 152 && lum > 8) {
+            rawMask[rowOff + x] = 1
+            colDarkTotals[x]++
           }
         }
       }
 
-      const cols = segmentRowIntoInkColumns(hasInk, width, null, null, colWhiteGap)
-      bandEntries.push({ y1, y2, hasInk, cols })
-      for (const col of cols) {
-        preliminaryBlocks.push({
-          minX: col.minX,
-          maxX: col.maxX,
-          minY: y1,
-          maxY: y2
-        })
-      }
-    }
-
-    const centralGutterX = detectCentralColumnGutter(bandColInk, width, preliminaryBlocks)
-    if (centralGutterX === null) {
-      return {
-        blocks: preliminaryBlocks,
-        centralGutterX: null,
-        paperBounds: { minY: paperMinY, maxY: paperMaxY }
-      }
-    }
-
-    const splitBlocks = []
-    for (const entry of bandEntries) {
-      for (const col of entry.cols) {
-        const parts = splitBlockAtCentralGutter(entry.hasInk, col, centralGutterX, width)
-        for (const part of parts) {
-          splitBlocks.push({
-            minX: part.minX,
-            maxX: part.maxX,
-            minY: entry.y1,
-            maxY: entry.y2
-          })
+      const maxColDensity = paperH * 0.28
+      for (let y = paperMinY; y <= paperMaxY; y++) {
+        const rowOff = y * width
+        for (let x = marginX; x < maxSafeX; x++) {
+          if (rawMask[rowOff + x] === 1 && colDarkTotals[x] > maxColDensity) {
+            rawMask[rowOff + x] = 0
+          }
         }
       }
+      inkMask = rawMask
+    }
+
+    const centralGutterX = detectCentralColumnGutter(inkMask, width, height, paperMinY, paperMaxY)
+    let blocks = []
+    if (centralGutterX !== null) {
+      const leftBlocks = segmentColumnLinesFromMask(inkMask, width, paperMinY, paperMaxY, 0, centralGutterX)
+      const rightBlocks = segmentColumnLinesFromMask(inkMask, width, paperMinY, paperMaxY, centralGutterX, width)
+      blocks = [...leftBlocks, ...rightBlocks]
+    } else {
+      blocks = segmentColumnLinesFromMask(inkMask, width, paperMinY, paperMaxY, 0, width)
     }
 
     return {
-      blocks: splitBlocks,
+      blocks,
       centralGutterX,
       paperBounds: { minY: paperMinY, maxY: paperMaxY }
     }
@@ -1337,12 +1613,13 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
           maxY: Math.max(...seg.map((b) => b.maxY))
         }
 
-        // Priorizar bloques 2D independientes si este segmento abarca 2 o más columnas detectadas
+        // Priorizar bloques 2D independientes si este segmento abarca 2 o más columnas/bandas detectadas
         const matchedInkBlocks = findOverlappingInkBlocks(rawBbox, inkBlocks)
         if (matchedInkBlocks.length >= 2) {
           for (const inkBlk of matchedInkBlocks) {
             const subBoxes = seg.filter((b) => {
               const bCenter = (b.minX + b.maxX) / 2
+              const bCenterY = (b.minY + b.maxY) / 2
               const bWidth = b.maxX - b.minX
               const crossesInkCut =
                 centralGutterX !== null &&
@@ -1352,7 +1629,9 @@ export function groupPaddleItemsIntoRichLines(items = [], sourceCanvas = null) {
                 !crossesInkCut &&
                 bWidth <= (sourceCanvas?.width || 1200) * 0.45 &&
                 bCenter >= inkBlk.minX - 12 &&
-                bCenter <= inkBlk.maxX + 12
+                bCenter <= inkBlk.maxX + 12 &&
+                bCenterY >= inkBlk.minY - 12 &&
+                bCenterY <= inkBlk.maxY + 12
               )
             })
             const subText = subBoxes.map((b) => b.text).filter(Boolean).join(' ').trim()

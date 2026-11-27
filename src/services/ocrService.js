@@ -92,7 +92,7 @@ export async function interpretContextualRecipeWithAiApi({
       renglonesNuevos: [],
       diagnosticoDetectado: '',
       notasMuestra: '',
-      modeloUsado: 'gemini-3.8-flash',
+      modeloUsado: 'gemini-3.1-flash-lite',
       errorIa: 'No se preparó la imagen contextual para enviar a IA.'
     }
   }
@@ -121,7 +121,7 @@ export async function interpretContextualRecipeWithAiApi({
     renglonesNuevos: rawNuevos.map(mapIaItem),
     diagnosticoDetectado: response?.diagnostico_detectado || '',
     notasMuestra: response?.notas_muestra || '',
-    modeloUsado: response?.modelo_usado || 'gemini-3.8-flash',
+    modeloUsado: response?.modelo_usado || 'gemini-3.1-flash-lite',
     errorIa: response?.error_ia || ''
   }
 }

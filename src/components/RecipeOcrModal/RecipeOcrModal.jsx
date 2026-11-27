@@ -224,7 +224,7 @@ function renderStudyOriginBadge(study) {
 }
 
 const INITIAL_VISIBLE_TRACES = 6
-const GENERAL_VISUAL_TRACE_MIN_SCORE = 39
+const GENERAL_VISUAL_TRACE_MIN_SCORE = 42
 const GENERAL_MEMORY_MIN_SCORE = 65
 const GENERAL_DIRECT_MIN_SCORE = 75
 const ORIGIN_PRIORITY = {
@@ -1875,7 +1875,7 @@ export default function RecipeOcrModal({ onClose, onConfirmStudies }) {
                         <AlertCircle size={16} />
                         <span>
                           {otherGeneralStudies.length > 0
-                            ? 'No hubo coincidencias de alta confianza (>= 39% trazo visual, >= 65% memoria de texto o >= 75% directa). Revisá "Mostrar otras opciones", usá "Buscar estudio" o "Escanear con IA".'
+                            ? `No hubo coincidencias de alta confianza (>= ${GENERAL_VISUAL_TRACE_MIN_SCORE}% trazo visual, >= ${GENERAL_MEMORY_MIN_SCORE}% memoria de texto o >= ${GENERAL_DIRECT_MIN_SCORE}% directa). Revisá "Mostrar otras opciones", usá "Buscar estudio" o "Escanear con IA".`
                             : 'Todavía no hay estudios sugeridos. Usá "Buscar estudio" o "Escanear con IA (en contexto)".'}
                         </span>
                       </div>
