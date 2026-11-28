@@ -345,6 +345,20 @@
   .navbar {
     padding: 0 14px;
   }
+
+  .navbar__right {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0 10px;
+  }
+
+  .navbar__right {
+    gap: 8px;
+  }
 }
 
 @media (max-width: 1024px) {

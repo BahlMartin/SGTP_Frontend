@@ -32,6 +32,7 @@ export default function RecipeManualCropSelector({
   const canvasRef = useRef(null)
   const dragOriginRef = useRef(null)
   const dragDraftRef = useRef(null)
+  const moveRafRef = useRef(null)
 
   const [displayMode, setDisplayMode] = useState('original') // 'original' | 'processed'
   const [loadedImgState, setLoadedImgState] = useState(null)
@@ -125,15 +126,22 @@ export default function RecipeManualCropSelector({
       ctx.fillRect(0, sy, sx, sh)
       ctx.fillRect(sx + sw, sy, Math.max(0, cw - (sx + sw)), sh)
 
-      ctx.strokeStyle = dragDraft ? '#0284c7' : '#2563eb'
-      ctx.lineWidth = Math.max(2.5, cw / 360)
-      if (dragDraft) {
-        ctx.setLineDash([6, 4])
-      }
+      ctx.strokeStyle = '#dc2626'
+      ctx.lineWidth = Math.max(2.5, cw / 340)
+      ctx.setLineDash([8, 5])
       ctx.strokeRect(sx, sy, sw, sh)
       ctx.restore()
     }
-  }, [loadedImg, existingBoxes, selectionRect, dragDraft])
+  }, [loadedImg, existingBoxes, selectionRect, dragDraft, isFullscreen])
+
+  useEffect(() => {
+    return () => {
+      if (moveRafRef.current) {
+        window.cancelAnimationFrame(moveRafRef.current)
+        moveRafRef.current = null
+      }
+    }
+  }, [])
 
   const previewCropUrl = useMemo(() => {
     if (!loadedImg || !selectionRect || !loadedImg.naturalWidth || !loadedImg.naturalHeight) {
@@ -167,6 +175,10 @@ export default function RecipeManualCropSelector({
     if (e.pointerType === 'mouse' && e.button !== 0) return
     const pt = getCanvasNormalizedPoint(canvasRef.current, e)
     if (!pt) return
+    if (moveRafRef.current) {
+      window.cancelAnimationFrame(moveRafRef.current)
+      moveRafRef.current = null
+    }
     e.currentTarget.setPointerCapture?.(e.pointerId)
     dragOriginRef.current = pt
     const initialDraft = { x: pt.x, y: pt.y, w: 0, h: 0 }
@@ -186,13 +198,24 @@ export default function RecipeManualCropSelector({
       h: Math.abs(pt.y - origin.y)
     }
     dragDraftRef.current = nextDraft
-    setDragDraft(nextDraft)
+    if (!moveRafRef.current) {
+      moveRafRef.current = window.requestAnimationFrame(() => {
+        moveRafRef.current = null
+        if (dragDraftRef.current) {
+          setDragDraft(dragDraftRef.current)
+        }
+      })
+    }
   }
 
   const finalizeDrag = (e) => {
     const origin = dragOriginRef.current
     if (!origin) return
     dragOriginRef.current = null
+    if (moveRafRef.current) {
+      window.cancelAnimationFrame(moveRafRef.current)
+      moveRafRef.current = null
+    }
     e?.currentTarget?.releasePointerCapture?.(e.pointerId)
 
     const draft = dragDraftRef.current
@@ -311,7 +334,10 @@ export default function RecipeManualCropSelector({
           <span className="ocr-ai-editor__panel-label">
             Dibujá el recuadro del estudio faltante
           </span>
-          <div ref={wrapRef} className="ocr-ai-editor__canvas-wrap">
+          <div
+            ref={wrapRef}
+            className={`ocr-ai-editor__canvas-wrap${!isZoomed ? ' ocr-ai-editor__canvas-wrap--fit' : ''}`}
+          >
             <div className="ocr-ai-editor__canvas-stage">
               <canvas
                 ref={canvasRef}

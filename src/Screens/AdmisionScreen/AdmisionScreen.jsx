@@ -159,6 +159,17 @@ function parseManualCallNumber(data) {
   }
 }
 
+const ADMISSION_FIELD_FOCUS_ORDER = [
+  { key: 'dni', id: 'admission-patient-dni' },
+  { key: 'numeroLlamado', id: 'admission-call-seq' },
+  { key: 'nombre', id: 'admission-patient-name' },
+  { key: 'apellido', id: 'admission-patient-surname' },
+  { key: 'obraSocial', id: 'admission-patient-obra-social' },
+  { key: 'numeroAfiliado', id: 'admission-patient-numero-afiliado' },
+  { key: 'justificacion', id: 'admission-justification-otro' },
+  { key: 'estudios', id: 'shared-study-search' }
+]
+
 /**
  * Pantalla principal de Admisión (Orquestador).
  * Coordina el formulario de admisión, la cola de espera del Tótem de autoservicio,
@@ -191,7 +202,7 @@ export default function AdmisionScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submittingCallNumber, setSubmittingCallNumber] = useState('')
   const [issuedTicket, setIssuedTicket] = useState(null)
-  const [openedFromNotification, setOpenedFromNotification] = useState(false)
+  const [ticketModalOrigin, setTicketModalOrigin] = useState(null)
   const [showOcrModal, setShowOcrModal] = useState(false)
   const [admissionError, setAdmissionError] = useState('')
   const [ticketNumberError, setTicketNumberError] = useState('')
@@ -741,17 +752,17 @@ export default function AdmisionScreen() {
     : ''
 
   const handleTicketItemClick = useCallback((selectedTicket) => {
-    setOpenedFromNotification(false)
+    setTicketModalOrigin('ingresos')
     setIssuedTicket(selectedTicket)
   }, [])
 
   const handleCloseTicketModal = useCallback(() => {
     setIssuedTicket(null)
-    if (!openedFromNotification) {
-      setActiveSideTab('ingresos')
+    if (ticketModalOrigin === 'emission') {
+      setActiveSideTab('recepcion')
     }
-    setOpenedFromNotification(false)
-  }, [openedFromNotification])
+    setTicketModalOrigin(null)
+  }, [ticketModalOrigin])
 
   const handleLabelsPrinted = useCallback(
     (updatedTicket, response) => {
@@ -785,7 +796,7 @@ export default function AdmisionScreen() {
       try {
         const freshTicket = await fetchTicketByIdApi(notif.ticket_id, { cacheBust: true })
         if (!isMountedRef.current) return
-        setOpenedFromNotification(true)
+        setTicketModalOrigin('notification')
         setIssuedTicket(freshTicket)
       } catch (err) {
         console.error('Error al abrir ticket desde notificación:', err)
@@ -1022,6 +1033,28 @@ export default function AdmisionScreen() {
     }
   }
 
+  const focusFirstInvalidField = useCallback((errorMap) => {
+    if (!errorMap || typeof errorMap !== 'object' || typeof window === 'undefined') return
+    const firstInvalid = ADMISSION_FIELD_FOCUS_ORDER.find(({ key }) => Boolean(errorMap[key]))
+    if (!firstInvalid) return
+
+    const runFocus = () => {
+      const el = document.getElementById(firstInvalid.id)
+      const target = el || document.querySelector('.admission-form__field')
+      if (!target) return
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      if (el && !el.disabled && !el.readOnly) {
+        el.focus({ preventScroll: true })
+      }
+    }
+
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(runFocus)
+    } else {
+      runFocus()
+    }
+  }, [])
+
   const handleSubmitAdmission = async (event) => {
     event.preventDefault()
     if (isSubmittingRef.current || isSubmitting) return
@@ -1033,34 +1066,36 @@ export default function AdmisionScreen() {
 
     setAdmissionError('')
 
-    if (!enteredCallNumber) {
-      setAdmissionError('El número de llamado es obligatorio.')
-      return
-    }
+    const { errors: formErrors } = validateAdmissionForm()
+    const combinedErrors = { ...formErrors }
 
-    if (!activeReceptionTurnoId && isTicketNumberAlreadyUsed(enteredCallNumber, todayTickets)) {
+    if (
+      !activeReceptionTurnoId &&
+      enteredCallNumber &&
+      isTicketNumberAlreadyUsed(enteredCallNumber, todayTickets)
+    ) {
       const duplicateMsg = `El número de llamado ${enteredCallNumber} ya fue utilizado hoy. Ingrese otro número para evitar duplicar el ticket.`
       setTicketNumberError(duplicateMsg)
       setAdmissionError(duplicateMsg)
-      return
-    }
-
-    if (ticketNumberError) {
+      combinedErrors.numeroLlamado = duplicateMsg
+    } else if (ticketNumberError) {
       setAdmissionError(ticketNumberError)
-      return
+      combinedErrors.numeroLlamado = ticketNumberError
     }
-
-    const isFormValid = validateAdmissionForm()
-    if (!isFormValid) return
 
     if (
       formData.selectedStudies.some(
         (study) => study.id == null || !Number.isInteger(Number(study.id))
       )
     ) {
-      setAdmissionError(
+      const unlinkedStudiesMsg =
         'Uno o más estudios no están vinculados al catálogo. Selecciónelos nuevamente desde la búsqueda de estudios.'
-      )
+      setAdmissionError(unlinkedStudiesMsg)
+      combinedErrors.estudios = unlinkedStudiesMsg
+    }
+
+    if (Object.keys(combinedErrors).length > 0) {
+      focusFirstInvalidField(combinedErrors)
       return
     }
 
@@ -1111,7 +1146,7 @@ export default function AdmisionScreen() {
         clearStoredActiveTurno()
       }
 
-      setOpenedFromNotification(false)
+      setTicketModalOrigin('emission')
       setIssuedTicket(generatedTicket)
       setUnregisteredPatientAlert('')
       setTicketNumberError('')
@@ -1133,6 +1168,7 @@ export default function AdmisionScreen() {
           `No se pudo emitir el ticket porque el número de llamado ya está registrado. Verifique que no se repita. ${serverMessage}`
         setTicketNumberError(conflictText)
         setAdmissionError(conflictText)
+        focusFirstInvalidField({ numeroLlamado: conflictText })
       } else {
         setAdmissionError(serverMessage)
       }
@@ -1152,9 +1188,102 @@ export default function AdmisionScreen() {
       ? ''
       : ticketNumberError
 
+  const notificationsBell =
+    userData?.rol === 'Admision' ? (
+      <div className="admision-screen__notifications" ref={notificationsContainerRef}>
+        <button
+          type="button"
+          className={`admision-screen__notification-btn ${
+            unreadNotificationsCount > 0 ? 'admision-screen__notification-btn--unread' : ''
+          }`}
+          aria-label={`Notificaciones de cambios de estudios: ${unreadNotificationsCount} sin leer`}
+          aria-expanded={isNotificationsOpen}
+          onClick={() => setIsNotificationsOpen((isOpen) => !isOpen)}
+        >
+          <Bell size={20} />
+          {unreadNotificationsCount > 0 && (
+            <span className="admision-screen__notification-count">
+              {unreadNotificationsCount}
+            </span>
+          )}
+        </button>
+        {isNotificationsOpen && (
+          <section
+            className="admision-screen__notification-panel"
+            aria-label="Cambios en estudios"
+          >
+            <div className="admision-screen__notification-panel-header">
+              <h2>Cambios de estudios en Box</h2>
+              <button
+                type="button"
+                className="admision-screen__notification-mark-all"
+                onClick={handleMarkAllNotificationsRead}
+                disabled={unreadNotificationsCount === 0 || isMarkingAllRead}
+              >
+                {isMarkingAllRead ? 'Marcando...' : 'Marcar todas como leídas'}
+              </button>
+            </div>
+            {studyChangeNotifications.length === 0 ? (
+              <p className="admision-screen__notification-empty">
+                Todavía no hay modificaciones.
+              </p>
+            ) : (
+              <ul>
+                {studyChangeNotifications.map((notification) => (
+                  <li key={notification.id}>
+                    <button
+                      type="button"
+                      className={`admision-screen__notification-item ${
+                        !notification.leida ? 'admision-screen__notification-item--unread' : ''
+                      }`}
+                      onClick={() => handleNotificationClick(notification)}
+                      disabled={isLoadingNotificationTicket}
+                    >
+                      <div className="admision-screen__notification-top">
+                        <strong>
+                          Ticket {notification.num_totem || notification.ticket_id}
+                          {notification.box_numero ? ` · Box ${notification.box_numero}` : ''}
+                        </strong>
+                        {!notification.leida && (
+                          <span className="admision-screen__notification-unread-badge">
+                            Nueva
+                          </span>
+                        )}
+                      </div>
+                      <span className="admision-screen__notification-patient">
+                        {formatNotificationPatient(notification)} · DNI{' '}
+                        {notification.paciente_dni || 'No informado'}
+                      </span>
+                      <div className="admision-screen__notification-changes">
+                        {notification.cambios.map((change, idx) => {
+                          const meta = getStudyChangeBadgeMeta(change)
+                          return (
+                            <span
+                              key={`${notification.id}-chg-${idx}`}
+                              className={`admision-screen__notification-change-tag admision-screen__notification-change-tag--${meta.accion}`}
+                            >
+                              {meta.label}
+                            </span>
+                          )
+                        })}
+                      </div>
+                      <small className="admision-screen__notification-meta">
+                        {formatNotificationTimestamp(notification.created_at)} · Por{' '}
+                        {notification.actor_nombre || 'Personal de Box'}
+                      </small>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+      </div>
+    ) : null
+
   return (
     <div className="admision-screen">
-      <Navbar />
+      <Navbar beforeProfileSlot={notificationsBell} />
 
       <main className="admision-screen__main">
         <header className="admision-screen__header">
@@ -1164,101 +1293,6 @@ export default function AdmisionScreen() {
               Registro de pacientes, clasificacion de triage y emision de tickets
             </p>
           </div>
-          {userData?.rol === 'Admision' && (
-            <div className="admision-screen__notifications" ref={notificationsContainerRef}>
-              <button
-                type="button"
-                className={`admision-screen__notification-btn ${
-                  unreadNotificationsCount > 0
-                    ? 'admision-screen__notification-btn--unread'
-                    : ''
-                }`}
-                aria-label={`Notificaciones de cambios de estudios: ${unreadNotificationsCount} sin leer`}
-                aria-expanded={isNotificationsOpen}
-                onClick={() => setIsNotificationsOpen((isOpen) => !isOpen)}
-              >
-                <Bell size={20} />
-                {unreadNotificationsCount > 0 && (
-                  <span className="admision-screen__notification-count">
-                    {unreadNotificationsCount}
-                  </span>
-                )}
-              </button>
-              {isNotificationsOpen && (
-                <section
-                  className="admision-screen__notification-panel"
-                  aria-label="Cambios en estudios"
-                >
-                  <div className="admision-screen__notification-panel-header">
-                    <h2>Cambios de estudios en Box</h2>
-                    <button
-                      type="button"
-                      className="admision-screen__notification-mark-all"
-                      onClick={handleMarkAllNotificationsRead}
-                      disabled={unreadNotificationsCount === 0 || isMarkingAllRead}
-                    >
-                      {isMarkingAllRead ? 'Marcando...' : 'Marcar todas como leídas'}
-                    </button>
-                  </div>
-                  {studyChangeNotifications.length === 0 ? (
-                    <p className="admision-screen__notification-empty">
-                      Todavía no hay modificaciones.
-                    </p>
-                  ) : (
-                    <ul>
-                      {studyChangeNotifications.map((notification) => (
-                        <li key={notification.id}>
-                          <button
-                            type="button"
-                            className={`admision-screen__notification-item ${
-                              !notification.leida
-                                ? 'admision-screen__notification-item--unread'
-                                : ''
-                            }`}
-                            onClick={() => handleNotificationClick(notification)}
-                            disabled={isLoadingNotificationTicket}
-                          >
-                            <div className="admision-screen__notification-top">
-                              <strong>
-                                Ticket {notification.num_totem || notification.ticket_id}
-                                {notification.box_numero ? ` · Box ${notification.box_numero}` : ''}
-                              </strong>
-                              {!notification.leida && (
-                                <span className="admision-screen__notification-unread-badge">
-                                  Nueva
-                                </span>
-                              )}
-                            </div>
-                            <span className="admision-screen__notification-patient">
-                              {formatNotificationPatient(notification)} · DNI{' '}
-                              {notification.paciente_dni || 'No informado'}
-                            </span>
-                            <div className="admision-screen__notification-changes">
-                              {notification.cambios.map((change, idx) => {
-                                const meta = getStudyChangeBadgeMeta(change)
-                                return (
-                                  <span
-                                    key={`${notification.id}-chg-${idx}`}
-                                    className={`admision-screen__notification-change-tag admision-screen__notification-change-tag--${meta.accion}`}
-                                  >
-                                    {meta.label}
-                                  </span>
-                                )
-                              })}
-                            </div>
-                            <small className="admision-screen__notification-meta">
-                              {formatNotificationTimestamp(notification.created_at)} · Por{' '}
-                              {notification.actor_nombre || 'Personal de Box'}
-                            </small>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-              )}
-            </div>
-          )}
         </header>
 
         <div className="admision-screen__grid">

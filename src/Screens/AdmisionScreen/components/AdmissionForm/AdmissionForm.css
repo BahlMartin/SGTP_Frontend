@@ -39,6 +39,15 @@
   gap: 20px;
 }
 
+.admission-form [id],
+.admission-form__field,
+.admission-form__input,
+.admission-form__call-group,
+.admission-form .studies-selector__input,
+.admission-form #shared-study-search {
+  scroll-margin-top: 96px;
+}
+
 .admission-form__row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

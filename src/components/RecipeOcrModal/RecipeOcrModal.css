@@ -1975,6 +1975,10 @@
   max-height: 58vh;
 }
 
+.ocr-ai-editor__canvas-wrap--fit {
+  overflow: hidden;
+}
+
 .ocr-ai-editor__canvas-wrap::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -2054,8 +2058,7 @@
   position: fixed;
   inset: 0;
   z-index: 1200;
-  background: rgba(15, 23, 42, 0.78);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.84);
   padding: 14px;
   display: flex;
   align-items: center;
@@ -2068,10 +2071,10 @@
   height: 94dvh;
   max-height: 94dvh;
   border-radius: 14px;
-  padding: 16px 18px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   overflow: hidden;
   box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.45);
   box-sizing: border-box;
@@ -2093,12 +2096,31 @@
   flex: 1;
   min-height: 0;
   height: 100%;
+  gap: 6px;
+}
+
+.ocr-ai-editor--fullscreen .ocr-modal__privacy-guard-header,
+.ocr-ai-editor--fullscreen .ocr-manual-crop__header {
+  align-items: center;
+}
+
+.ocr-ai-editor--fullscreen .ocr-modal__privacy-guard-desc,
+.ocr-ai-editor--fullscreen .ocr-manual-crop__desc {
+  display: none;
+}
+
+.ocr-ai-editor--fullscreen .ocr-ai-editor__hint {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.25;
 }
 
 .ocr-ai-editor--fullscreen .ocr-ai-editor__workspace {
   flex: 1;
   min-height: 0;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 10px;
   align-items: stretch;
 }
 

@@ -69,6 +69,7 @@ export default function RecipeAiRedactionEditor({
   const canvasRef = useRef(null)
   const dragOriginRef = useRef(null)
   const dragDraftRef = useRef(null)
+  const moveRafRef = useRef(null)
 
   const [loadedImgState, setLoadedImgState] = useState(null)
   const [tool, setTool] = useState('crop') // 'crop' | 'redact'
@@ -163,16 +164,16 @@ export default function RecipeAiRedactionEditor({
         ctx.fillStyle = 'rgba(255, 255, 255, 0.92)'
         ctx.fillRect(dx, dy, dw, dh)
         ctx.save()
-        ctx.strokeStyle = '#dc2626'
+        ctx.strokeStyle = '#d97706'
         ctx.lineWidth = draftStroke
         ctx.setLineDash([5, 3])
         ctx.strokeRect(dx, dy, dw, dh)
         ctx.restore()
       } else {
         ctx.save()
-        ctx.strokeStyle = '#0284c7'
-        ctx.lineWidth = draftStroke
-        ctx.setLineDash([6, 4])
+        ctx.strokeStyle = '#dc2626'
+        ctx.lineWidth = Math.max(2.5, cw / 340)
+        ctx.setLineDash([8, 5])
         ctx.strokeRect(dx, dy, dw, dh)
         ctx.restore()
       }
@@ -195,17 +196,31 @@ export default function RecipeAiRedactionEditor({
     // Derecha
     ctx.fillRect(cx + crw, cy, Math.max(0, cw - (cx + crw)), crh)
 
-    ctx.strokeStyle = '#0ea5e9'
-    ctx.lineWidth = Math.max(2.5, cw / 360)
+    ctx.strokeStyle = '#dc2626'
+    ctx.lineWidth = Math.max(2.5, cw / 340)
+    ctx.setLineDash([8, 5])
     ctx.strokeRect(cx, cy, crw, crh)
     ctx.restore()
-  }, [loadedImg, cropRect, redactionBoxes, dragDraft, tool])
+  }, [loadedImg, cropRect, redactionBoxes, dragDraft, tool, isFullscreen])
+
+  useEffect(() => {
+    return () => {
+      if (moveRafRef.current) {
+        window.cancelAnimationFrame(moveRafRef.current)
+        moveRafRef.current = null
+      }
+    }
+  }, [])
 
   const handlePointerDown = (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return
     if (isSubmitting || !loadedImg) return
     const pt = getCanvasNormalizedPoint(canvasRef.current, e)
     if (!pt) return
+    if (moveRafRef.current) {
+      window.cancelAnimationFrame(moveRafRef.current)
+      moveRafRef.current = null
+    }
     e.currentTarget.setPointerCapture?.(e.pointerId)
     dragOriginRef.current = pt
     const initialDraft = { x: pt.x, y: pt.y, w: 0, h: 0 }
@@ -224,13 +239,24 @@ export default function RecipeAiRedactionEditor({
     const h = Math.abs(pt.y - origin.y)
     const nextDraft = { x, y, w, h }
     dragDraftRef.current = nextDraft
-    setDragDraft(nextDraft)
+    if (!moveRafRef.current) {
+      moveRafRef.current = window.requestAnimationFrame(() => {
+        moveRafRef.current = null
+        if (dragDraftRef.current) {
+          setDragDraft(dragDraftRef.current)
+        }
+      })
+    }
   }
 
   const finalizeDrag = (e) => {
     const origin = dragOriginRef.current
     if (!origin) return
     dragOriginRef.current = null
+    if (moveRafRef.current) {
+      window.cancelAnimationFrame(moveRafRef.current)
+      moveRafRef.current = null
+    }
     e?.currentTarget?.releasePointerCapture?.(e.pointerId)
 
     const draft = dragDraftRef.current
@@ -382,7 +408,10 @@ export default function RecipeAiRedactionEditor({
       <div className="ocr-ai-editor__workspace">
         <div className="ocr-ai-editor__canvas-panel">
           <span className="ocr-ai-editor__panel-label">Editor sobre receta original</span>
-          <div ref={wrapRef} className="ocr-ai-editor__canvas-wrap">
+          <div
+            ref={wrapRef}
+            className={`ocr-ai-editor__canvas-wrap${!isZoomed ? ' ocr-ai-editor__canvas-wrap--fit' : ''}`}
+          >
             <div className="ocr-ai-editor__canvas-stage">
               <canvas
                 ref={canvasRef}

@@ -389,7 +389,7 @@ export function useAdmissionForm() {
 
   /**
    * Valida exhaustivamente todos los campos del formulario.
-   * Retorna true si es válido, o false si contiene errores.
+   * Retorna un objeto con isValid y el mapa de errores calculados.
    */
   const validateAdmissionForm = useCallback(() => {
     const calculatedErrors = {}
@@ -442,7 +442,10 @@ export function useAdmissionForm() {
     }
 
     setValidationErrors(calculatedErrors)
-    return Object.keys(calculatedErrors).length === 0
+    return {
+      isValid: Object.keys(calculatedErrors).length === 0,
+      errors: calculatedErrors
+    }
   }, [formData, existingPatient, numeroAfiliadoBase, numeroAfiliadoSufijo])
 
   /**

@@ -98,7 +98,7 @@ const NAV_TABS = [
   { label: 'Actividad', path: '/auditoria', roleKey: 'Auditoria', allowedRoles: ['Jefa', 'Admin'] }
 ]
 
-export default function Navbar() {
+export default function Navbar({ beforeProfileSlot = null }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { userData, logout } = useAuth()
@@ -270,6 +270,8 @@ export default function Navbar() {
       </div>
 
       <div className="navbar__right">
+        {beforeProfileSlot}
+
         <button
           type="button"
           className="navbar__profile"

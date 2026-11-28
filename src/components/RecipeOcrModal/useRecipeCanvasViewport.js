@@ -6,7 +6,7 @@ export const ZOOM_LEVELS = [1, 1.25, 1.5, 2, 2.5, 3]
 const MIN_CANVAS_DIM = 120
 const FALLBACK_CONTAINER_WIDTH = 520
 const FALLBACK_CONTAINER_HEIGHT = 400
-const CONTAINER_SAFETY_MARGIN = 4
+const CONTAINER_SAFETY_MARGIN = 12
 
 /**
  * Computes CSS display dimensions for the recipe canvas so it fits inside
@@ -107,38 +107,68 @@ export function useRecipeCanvasViewport(loadedImg) {
     const el = wrapRef.current
     if (!el) return undefined
 
+    let rafId = 0
+
     const measure = () => {
       const style = window.getComputedStyle(el)
+      const borderX =
+        (parseFloat(style.borderLeftWidth) || 0) + (parseFloat(style.borderRightWidth) || 0)
+      const borderY =
+        (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0)
       const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0)
       const padY = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
-      const innerW = el.clientWidth - padX
-      const innerH = el.clientHeight - padY
+      const innerW = el.offsetWidth - borderX - padX
+      const innerH = el.offsetHeight - borderY - padY
 
       if (innerW <= 0 || innerH <= 0) return
 
       const nextW = Math.max(MIN_CANVAS_DIM, Math.floor(innerW - CONTAINER_SAFETY_MARGIN))
       const nextH = Math.max(MIN_CANVAS_DIM, Math.floor(innerH - CONTAINER_SAFETY_MARGIN))
 
-      setContainerSize((prev) =>
-        prev.width === nextW && prev.height === nextH ? prev : { width: nextW, height: nextH }
-      )
+      setContainerSize((prev) => {
+        if (
+          prev.width > 0 &&
+          prev.height > 0 &&
+          Math.abs(prev.width - nextW) <= 2 &&
+          Math.abs(prev.height - nextH) <= 2
+        ) {
+          return prev
+        }
+        return prev.width === nextW && prev.height === nextH
+          ? prev
+          : { width: nextW, height: nextH }
+      })
+    }
+
+    const scheduleMeasure = () => {
+      if (rafId) {
+        window.cancelAnimationFrame(rafId)
+      }
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0
+        measure()
+      })
     }
 
     el.scrollTop = 0
     el.scrollLeft = 0
     measure()
+    scheduleMeasure()
 
     let observer = null
     if (typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver(measure)
+      observer = new ResizeObserver(scheduleMeasure)
       observer.observe(el)
     } else {
-      window.addEventListener('resize', measure)
+      window.addEventListener('resize', scheduleMeasure)
     }
 
     return () => {
+      if (rafId) {
+        window.cancelAnimationFrame(rafId)
+      }
       observer?.disconnect()
-      window.removeEventListener('resize', measure)
+      window.removeEventListener('resize', scheduleMeasure)
     }
   }, [isFullscreen])
 
