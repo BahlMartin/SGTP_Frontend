@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Lock, Unlock, RefreshCw, AlertTriangle, AlertCircle, ThumbsUp, ThumbsDown, ScanText } from 'lucide-react'
+import { Lock, Unlock, RefreshCw, AlertTriangle, ThumbsUp, ThumbsDown, ScanText } from 'lucide-react'
 import { fetchOcrConfigApi, updateOcrConfigApi } from '../../../../services/ocrService'
 import './OcrConfigCard.css'
 
@@ -166,14 +166,6 @@ export default function OcrConfigCard({ onNotice = () => {} }) {
               <ThumbsDown size={14} />
               <span>Votos negativos acumulados: <strong>{config.totalVotosNegativos}</strong></span>
             </div>
-          </div>
-
-          <div className="jefa-screen__ocr-footer-note">
-            <AlertCircle size={14} className="jefa-screen__ocr-note-icon" />
-            <span>
-              Recomendación: mantené el entrenamiento <strong>bloqueado</strong> durante la atención habitual o presentaciones
-              para mostrar únicamente la <strong>Vista General</strong> sin riesgo de entrenar el modelo por error desde selecciones rápidas.
-            </span>
           </div>
         </>
       )}

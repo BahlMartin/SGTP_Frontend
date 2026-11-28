@@ -252,22 +252,3 @@
   border-color: #fecaca;
   color: #991b1b;
 }
-
-.jefa-screen__ocr-footer-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  color: #075985;
-  font-size: 0.78rem;
-  line-height: 1.42;
-}
-
-.jefa-screen__ocr-note-icon {
-  flex-shrink: 0;
-  margin-top: 2px;
-  color: #0284c7;
-}
